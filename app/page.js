@@ -1,4 +1,3 @@
-```javascript
 "use client";
 
 import { useState } from "react";
@@ -9,7 +8,6 @@ const asesores = [
   ["Bahamonde, Camila", "8135", "bahamonde.camila@portalcalidad.com"],
   ["Bustamante, Ailin", "8188", "bustamante.ailin@portalcalidad.com"],
   ["Bustos, Jesica", "8141", "bustos.jesica@portalcalidad.com"],
-  ["Bustos, Nicolas", "8214", "bustos.nicolas@portalcalidad.com"],
   ["Cabrera, Antonella", "8187", "cabrera.antonella@portalcalidad.com"],
   ["Contreras, Gilary", "8046", "contreras.gilary@portalcalidad.com"],
   ["Cordoba, Tania", "8202", "cordoba.tania@portalcalidad.com"],
@@ -52,7 +50,6 @@ export default function Page() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
   const [asesorActual, setAsesorActual] = useState(null);
 
   function iniciarSesion(e) {
@@ -65,9 +62,7 @@ export default function Page() {
     );
 
     if (!asesor) {
-      setError(
-        "El correo ingresado no está asociado a un asesor."
-      );
+      setError("El correo ingresado no está asociado a un asesor.");
       return;
     }
 
@@ -102,9 +97,7 @@ export default function Page() {
           </p>
 
           <form onSubmit={iniciarSesion}>
-            <label style={styles.label}>
-              Correo electrónico
-            </label>
+            <label style={styles.label}>Correo electrónico</label>
 
             <input
               type="email"
@@ -115,9 +108,7 @@ export default function Page() {
               required
             />
 
-            <label style={styles.label}>
-              Contraseña
-            </label>
+            <label style={styles.label}>Contraseña</label>
 
             <input
               type="password"
@@ -128,16 +119,9 @@ export default function Page() {
               required
             />
 
-            {error && (
-              <div style={styles.errorBox}>
-                {error}
-              </div>
-            )}
+            {error && <div style={styles.errorBox}>{error}</div>}
 
-            <button
-              type="submit"
-              style={styles.primaryButton}
-            >
+            <button type="submit" style={styles.primaryButton}>
               Ingresar
             </button>
           </form>
@@ -155,33 +139,25 @@ export default function Page() {
 }
 
 function AsesorPortal({ asesor, cerrarSesion }) {
-  const [pestañaActiva, setPestañaActiva] =
-    useState("inicio");
-
+  const [pestañaActiva, setPestañaActiva] = useState("inicio");
   const [semanaSeleccionada, setSemanaSeleccionada] =
     useState("Semana 4 · Agosto");
 
   const nombreCompleto = asesor[0];
   const nombre =
-    nombreCompleto.split(",")[1]?.trim() ||
-    nombreCompleto;
+    nombreCompleto.split(",")[1]?.trim() || nombreCompleto;
 
   const usuario = asesor[1];
 
   return (
     <main style={styles.portalPage}>
       <div style={styles.portalLayout}>
-
         <aside style={styles.sidebar}>
-
           <div style={styles.brand}>
             <div style={styles.brandIcon}>P</div>
 
             <div>
-              <strong>
-                Portal Integral
-              </strong>
-
+              <strong>Portal Integral</strong>
               <span style={styles.sidebarSubtitle}>
                 del Asesor
               </span>
@@ -213,30 +189,22 @@ function AsesorPortal({ asesor, cerrarSesion }) {
 
           <nav style={styles.navigation}>
             {pestañas.map((item) => {
-
-              const activa =
-                pestañaActiva === item.id;
+              const activa = pestañaActiva === item.id;
 
               return (
                 <button
                   key={item.id}
-                  onClick={() =>
-                    setPestañaActiva(item.id)
-                  }
+                  onClick={() => setPestañaActiva(item.id)}
                   style={{
                     ...styles.navButton,
-                    ...(activa
-                      ? styles.navButtonActive
-                      : {}),
+                    ...(activa ? styles.navButtonActive : {}),
                   }}
                 >
                   <span style={styles.navIcon}>
                     {item.icon}
                   </span>
 
-                  <span>
-                    {item.label}
-                  </span>
+                  <span>{item.label}</span>
                 </button>
               );
             })}
@@ -251,31 +219,23 @@ function AsesorPortal({ asesor, cerrarSesion }) {
         </aside>
 
         <section style={styles.mainArea}>
-
           <header style={styles.topbar}>
-
             <div>
               <div style={styles.topbarKicker}>
                 PORTAL INTEGRAL DEL ASESOR
               </div>
 
-              <h1 style={styles.topbarTitle}>
-                {nombre}
-              </h1>
+              <h1 style={styles.topbarTitle}>{nombre}</h1>
             </div>
 
             <div style={styles.weekBadge}>
               <span style={styles.weekDot}></span>
               Semana vigente
-              <strong>
-                {semanaSeleccionada}
-              </strong>
+              <strong>{semanaSeleccionada}</strong>
             </div>
-
           </header>
 
           <div style={styles.content}>
-
             {pestañaActiva === "inicio" && (
               <Inicio
                 nombre={nombre}
@@ -344,9 +304,7 @@ function AsesorPortal({ asesor, cerrarSesion }) {
               </SeccionSemanal>
             )}
 
-            {pestañaActiva === "evolutivo" && (
-              <Evolutivo />
-            )}
+            {pestañaActiva === "evolutivo" && <Evolutivo />}
 
             {pestañaActiva === "feedback" && (
               <Feedback
@@ -354,7 +312,6 @@ function AsesorPortal({ asesor, cerrarSesion }) {
                 setSemana={setSemanaSeleccionada}
               />
             )}
-
           </div>
         </section>
       </div>
@@ -370,7 +327,6 @@ function Inicio({
   return (
     <>
       <div style={styles.hero}>
-
         <div>
           <span style={styles.heroLabel}>
             RESUMEN SEMANAL
@@ -381,21 +337,18 @@ function Inicio({
           </h2>
 
           <p style={styles.heroText}>
-            Acá vas a encontrar toda la información
-            de tu seguimiento y evolución.
+            Acá vas a encontrar toda la información de tu
+            seguimiento y evolución.
           </p>
         </div>
 
         <div style={styles.heroWeek}>
           <span>Semana vigente</span>
-
           <strong>{semana}</strong>
         </div>
-
       </div>
 
       <div style={styles.metricsGrid}>
-
         <MetricCard
           title="Calidad"
           value="—"
@@ -423,13 +376,10 @@ function Inicio({
           description="Seguimiento semanal"
           icon="🚫"
         />
-
       </div>
 
       <div style={styles.sectionHeader}>
-        <h2 style={styles.sectionTitle}>
-          Tu semana
-        </h2>
+        <h2 style={styles.sectionTitle}>Tu semana</h2>
 
         <p style={styles.sectionDescription}>
           Accedé rápidamente a la información correspondiente
@@ -438,7 +388,6 @@ function Inicio({
       </div>
 
       <div style={styles.cardsGrid}>
-
         <QuickCard
           icon="📊"
           title="Calidad"
@@ -450,47 +399,36 @@ function Inicio({
           icon="📈"
           title="Productividad"
           text="Consultá tu SPH, ventas y seguimiento."
-          onClick={() =>
-            cambiarPestaña("productividad")
-          }
+          onClick={() => cambiarPestaña("productividad")}
         />
 
         <QuickCard
           icon="🏷️"
           title="Tipificaciones"
           text="Revisá tus resultados y oportunidades de mejora."
-          onClick={() =>
-            cambiarPestaña("tipificaciones")
-          }
+          onClick={() => cambiarPestaña("tipificaciones")}
         />
 
         <QuickCard
           icon="🚫"
           title="No Ventas"
           text="Consultá tus gestiones y aspectos trabajados."
-          onClick={() =>
-            cambiarPestaña("no-ventas")
-          }
+          onClick={() => cambiarPestaña("no-ventas")}
         />
 
         <QuickCard
           icon="🏆"
           title="Mis Felicitaciones"
           text="Mirá los reconocimientos que recibiste."
-          onClick={() =>
-            cambiarPestaña("felicitaciones")
-          }
+          onClick={() => cambiarPestaña("felicitaciones")}
         />
 
         <QuickCard
           icon="💬"
           title="Feedback"
           text="Dejá tu comentario y realizá el cierre semanal."
-          onClick={() =>
-            cambiarPestaña("feedback")
-          }
+          onClick={() => cambiarPestaña("feedback")}
         />
-
       </div>
 
       <div style={styles.infoBanner}>
@@ -502,8 +440,8 @@ function Inicio({
           </strong>
 
           <p style={styles.muted}>
-            Cada sección del portal muestra claramente
-            lo correspondiente a cada semana.
+            Cada sección del portal muestra claramente lo
+            correspondiente a cada semana.
           </p>
         </div>
       </div>
@@ -522,27 +460,18 @@ function SeccionSemanal({
   return (
     <>
       <div style={styles.pageHeading}>
+        <div style={styles.pageHeadingIcon}>{icon}</div>
 
-        <div style={styles.pageHeadingIcon}>
-          {icon}
-        </div>
-
-        <h2 style={styles.pageHeadingTitle}>
-          {titulo}
-        </h2>
+        <h2 style={styles.pageHeadingTitle}>{titulo}</h2>
 
         <p style={styles.pageHeadingText}>
           {descripcion}
         </p>
-
       </div>
 
       <div style={styles.weekSelectorCard}>
-
         <div>
-          <span style={styles.selectorLabel}>
-            SEMANA
-          </span>
+          <span style={styles.selectorLabel}>SEMANA</span>
 
           <strong style={styles.selectedWeek}>
             {semana}
@@ -551,30 +480,20 @@ function SeccionSemanal({
 
         <select
           value={semana}
-          onChange={(e) =>
-            setSemana(e.target.value)
-          }
+          onChange={(e) => setSemana(e.target.value)}
           style={styles.weekSelect}
         >
           {semanas.map((item) => (
-            <option
-              key={item}
-              value={item}
-            >
+            <option key={item} value={item}>
               {item}
             </option>
           ))}
         </select>
-
       </div>
 
       <div style={styles.weekContent}>
-
         <div style={styles.weekHeader}>
-
-          <span style={styles.weekHeaderIcon}>
-            📅
-          </span>
+          <span style={styles.weekHeaderIcon}>📅</span>
 
           <div>
             <span style={styles.weekHeaderSmall}>
@@ -585,11 +504,9 @@ function SeccionSemanal({
               {semana}
             </h3>
           </div>
-
         </div>
 
         {children}
-
       </div>
     </>
   );
@@ -598,26 +515,10 @@ function SeccionSemanal({
 function CalidadSemana() {
   return (
     <div style={styles.placeholderGrid}>
-
-      <DataCard
-        title="Nota de calidad"
-        value="—"
-      />
-
-      <DataCard
-        title="Evolución"
-        value="—"
-      />
-
-      <DataCard
-        title="Desvíos"
-        value="—"
-      />
-
-      <DataCard
-        title="Fortalezas"
-        value="—"
-      />
+      <DataCard title="Nota de calidad" value="—" />
+      <DataCard title="Evolución" value="—" />
+      <DataCard title="Desvíos" value="—" />
+      <DataCard title="Fortalezas" value="—" />
 
       <WideDataCard
         title="Devoluciones"
@@ -628,7 +529,6 @@ function CalidadSemana() {
         title="Aspectos trabajados"
         text="Los aspectos registrados durante la semana aparecerán acá."
       />
-
     </div>
   );
 }
@@ -636,17 +536,10 @@ function CalidadSemana() {
 function ProductividadSemana() {
   return (
     <div style={styles.placeholderGrid}>
-
       <DataCard title="SPH" value="—" />
       <DataCard title="Ventas" value="—" />
-      <DataCard
-        title="Objetivo SPH"
-        value="—"
-      />
-      <DataCard
-        title="Objetivo ventas"
-        value="—"
-      />
+      <DataCard title="Objetivo SPH" value="—" />
+      <DataCard title="Objetivo ventas" value="—" />
 
       <WideDataCard
         title="Aspectos trabajados"
@@ -657,7 +550,6 @@ function ProductividadSemana() {
         title="Acciones"
         text="Las acciones realizadas durante la semana aparecerán acá."
       />
-
     </div>
   );
 }
@@ -665,26 +557,10 @@ function ProductividadSemana() {
 function TipificacionesSemana() {
   return (
     <div style={styles.placeholderGrid}>
-
-      <DataCard
-        title="Resultado"
-        value="—"
-      />
-
-      <DataCard
-        title="Objetivo"
-        value="—"
-      />
-
-      <DataCard
-        title="Desvío"
-        value="—"
-      />
-
-      <DataCard
-        title="Evolución"
-        value="—"
-      />
+      <DataCard title="Resultado" value="—" />
+      <DataCard title="Objetivo" value="—" />
+      <DataCard title="Desvío" value="—" />
+      <DataCard title="Evolución" value="—" />
 
       <WideDataCard
         title="Tipificaciones auditadas"
@@ -695,7 +571,6 @@ function TipificacionesSemana() {
         title="Devoluciones"
         text="Las devoluciones de tipificaciones correspondientes a esta semana aparecerán acá."
       />
-
     </div>
   );
 }
@@ -703,26 +578,10 @@ function TipificacionesSemana() {
 function NoVentasSemana() {
   return (
     <div style={styles.placeholderGrid}>
-
-      <DataCard
-        title="Cantidad"
-        value="—"
-      />
-
-      <DataCard
-        title="Coaching"
-        value="—"
-      />
-
-      <DataCard
-        title="Registro en sistema"
-        value="—"
-      />
-
-      <DataCard
-        title="Compromiso"
-        value="—"
-      />
+      <DataCard title="Cantidad" value="—" />
+      <DataCard title="Coaching" value="—" />
+      <DataCard title="Registro en sistema" value="—" />
+      <DataCard title="Compromiso" value="—" />
 
       <WideDataCard
         title="Principales O.M."
@@ -733,7 +592,6 @@ function NoVentasSemana() {
         title="Fortalezas"
         text="Las fortalezas destacadas durante la semana aparecerán acá."
       />
-
     </div>
   );
 }
@@ -741,20 +599,14 @@ function NoVentasSemana() {
 function FelicitacionesSemana() {
   return (
     <div style={styles.emptyCard}>
+      <div style={styles.emptyIcon}>🏆</div>
 
-      <div style={styles.emptyIcon}>
-        🏆
-      </div>
-
-      <h3>
-        Felicitaciones de la semana
-      </h3>
+      <h3>Felicitaciones de la semana</h3>
 
       <p style={styles.muted}>
-        Los reconocimientos que sean cargados
-        para esta semana aparecerán acá.
+        Los reconocimientos que sean cargados para esta
+        semana aparecerán acá.
       </p>
-
     </div>
   );
 }
@@ -763,10 +615,7 @@ function Evolutivo() {
   return (
     <>
       <div style={styles.pageHeading}>
-
-        <div style={styles.pageHeadingIcon}>
-          📈
-        </div>
+        <div style={styles.pageHeadingIcon}>📈</div>
 
         <h2 style={styles.pageHeadingTitle}>
           Evolutivo
@@ -775,11 +624,9 @@ function Evolutivo() {
         <p style={styles.pageHeadingText}>
           Comparación de tu desempeño a través de las semanas.
         </p>
-
       </div>
 
       <EvolutionBlock title="Calidad" />
-
       <EvolutionBlock title="Productividad" />
     </>
   );
@@ -788,7 +635,6 @@ function Evolutivo() {
 function EvolutionBlock({ title }) {
   return (
     <div style={styles.evolutionCard}>
-
       <span style={styles.selectorLabel}>
         {title.toUpperCase()}
       </span>
@@ -798,28 +644,19 @@ function EvolutionBlock({ title }) {
       </h3>
 
       <div style={styles.evolutionRows}>
-
         {semanas.map((semana) => (
-          <div
-            key={semana}
-            style={styles.evolutionRow}
-          >
+          <div key={semana} style={styles.evolutionRow}>
             <span>{semana}</span>
 
             <div style={styles.evolutionLine}>
-
               <div style={styles.evolutionBar}>
-                <div
-                  style={styles.evolutionBarFill}
-                ></div>
+                <div style={styles.evolutionBarFill}></div>
               </div>
 
               <strong>—</strong>
-
             </div>
           </div>
         ))}
-
       </div>
     </div>
   );
@@ -829,14 +666,9 @@ function Feedback({
   semana,
   setSemana,
 }) {
-  const [feedback, setFeedback] =
-    useState("");
-
-  const [firma, setFirma] =
-    useState("");
-
-  const [motivo, setMotivo] =
-    useState("");
+  const [feedback, setFeedback] = useState("");
+  const [firma, setFirma] = useState("");
+  const [motivo, setMotivo] = useState("");
 
   function guardarFeedback(e) {
     e.preventDefault();
@@ -861,10 +693,7 @@ function Feedback({
   return (
     <>
       <div style={styles.pageHeading}>
-
-        <div style={styles.pageHeadingIcon}>
-          💬
-        </div>
+        <div style={styles.pageHeadingIcon}>💬</div>
 
         <h2 style={styles.pageHeadingTitle}>
           Feedback
@@ -873,11 +702,9 @@ function Feedback({
         <p style={styles.pageHeadingText}>
           Un feedback correspondiente a cada semana.
         </p>
-
       </div>
 
       <div style={styles.weekSelectorCard}>
-
         <div>
           <span style={styles.selectorLabel}>
             FEEDBACK DE
@@ -890,27 +717,19 @@ function Feedback({
 
         <select
           value={semana}
-          onChange={(e) =>
-            setSemana(e.target.value)
-          }
+          onChange={(e) => setSemana(e.target.value)}
           style={styles.weekSelect}
         >
           {semanas.map((item) => (
-            <option
-              key={item}
-              value={item}
-            >
+            <option key={item} value={item}>
               {item}
             </option>
           ))}
         </select>
-
       </div>
 
       <form onSubmit={guardarFeedback}>
-
         <div style={styles.feedbackCard}>
-
           <span style={styles.selectorLabel}>
             TU FEEDBACK SEMANAL
           </span>
@@ -920,24 +739,20 @@ function Feedback({
           </h3>
 
           <p style={styles.muted}>
-            Podés escribir consultas, pedidos,
-            comentarios, aclaraciones, propuestas
-            o cualquier cuestión que quieras comunicar.
+            Podés escribir consultas, pedidos, comentarios,
+            aclaraciones, propuestas o cualquier cuestión
+            que quieras comunicar.
           </p>
 
           <textarea
             value={feedback}
-            onChange={(e) =>
-              setFeedback(e.target.value)
-            }
+            onChange={(e) => setFeedback(e.target.value)}
             placeholder="Escribí acá tu feedback de la semana..."
             style={styles.feedbackTextarea}
           />
-
         </div>
 
         <div style={styles.signatureCard}>
-
           <span style={styles.selectorLabel}>
             CIERRE DE LA SEMANA
           </span>
@@ -947,17 +762,14 @@ function Feedback({
           </h3>
 
           <p style={styles.muted}>
-            La firma corresponde al cierre de todo
-            lo ocurrido durante esta semana.
+            La firma corresponde al cierre de todo lo
+            ocurrido durante esta semana.
           </p>
 
           <div style={styles.signatureOptions}>
-
             <button
               type="button"
-              onClick={() =>
-                setFirma("conformidad")
-              }
+              onClick={() => setFirma("conformidad")}
               style={{
                 ...styles.signatureButton,
                 ...(firma === "conformidad"
@@ -970,9 +782,7 @@ function Feedback({
 
             <button
               type="button"
-              onClick={() =>
-                setFirma("disconformidad")
-              }
+              onClick={() => setFirma("disconformidad")}
               style={{
                 ...styles.signatureButton,
                 ...(firma === "disconformidad"
@@ -982,28 +792,22 @@ function Feedback({
             >
               ✕ Firmar en disconformidad
             </button>
-
           </div>
 
           {firma === "disconformidad" && (
             <div style={{ marginTop: 20 }}>
-
               <label style={styles.label}>
                 Motivo de la disconformidad
               </label>
 
               <textarea
                 value={motivo}
-                onChange={(e) =>
-                  setMotivo(e.target.value)
-                }
+                onChange={(e) => setMotivo(e.target.value)}
                 placeholder="Escribí el motivo..."
                 style={styles.feedbackTextarea}
               />
-
             </div>
           )}
-
         </div>
 
         <button
@@ -1012,7 +816,6 @@ function Feedback({
         >
           Guardar Feedback y cierre semanal
         </button>
-
       </form>
     </>
   );
@@ -1026,15 +829,10 @@ function MetricCard({
 }) {
   return (
     <div style={styles.metricCard}>
-
-      <div style={styles.metricIcon}>
-        {icon}
-      </div>
+      <div style={styles.metricIcon}>{icon}</div>
 
       <div>
-        <span style={styles.metricTitle}>
-          {title}
-        </span>
+        <span style={styles.metricTitle}>{title}</span>
 
         <strong style={styles.metricValue}>
           {value}
@@ -1044,7 +842,6 @@ function MetricCard({
           {description}
         </span>
       </div>
-
     </div>
   );
 }
@@ -1056,75 +853,45 @@ function QuickCard({
   onClick,
 }) {
   return (
-    <button
-      onClick={onClick}
-      style={styles.quickCard}
-    >
-
-      <div style={styles.quickIcon}>
-        {icon}
-      </div>
+    <button onClick={onClick} style={styles.quickCard}>
+      <div style={styles.quickIcon}>{icon}</div>
 
       <div style={{ textAlign: "left" }}>
-
         <h3 style={{ margin: "0 0 7px" }}>
           {title}
         </h3>
 
-        <p style={styles.quickText}>
-          {text}
-        </p>
-
+        <p style={styles.quickText}>{text}</p>
       </div>
 
-      <span style={styles.arrow}>
-        →
-      </span>
-
+      <span style={styles.arrow}>→</span>
     </button>
   );
 }
 
-function DataCard({
-  title,
-  value,
-}) {
+function DataCard({ title, value }) {
   return (
     <div style={styles.dataCard}>
-
-      <span style={styles.dataTitle}>
-        {title}
-      </span>
+      <span style={styles.dataTitle}>{title}</span>
 
       <strong style={styles.dataValue}>
         {value}
       </strong>
-
     </div>
   );
 }
 
-function WideDataCard({
-  title,
-  text,
-}) {
+function WideDataCard({ title, text }) {
   return (
     <div style={styles.wideDataCard}>
+      <span style={styles.dataTitle}>{title}</span>
 
-      <span style={styles.dataTitle}>
-        {title}
-      </span>
-
-      <p style={styles.muted}>
-        {text}
-      </p>
-
+      <p style={styles.muted}>{text}</p>
     </div>
   );
 }
 
 const styles = {
-
   loginPage: {
     minHeight: "100vh",
     display: "flex",
@@ -1822,4 +1589,3 @@ const styles = {
     color: "#a52b2b",
   },
 };
-```

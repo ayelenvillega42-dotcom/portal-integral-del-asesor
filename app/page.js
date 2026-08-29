@@ -1,31 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 
-const asesores = [
-  ["Acosta, Pamela", "8134", "acosta.pamela@portalcalidad.com"],
-  ["Aguilera, Trinidad", "8196", "aguilera.trinidad@portalcalidad.com"],
-  ["Bahamonde, Camila", "8135", "bahamonde.camila@portalcalidad.com"],
-  ["Bustamante, Ailin", "8188", "bustamante.ailin@portalcalidad.com"],
-  ["Bustos, Jesica", "8141", "bustos.jesica@portalcalidad.com"],
-  ["Cabrera, Antonella", "8187", "cabrera.antonella@portalcalidad.com"],
-  ["Contreras, Gilary", "8046", "contreras.gilary@portalcalidad.com"],
-  ["Cordoba, Tania", "8202", "cordoba.tania@portalcalidad.com"],
-  ["Diaz, Milagros", "8212", "diaz.milagros@portalcalidad.com"],
-  ["Gomez, Carla", "8126", "gomez.carla@portalcalidad.com"],
-  ["Luna, Oriana", "8097", "luna.oriana@portalcalidad.com"],
-  ["Malqui, Xiomara", "8092", "malqui.xiomara@portalcalidad.com"],
-  ["Mercado, Chiara", "8209", "mercado.chiara@portalcalidad.com"],
-  ["Ojeda, Luana", "8200", "ojeda.luana@portalcalidad.com"],
-  ["Olmedo, Thomas", "8192", "olmedo.thomas@portalcalidad.com"],
-  ["Peralta, Belen", "8207", "peralta.belen@portalcalidad.com"],
-  ["Reartes, Maia", "8201", "reartes.maia@portalcalidad.com"],
-  ["Rojek, Luna", "8213", "rojek.luna@portalcalidad.com"],
-  ["Simonetta, Valentina", "8191", "simonetta.valentina@portalcalidad.com"],
-  ["Tello, Marianela", "8042", "tello.marianela@portalcalidad.com"],
-  ["Vasquez, Agustin", "8136", "vasquez.agustin@portalcalidad.com"],
-  ["Viniegra, Agustín", "8199", "viniegra.agustin@portalcalidad.com"],
-];
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+const supabase =
+  supabaseUrl && supabaseKey
+    ? createClient(supabaseUrl, supabaseKey)
+    : null;
 
 const semanas = [
   "Semana 1 · Agosto",
@@ -34,7 +19,7 @@ const semanas = [
   "Semana 4 · Agosto",
 ];
 
-const pestañas = [
+const pestañasAsesor = [
   { id: "inicio", label: "Inicio", icon: "🏠" },
   { id: "calidad", label: "Calidad", icon: "📊" },
   { id: "productividad", label: "Productividad", icon: "📈" },
@@ -45,44 +30,178 @@ const pestañas = [
   { id: "feedback", label: "Feedback", icon: "💬" },
 ];
 
+const pestañasAdmin = [
+  { id: "admin-inicio", label: "Inicio", icon: "🏠" },
+  { id: "admin-asesores", label: "Asesores", icon: "👥" },
+  { id: "admin-reportes", label: "Reportes", icon: "📋" },
+];
+
 export default function Page() {
+  const [cargando, setCargando] = useState(true);
   const [logueado, setLogueado] = useState(false);
+  const [perfil, setPerfil] = useState(null);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [asesorActual, setAsesorActual] = useState(null);
+  const [iniciando, setIniciando] = useState(false);
 
-  function iniciarSesion(e) {
-    e.preventDefault();
-    setError("");
+  useEffect(() => {
+    verificarSesion();
 
-    const asesor = asesores.find(
-      ([, , correo]) =>
-        correo.toLowerCase() === email.trim().toLowerCase()
+    if (!supabase) {
+      setCargando(false);
+      return;
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (session?.user) {
+          await cargarPerfil(session.user);
+        } else {
+          setPerfil(null);
+          setLogueado(false);
+        }
+
+        setCargando(false);
+      }
     );
 
-    if (!asesor) {
-      setError("El correo ingresado no está asociado a un asesor.");
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  async function verificarSesion() {
+    if (!supabase) {
+      setCargando(false);
       return;
     }
 
-    if (!password.trim()) {
-      setError("Ingresá una contraseña.");
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session?.user) {
+        await cargarPerfil(session.user);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  async function cargarPerfil(usuarioAuth) {
+    if (!supabase || !usuarioAuth) return;
+
+    const { data, error } = await supabase
+      .from("perfiles")
+      .select("*")
+      .eq("id", usuarioAuth.id)
+      .single();
+
+    if (error) {
+      console.error("Error cargando perfil:", error);
+      setError(
+        "Tu usuario existe, pero no encontramos tu perfil."
+      );
       return;
     }
 
-    setAsesorActual(asesor);
+    setPerfil({
+      ...data,
+      authUser: usuarioAuth,
+    });
+
     setLogueado(true);
   }
 
-  function cerrarSesion() {
-    setLogueado(false);
-    setAsesorActual(null);
-    setEmail("");
-    setPassword("");
+  async function iniciarSesion(e) {
+    e.preventDefault();
+
+    setError("");
+
+    if (!supabase) {
+      setError(
+        "No está configurada la conexión con Supabase."
+      );
+      return;
+    }
+
+    if (!email.trim() || !password.trim()) {
+      setError(
+        "Ingresá tu correo electrónico y contraseña."
+      );
+      return;
+    }
+
+    setIniciando(true);
+
+    try {
+      const { data, error } =
+        await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password,
+        });
+
+      if (error) {
+        setError(
+          "El correo o la contraseña no son correctos."
+        );
+        return;
+      }
+
+      if (!data.user) {
+        setError("No se pudo iniciar sesión.");
+        return;
+      }
+
+      await cargarPerfil(data.user);
+    } catch (error) {
+      console.error(error);
+      setError(
+        "Ocurrió un error al iniciar sesión."
+      );
+    } finally {
+      setIniciando(false);
+    }
   }
 
-  if (!logueado) {
+  async function cerrarSesion() {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+
+    setPerfil(null);
+    setLogueado(false);
+    setEmail("");
+    setPassword("");
+    setError("");
+  }
+
+  if (cargando) {
+    return (
+      <main style={styles.loginPage}>
+        <div style={styles.loginCard}>
+          <div style={styles.logoCircle}>P</div>
+
+          <h1 style={styles.loginTitle}>
+            Portal Integral del Asesor
+          </h1>
+
+          <p style={styles.loginSubtitle}>
+            Cargando tu información...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!logueado || !perfil) {
     return (
       <main style={styles.loginPage}>
         <div style={styles.loginCard}>
@@ -97,32 +216,53 @@ export default function Page() {
           </p>
 
           <form onSubmit={iniciarSesion}>
-            <label style={styles.label}>Correo electrónico</label>
+            <label style={styles.label}>
+              Correo electrónico
+            </label>
 
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
               placeholder="Ingresá tu correo"
               style={styles.input}
               required
             />
 
-            <label style={styles.label}>Contraseña</label>
+            <label style={styles.label}>
+              Contraseña
+            </label>
 
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) =>
+                setPassword(e.target.value)
+              }
               placeholder="Ingresá tu contraseña"
               style={styles.input}
               required
             />
 
-            {error && <div style={styles.errorBox}>{error}</div>}
+            {error && (
+              <div style={styles.errorBox}>
+                {error}
+              </div>
+            )}
 
-            <button type="submit" style={styles.primaryButton}>
-              Ingresar
+            <button
+              type="submit"
+              style={{
+                ...styles.primaryButton,
+                opacity: iniciando ? 0.7 : 1,
+              }}
+              disabled={iniciando}
+            >
+              {iniciando
+                ? "Ingresando..."
+                : "Ingresar"}
             </button>
           </form>
         </div>
@@ -130,24 +270,44 @@ export default function Page() {
     );
   }
 
+  if (perfil.rol === "administrador") {
+    return (
+      <AdministradorPortal
+        perfil={perfil}
+        cerrarSesion={cerrarSesion}
+      />
+    );
+  }
+
   return (
     <AsesorPortal
-      asesor={asesorActual}
+      perfil={perfil}
       cerrarSesion={cerrarSesion}
     />
   );
 }
 
-function AsesorPortal({ asesor, cerrarSesion }) {
-  const [pestañaActiva, setPestañaActiva] = useState("inicio");
+function AsesorPortal({ perfil, cerrarSesion }) {
+  const [pestañaActiva, setPestañaActiva] =
+    useState("inicio");
+
   const [semanaSeleccionada, setSemanaSeleccionada] =
     useState("Semana 4 · Agosto");
 
-  const nombreCompleto = asesor[0];
-  const nombre =
-    nombreCompleto.split(",")[1]?.trim() || nombreCompleto;
+  const nombreCompleto =
+    perfil.nombre ||
+    perfil.email ||
+    "Asesor";
 
-  const usuario = asesor[1];
+  const nombre =
+    nombreCompleto.includes(",")
+      ? nombreCompleto.split(",")[1]?.trim() ||
+        nombreCompleto
+      : nombreCompleto;
+
+  const usuario =
+    perfil.usuario ||
+    "—";
 
   return (
     <main style={styles.portalPage}>
@@ -158,6 +318,7 @@ function AsesorPortal({ asesor, cerrarSesion }) {
 
             <div>
               <strong>Portal Integral</strong>
+
               <span style={styles.sidebarSubtitle}>
                 del Asesor
               </span>
@@ -188,16 +349,21 @@ function AsesorPortal({ asesor, cerrarSesion }) {
           </div>
 
           <nav style={styles.navigation}>
-            {pestañas.map((item) => {
-              const activa = pestañaActiva === item.id;
+            {pestañasAsesor.map((item) => {
+              const activa =
+                pestañaActiva === item.id;
 
               return (
                 <button
                   key={item.id}
-                  onClick={() => setPestañaActiva(item.id)}
+                  onClick={() =>
+                    setPestañaActiva(item.id)
+                  }
                   style={{
                     ...styles.navButton,
-                    ...(activa ? styles.navButtonActive : {}),
+                    ...(activa
+                      ? styles.navButtonActive
+                      : {}),
                   }}
                 >
                   <span style={styles.navIcon}>
@@ -225,13 +391,18 @@ function AsesorPortal({ asesor, cerrarSesion }) {
                 PORTAL INTEGRAL DEL ASESOR
               </div>
 
-              <h1 style={styles.topbarTitle}>{nombre}</h1>
+              <h1 style={styles.topbarTitle}>
+                {nombre}
+              </h1>
             </div>
 
             <div style={styles.weekBadge}>
               <span style={styles.weekDot}></span>
               Semana vigente
-              <strong>{semanaSeleccionada}</strong>
+
+              <strong>
+                {semanaSeleccionada}
+              </strong>
             </div>
           </header>
 
@@ -240,7 +411,9 @@ function AsesorPortal({ asesor, cerrarSesion }) {
               <Inicio
                 nombre={nombre}
                 semana={semanaSeleccionada}
-                cambiarPestaña={setPestañaActiva}
+                cambiarPestaña={
+                  setPestañaActiva
+                }
               />
             )}
 
@@ -250,7 +423,9 @@ function AsesorPortal({ asesor, cerrarSesion }) {
                 icon="📊"
                 descripcion="Tu desempeño de calidad organizado por semana."
                 semana={semanaSeleccionada}
-                setSemana={setSemanaSeleccionada}
+                setSemana={
+                  setSemanaSeleccionada
+                }
               >
                 <CalidadSemana />
               </SeccionSemanal>
@@ -262,7 +437,9 @@ function AsesorPortal({ asesor, cerrarSesion }) {
                 icon="📈"
                 descripcion="Tu desempeño de productividad organizado por semana."
                 semana={semanaSeleccionada}
-                setSemana={setSemanaSeleccionada}
+                setSemana={
+                  setSemanaSeleccionada
+                }
               >
                 <ProductividadSemana />
               </SeccionSemanal>
@@ -274,7 +451,9 @@ function AsesorPortal({ asesor, cerrarSesion }) {
                 icon="🏷️"
                 descripcion="Resultados y seguimiento de tus tipificaciones."
                 semana={semanaSeleccionada}
-                setSemana={setSemanaSeleccionada}
+                setSemana={
+                  setSemanaSeleccionada
+                }
               >
                 <TipificacionesSemana />
               </SeccionSemanal>
@@ -286,7 +465,9 @@ function AsesorPortal({ asesor, cerrarSesion }) {
                 icon="🚫"
                 descripcion="Seguimiento de tus gestiones de no venta."
                 semana={semanaSeleccionada}
-                setSemana={setSemanaSeleccionada}
+                setSemana={
+                  setSemanaSeleccionada
+                }
               >
                 <NoVentasSemana />
               </SeccionSemanal>
@@ -298,24 +479,691 @@ function AsesorPortal({ asesor, cerrarSesion }) {
                 icon="🏆"
                 descripcion="Reconocimientos recibidos durante cada semana."
                 semana={semanaSeleccionada}
-                setSemana={setSemanaSeleccionada}
+                setSemana={
+                  setSemanaSeleccionada
+                }
               >
                 <FelicitacionesSemana />
               </SeccionSemanal>
             )}
 
-            {pestañaActiva === "evolutivo" && <Evolutivo />}
+            {pestañaActiva === "evolutivo" && (
+              <Evolutivo />
+            )}
 
             {pestañaActiva === "feedback" && (
               <Feedback
                 semana={semanaSeleccionada}
-                setSemana={setSemanaSeleccionada}
+                setSemana={
+                  setSemanaSeleccionada
+                }
               />
             )}
           </div>
         </section>
       </div>
     </main>
+  );
+}
+
+function AdministradorPortal({
+  perfil,
+  cerrarSesion,
+}) {
+  const [pestañaActiva, setPestañaActiva] =
+    useState("admin-inicio");
+
+  const nombre =
+    perfil.nombre ||
+    perfil.email ||
+    "Administrador";
+
+  return (
+    <main style={styles.portalPage}>
+      <div style={styles.portalLayout}>
+        <aside style={styles.sidebar}>
+          <div style={styles.brand}>
+            <div style={styles.brandIcon}>P</div>
+
+            <div>
+              <strong>Portal Integral</strong>
+
+              <span style={styles.sidebarSubtitle}>
+                Administración
+              </span>
+            </div>
+          </div>
+
+          <div style={styles.userBox}>
+            <div style={styles.avatar}>
+              {nombre.charAt(0).toUpperCase()}
+            </div>
+
+            <div style={{ minWidth: 0 }}>
+              <strong
+                style={{
+                  display: "block",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {nombre}
+              </strong>
+
+              <span style={styles.userSmall}>
+                Administrador
+              </span>
+            </div>
+          </div>
+
+          <nav style={styles.navigation}>
+            {pestañasAdmin.map((item) => {
+              const activa =
+                pestañaActiva === item.id;
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={() =>
+                    setPestañaActiva(item.id)
+                  }
+                  style={{
+                    ...styles.navButton,
+                    ...(activa
+                      ? styles.navButtonActive
+                      : {}),
+                  }}
+                >
+                  <span style={styles.navIcon}>
+                    {item.icon}
+                  </span>
+
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          <button
+            onClick={cerrarSesion}
+            style={styles.logoutButton}
+          >
+            Cerrar sesión
+          </button>
+        </aside>
+
+        <section style={styles.mainArea}>
+          <header style={styles.topbar}>
+            <div>
+              <div style={styles.topbarKicker}>
+                PORTAL INTEGRAL DEL ASESOR
+              </div>
+
+              <h1 style={styles.topbarTitle}>
+                Administración
+              </h1>
+            </div>
+
+            <div style={styles.adminBadge}>
+              ADMINISTRADOR
+            </div>
+          </header>
+
+          <div style={styles.content}>
+            {pestañaActiva ===
+              "admin-inicio" && (
+              <AdminInicio
+                nombre={nombre}
+                cambiarPestaña={
+                  setPestañaActiva
+                }
+              />
+            )}
+
+            {pestañaActiva ===
+              "admin-asesores" && (
+              <AdminAsesores />
+            )}
+
+            {pestañaActiva ===
+              "admin-reportes" && (
+              <AdminReportes />
+            )}
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function AdminInicio({
+  nombre,
+  cambiarPestaña,
+}) {
+  return (
+    <>
+      <div style={styles.hero}>
+        <div>
+          <span style={styles.heroLabel}>
+            PANEL DE ADMINISTRACIÓN
+          </span>
+
+          <h2 style={styles.heroTitle}>
+            Hola, {nombre}
+          </h2>
+
+          <p style={styles.heroText}>
+            Desde acá podés administrar los asesores
+            y gestionar la información del portal.
+          </p>
+        </div>
+
+        <div style={styles.heroWeek}>
+          <span>Estado</span>
+          <strong>Panel activo</strong>
+        </div>
+      </div>
+
+      <div style={styles.metricsGrid}>
+        <MetricCard
+          title="Asesores"
+          value="—"
+          description="Perfiles registrados"
+          icon="👥"
+        />
+
+        <MetricCard
+          title="Reportes"
+          value="—"
+          description="Reportes cargados"
+          icon="📋"
+        />
+
+        <MetricCard
+          title="Seguimiento"
+          value="—"
+          description="Gestiones activas"
+          icon="📈"
+        />
+
+        <MetricCard
+          title="Estado"
+          value="Activo"
+          description="Portal operativo"
+          icon="✓"
+        />
+      </div>
+
+      <div style={styles.sectionHeader}>
+        <h2 style={styles.sectionTitle}>
+          Administración
+        </h2>
+
+        <p style={styles.sectionDescription}>
+          Gestioná desde acá la información principal
+          del portal.
+        </p>
+      </div>
+
+      <div style={styles.cardsGrid}>
+        <QuickCard
+          icon="👥"
+          title="Asesores"
+          text="Crear, consultar y administrar los perfiles de los asesores."
+          onClick={() =>
+            cambiarPestaña("admin-asesores")
+          }
+        />
+
+        <QuickCard
+          icon="📋"
+          title="Reportes"
+          text="Gestionar los reportes y la información semanal."
+          onClick={() =>
+            cambiarPestaña("admin-reportes")
+          }
+        />
+      </div>
+    </>
+  );
+}
+
+function AdminAsesores() {
+  const [asesores, setAsesores] =
+    useState([]);
+
+  const [cargando, setCargando] =
+    useState(true);
+
+  const [mostrarFormulario, setMostrarFormulario] =
+    useState(false);
+
+  const [mensaje, setMensaje] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
+
+  const [formulario, setFormulario] =
+    useState({
+      nombre: "",
+      usuario: "",
+      email: "",
+      password: "",
+    });
+
+  useEffect(() => {
+    cargarAsesores();
+  }, []);
+
+  async function cargarAsesores() {
+    if (!supabase) return;
+
+    setCargando(true);
+    setError("");
+
+    const { data, error } = await supabase
+      .from("perfiles")
+      .select("*")
+      .eq("rol", "asesor")
+      .order("nombre", {
+        ascending: true,
+      });
+
+    if (error) {
+      console.error(error);
+      setError(
+        "No se pudieron cargar los asesores."
+      );
+    } else {
+      setAsesores(data || []);
+    }
+
+    setCargando(false);
+  }
+
+  function cambiarCampo(campo, valor) {
+    setFormulario((actual) => ({
+      ...actual,
+      [campo]: valor,
+    }));
+  }
+
+  async function crearAsesor(e) {
+    e.preventDefault();
+
+    setMensaje("");
+    setError("");
+
+    if (
+      !formulario.nombre.trim() ||
+      !formulario.usuario.trim() ||
+      !formulario.email.trim() ||
+      !formulario.password.trim()
+    ) {
+      setError(
+        "Completá todos los campos."
+      );
+      return;
+    }
+
+    if (formulario.password.length < 6) {
+      setError(
+        "La contraseña debe tener al menos 6 caracteres."
+      );
+      return;
+    }
+
+    try {
+      const {
+        data: {
+          session,
+        },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        setError(
+          "La sesión del administrador expiró."
+        );
+        return;
+      }
+
+      const respuesta = await fetch(
+        "/api/admin/usuarios",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+            Authorization:
+              `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            nombre:
+              formulario.nombre.trim(),
+            usuario:
+              formulario.usuario.trim(),
+            email:
+              formulario.email.trim(),
+            password:
+              formulario.password,
+          }),
+        }
+      );
+
+      const resultado =
+        await respuesta.json();
+
+      if (!respuesta.ok) {
+        setError(
+          resultado.error ||
+            "No se pudo crear el asesor."
+        );
+        return;
+      }
+
+      setMensaje(
+        "Asesor creado correctamente."
+      );
+
+      setFormulario({
+        nombre: "",
+        usuario: "",
+        email: "",
+        password: "",
+      });
+
+      setMostrarFormulario(false);
+
+      await cargarAsesores();
+    } catch (error) {
+      console.error(error);
+
+      setError(
+        "Ocurrió un error al crear el asesor."
+      );
+    }
+  }
+
+  return (
+    <>
+      <div style={styles.pageHeading}>
+        <div style={styles.pageHeadingIcon}>
+          👥
+        </div>
+
+        <h2 style={styles.pageHeadingTitle}>
+          Asesores
+        </h2>
+
+        <p style={styles.pageHeadingText}>
+          Administración de los perfiles de los asesores.
+        </p>
+      </div>
+
+      {mensaje && (
+        <div style={styles.successBox}>
+          {mensaje}
+        </div>
+      )}
+
+      {error && (
+        <div style={styles.errorBox}>
+          {error}
+        </div>
+      )}
+
+      <div style={styles.adminToolbar}>
+        <div>
+          <strong>
+            Base de asesores
+          </strong>
+
+          <p style={styles.muted}>
+            Los asesores que aparecen acá
+            provienen directamente de Supabase.
+          </p>
+        </div>
+
+        <button
+          onClick={() =>
+            setMostrarFormulario(
+              !mostrarFormulario
+            )
+          }
+          style={styles.primaryButtonSmall}
+        >
+          {mostrarFormulario
+            ? "Cancelar"
+            : "+ Nuevo asesor"}
+        </button>
+      </div>
+
+      {mostrarFormulario && (
+        <form
+          onSubmit={crearAsesor}
+          style={styles.adminForm}
+        >
+          <div style={styles.formTitle}>
+            Nuevo asesor
+          </div>
+
+          <div style={styles.formGrid}>
+            <div>
+              <label style={styles.label}>
+                Nombre y apellido
+              </label>
+
+              <input
+                value={formulario.nombre}
+                onChange={(e) =>
+                  cambiarCampo(
+                    "nombre",
+                    e.target.value
+                  )
+                }
+                placeholder="Ej. Carla Gomez"
+                style={styles.input}
+              />
+            </div>
+
+            <div>
+              <label style={styles.label}>
+                Usuario
+              </label>
+
+              <input
+                value={formulario.usuario}
+                onChange={(e) =>
+                  cambiarCampo(
+                    "usuario",
+                    e.target.value
+                  )
+                }
+                placeholder="Ej. 8126"
+                style={styles.input}
+              />
+            </div>
+
+            <div>
+              <label style={styles.label}>
+                Correo electrónico
+              </label>
+
+              <input
+                type="email"
+                value={formulario.email}
+                onChange={(e) =>
+                  cambiarCampo(
+                    "email",
+                    e.target.value
+                  )
+                }
+                placeholder="correo@empresa.com"
+                style={styles.input}
+              />
+            </div>
+
+            <div>
+              <label style={styles.label}>
+                Contraseña inicial
+              </label>
+
+              <input
+                type="password"
+                value={formulario.password}
+                onChange={(e) =>
+                  cambiarCampo(
+                    "password",
+                    e.target.value
+                  )
+                }
+                placeholder="Mínimo 6 caracteres"
+                style={styles.input}
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            style={styles.primaryButtonLarge}
+          >
+            Crear asesor
+          </button>
+        </form>
+      )}
+
+      <div style={styles.adminTableCard}>
+        <div style={styles.tableHeader}>
+          <strong>
+            Asesores registrados
+          </strong>
+
+          <span style={styles.tableCount}>
+            {asesores.length}
+          </span>
+        </div>
+
+        {cargando ? (
+          <div style={styles.emptyAdmin}>
+            Cargando asesores...
+          </div>
+        ) : asesores.length === 0 ? (
+          <div style={styles.emptyAdmin}>
+            <div style={styles.emptyIcon}>
+              👥
+            </div>
+
+            <strong>
+              Todavía no hay asesores
+            </strong>
+
+            <p style={styles.muted}>
+              Usá “+ Nuevo asesor” para
+              crear el primero.
+            </p>
+          </div>
+        ) : (
+          <div style={styles.tableWrapper}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>
+                    Nombre
+                  </th>
+
+                  <th style={styles.th}>
+                    Usuario
+                  </th>
+
+                  <th style={styles.th}>
+                    Email
+                  </th>
+
+                  <th style={styles.th}>
+                    Estado
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {asesores.map((asesor) => (
+                  <tr key={asesor.id}>
+                    <td style={styles.td}>
+                      <strong>
+                        {asesor.nombre ||
+                          "—"}
+                      </strong>
+                    </td>
+
+                    <td style={styles.td}>
+                      {asesor.usuario ||
+                        "—"}
+                    </td>
+
+                    <td style={styles.td}>
+                      {asesor.email ||
+                        "—"}
+                    </td>
+
+                    <td style={styles.td}>
+                      <span
+                        style={
+                          asesor.activo
+                            ? styles.activeBadge
+                            : styles.inactiveBadge
+                        }
+                      >
+                        {asesor.activo
+                          ? "Activo"
+                          : "Inactivo"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function AdminReportes() {
+  return (
+    <>
+      <div style={styles.pageHeading}>
+        <div style={styles.pageHeadingIcon}>
+          📋
+        </div>
+
+        <h2 style={styles.pageHeadingTitle}>
+          Reportes
+        </h2>
+
+        <p style={styles.pageHeadingText}>
+          Gestión de los reportes semanales.
+        </p>
+      </div>
+
+      <div style={styles.emptyAdmin}>
+        <div style={styles.emptyIcon}>
+          📋
+        </div>
+
+        <h3>
+          Gestión de reportes
+        </h3>
+
+        <p style={styles.muted}>
+          Esta sección queda preparada para
+          conectar los reportes semanales que
+          carguemos desde el administrador.
+        </p>
+      </div>
+    </>
   );
 }
 
@@ -337,8 +1185,8 @@ function Inicio({
           </h2>
 
           <p style={styles.heroText}>
-            Acá vas a encontrar toda la información de tu
-            seguimiento y evolución.
+            Acá vas a encontrar toda la información
+            de tu seguimiento y evolución.
           </p>
         </div>
 
@@ -379,11 +1227,13 @@ function Inicio({
       </div>
 
       <div style={styles.sectionHeader}>
-        <h2 style={styles.sectionTitle}>Tu semana</h2>
+        <h2 style={styles.sectionTitle}>
+          Tu semana
+        </h2>
 
         <p style={styles.sectionDescription}>
-          Accedé rápidamente a la información correspondiente
-          a la semana vigente.
+          Accedé rápidamente a la información
+          correspondiente a la semana vigente.
         </p>
       </div>
 
@@ -392,47 +1242,61 @@ function Inicio({
           icon="📊"
           title="Calidad"
           text="Consultá tu nota, fortalezas, desvíos y devoluciones."
-          onClick={() => cambiarPestaña("calidad")}
+          onClick={() =>
+            cambiarPestaña("calidad")
+          }
         />
 
         <QuickCard
           icon="📈"
           title="Productividad"
           text="Consultá tu SPH, ventas y seguimiento."
-          onClick={() => cambiarPestaña("productividad")}
+          onClick={() =>
+            cambiarPestaña("productividad")
+          }
         />
 
         <QuickCard
           icon="🏷️"
           title="Tipificaciones"
           text="Revisá tus resultados y oportunidades de mejora."
-          onClick={() => cambiarPestaña("tipificaciones")}
+          onClick={() =>
+            cambiarPestaña("tipificaciones")
+          }
         />
 
         <QuickCard
           icon="🚫"
           title="No Ventas"
           text="Consultá tus gestiones y aspectos trabajados."
-          onClick={() => cambiarPestaña("no-ventas")}
+          onClick={() =>
+            cambiarPestaña("no-ventas")
+          }
         />
 
         <QuickCard
           icon="🏆"
           title="Mis Felicitaciones"
           text="Mirá los reconocimientos que recibiste."
-          onClick={() => cambiarPestaña("felicitaciones")}
+          onClick={() =>
+            cambiarPestaña("felicitaciones")
+          }
         />
 
         <QuickCard
           icon="💬"
           title="Feedback"
           text="Dejá tu comentario y realizá el cierre semanal."
-          onClick={() => cambiarPestaña("feedback")}
+          onClick={() =>
+            cambiarPestaña("feedback")
+          }
         />
       </div>
 
       <div style={styles.infoBanner}>
-        <div style={styles.infoIcon}>ℹ️</div>
+        <div style={styles.infoIcon}>
+          ℹ️
+        </div>
 
         <div>
           <strong>
@@ -440,8 +1304,8 @@ function Inicio({
           </strong>
 
           <p style={styles.muted}>
-            Cada sección del portal muestra claramente lo
-            correspondiente a cada semana.
+            Cada sección del portal muestra claramente
+            lo correspondiente a cada semana.
           </p>
         </div>
       </div>
@@ -460,9 +1324,13 @@ function SeccionSemanal({
   return (
     <>
       <div style={styles.pageHeading}>
-        <div style={styles.pageHeadingIcon}>{icon}</div>
+        <div style={styles.pageHeadingIcon}>
+          {icon}
+        </div>
 
-        <h2 style={styles.pageHeadingTitle}>{titulo}</h2>
+        <h2 style={styles.pageHeadingTitle}>
+          {titulo}
+        </h2>
 
         <p style={styles.pageHeadingText}>
           {descripcion}
@@ -471,7 +1339,9 @@ function SeccionSemanal({
 
       <div style={styles.weekSelectorCard}>
         <div>
-          <span style={styles.selectorLabel}>SEMANA</span>
+          <span style={styles.selectorLabel}>
+            SEMANA
+          </span>
 
           <strong style={styles.selectedWeek}>
             {semana}
@@ -480,11 +1350,16 @@ function SeccionSemanal({
 
         <select
           value={semana}
-          onChange={(e) => setSemana(e.target.value)}
+          onChange={(e) =>
+            setSemana(e.target.value)
+          }
           style={styles.weekSelect}
         >
           {semanas.map((item) => (
-            <option key={item} value={item}>
+            <option
+              key={item}
+              value={item}
+            >
               {item}
             </option>
           ))}
@@ -493,14 +1368,20 @@ function SeccionSemanal({
 
       <div style={styles.weekContent}>
         <div style={styles.weekHeader}>
-          <span style={styles.weekHeaderIcon}>📅</span>
+          <span style={styles.weekHeaderIcon}>
+            📅
+          </span>
 
           <div>
-            <span style={styles.weekHeaderSmall}>
+            <span
+              style={styles.weekHeaderSmall}
+            >
               INFORMACIÓN DE LA SEMANA
             </span>
 
-            <h3 style={styles.weekHeaderTitle}>
+            <h3
+              style={styles.weekHeaderTitle}
+            >
               {semana}
             </h3>
           </div>
@@ -515,10 +1396,25 @@ function SeccionSemanal({
 function CalidadSemana() {
   return (
     <div style={styles.placeholderGrid}>
-      <DataCard title="Nota de calidad" value="—" />
-      <DataCard title="Evolución" value="—" />
-      <DataCard title="Desvíos" value="—" />
-      <DataCard title="Fortalezas" value="—" />
+      <DataCard
+        title="Nota de calidad"
+        value="—"
+      />
+
+      <DataCard
+        title="Evolución"
+        value="—"
+      />
+
+      <DataCard
+        title="Desvíos"
+        value="—"
+      />
+
+      <DataCard
+        title="Fortalezas"
+        value="—"
+      />
 
       <WideDataCard
         title="Devoluciones"
@@ -536,10 +1432,25 @@ function CalidadSemana() {
 function ProductividadSemana() {
   return (
     <div style={styles.placeholderGrid}>
-      <DataCard title="SPH" value="—" />
-      <DataCard title="Ventas" value="—" />
-      <DataCard title="Objetivo SPH" value="—" />
-      <DataCard title="Objetivo ventas" value="—" />
+      <DataCard
+        title="SPH"
+        value="—"
+      />
+
+      <DataCard
+        title="Ventas"
+        value="—"
+      />
+
+      <DataCard
+        title="Objetivo SPH"
+        value="—"
+      />
+
+      <DataCard
+        title="Objetivo ventas"
+        value="—"
+      />
 
       <WideDataCard
         title="Aspectos trabajados"
@@ -557,10 +1468,25 @@ function ProductividadSemana() {
 function TipificacionesSemana() {
   return (
     <div style={styles.placeholderGrid}>
-      <DataCard title="Resultado" value="—" />
-      <DataCard title="Objetivo" value="—" />
-      <DataCard title="Desvío" value="—" />
-      <DataCard title="Evolución" value="—" />
+      <DataCard
+        title="Resultado"
+        value="—"
+      />
+
+      <DataCard
+        title="Objetivo"
+        value="—"
+      />
+
+      <DataCard
+        title="Desvío"
+        value="—"
+      />
+
+      <DataCard
+        title="Evolución"
+        value="—"
+      />
 
       <WideDataCard
         title="Tipificaciones auditadas"
@@ -578,10 +1504,25 @@ function TipificacionesSemana() {
 function NoVentasSemana() {
   return (
     <div style={styles.placeholderGrid}>
-      <DataCard title="Cantidad" value="—" />
-      <DataCard title="Coaching" value="—" />
-      <DataCard title="Registro en sistema" value="—" />
-      <DataCard title="Compromiso" value="—" />
+      <DataCard
+        title="Cantidad"
+        value="—"
+      />
+
+      <DataCard
+        title="Coaching"
+        value="—"
+      />
+
+      <DataCard
+        title="Registro en sistema"
+        value="—"
+      />
+
+      <DataCard
+        title="Compromiso"
+        value="—"
+      />
 
       <WideDataCard
         title="Principales O.M."
@@ -599,13 +1540,17 @@ function NoVentasSemana() {
 function FelicitacionesSemana() {
   return (
     <div style={styles.emptyCard}>
-      <div style={styles.emptyIcon}>🏆</div>
+      <div style={styles.emptyIcon}>
+        🏆
+      </div>
 
-      <h3>Felicitaciones de la semana</h3>
+      <h3>
+        Felicitaciones de la semana
+      </h3>
 
       <p style={styles.muted}>
-        Los reconocimientos que sean cargados para esta
-        semana aparecerán acá.
+        Los reconocimientos que sean cargados
+        para esta semana aparecerán acá.
       </p>
     </div>
   );
@@ -615,14 +1560,17 @@ function Evolutivo() {
   return (
     <>
       <div style={styles.pageHeading}>
-        <div style={styles.pageHeadingIcon}>📈</div>
+        <div style={styles.pageHeadingIcon}>
+          📈
+        </div>
 
         <h2 style={styles.pageHeadingTitle}>
           Evolutivo
         </h2>
 
         <p style={styles.pageHeadingText}>
-          Comparación de tu desempeño a través de las semanas.
+          Comparación de tu desempeño a través
+          de las semanas.
         </p>
       </div>
 
@@ -639,18 +1587,31 @@ function EvolutionBlock({ title }) {
         {title.toUpperCase()}
       </span>
 
-      <h3 style={{ margin: "5px 0 18px" }}>
+      <h3
+        style={{
+          margin: "5px 0 18px",
+        }}
+      >
         Evolución semanal
       </h3>
 
       <div style={styles.evolutionRows}>
         {semanas.map((semana) => (
-          <div key={semana} style={styles.evolutionRow}>
+          <div
+            key={semana}
+            style={styles.evolutionRow}
+          >
             <span>{semana}</span>
 
             <div style={styles.evolutionLine}>
-              <div style={styles.evolutionBar}>
-                <div style={styles.evolutionBarFill}></div>
+              <div
+                style={styles.evolutionBar}
+              >
+                <div
+                  style={
+                    styles.evolutionBarFill
+                  }
+                ></div>
               </div>
 
               <strong>—</strong>
@@ -666,15 +1627,22 @@ function Feedback({
   semana,
   setSemana,
 }) {
-  const [feedback, setFeedback] = useState("");
-  const [firma, setFirma] = useState("");
-  const [motivo, setMotivo] = useState("");
+  const [feedback, setFeedback] =
+    useState("");
+
+  const [firma, setFirma] =
+    useState("");
+
+  const [motivo, setMotivo] =
+    useState("");
 
   function guardarFeedback(e) {
     e.preventDefault();
 
     if (!feedback.trim()) {
-      alert("Escribí tu feedback antes de guardar.");
+      alert(
+        "Escribí tu feedback antes de guardar."
+      );
       return;
     }
 
@@ -693,7 +1661,9 @@ function Feedback({
   return (
     <>
       <div style={styles.pageHeading}>
-        <div style={styles.pageHeadingIcon}>💬</div>
+        <div style={styles.pageHeadingIcon}>
+          💬
+        </div>
 
         <h2 style={styles.pageHeadingTitle}>
           Feedback
@@ -717,11 +1687,16 @@ function Feedback({
 
         <select
           value={semana}
-          onChange={(e) => setSemana(e.target.value)}
+          onChange={(e) =>
+            setSemana(e.target.value)
+          }
           style={styles.weekSelect}
         >
           {semanas.map((item) => (
-            <option key={item} value={item}>
+            <option
+              key={item}
+              value={item}
+            >
               {item}
             </option>
           ))}
@@ -734,19 +1709,25 @@ function Feedback({
             TU FEEDBACK SEMANAL
           </span>
 
-          <h3 style={{ margin: "7px 0 8px" }}>
+          <h3
+            style={{
+              margin: "7px 0 8px",
+            }}
+          >
             ¿Querés contarnos algo?
           </h3>
 
           <p style={styles.muted}>
-            Podés escribir consultas, pedidos, comentarios,
-            aclaraciones, propuestas o cualquier cuestión
-            que quieras comunicar.
+            Podés escribir consultas, pedidos,
+            comentarios, aclaraciones, propuestas
+            o cualquier cuestión que quieras comunicar.
           </p>
 
           <textarea
             value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
+            onChange={(e) =>
+              setFeedback(e.target.value)
+            }
             placeholder="Escribí acá tu feedback de la semana..."
             style={styles.feedbackTextarea}
           />
@@ -757,22 +1738,29 @@ function Feedback({
             CIERRE DE LA SEMANA
           </span>
 
-          <h3 style={{ margin: "7px 0 8px" }}>
+          <h3
+            style={{
+              margin: "7px 0 8px",
+            }}
+          >
             ¿Cómo querés cerrar esta semana?
           </h3>
 
           <p style={styles.muted}>
-            La firma corresponde al cierre de todo lo
-            ocurrido durante esta semana.
+            La firma corresponde al cierre de todo
+            lo ocurrido durante esta semana.
           </p>
 
           <div style={styles.signatureOptions}>
             <button
               type="button"
-              onClick={() => setFirma("conformidad")}
+              onClick={() =>
+                setFirma("conformidad")
+              }
               style={{
                 ...styles.signatureButton,
-                ...(firma === "conformidad"
+                ...(firma ===
+                "conformidad"
                   ? styles.signatureButtonGreen
                   : {}),
               }}
@@ -782,10 +1770,13 @@ function Feedback({
 
             <button
               type="button"
-              onClick={() => setFirma("disconformidad")}
+              onClick={() =>
+                setFirma("disconformidad")
+              }
               style={{
                 ...styles.signatureButton,
-                ...(firma === "disconformidad"
+                ...(firma ===
+                "disconformidad"
                   ? styles.signatureButtonRed
                   : {}),
               }}
@@ -794,7 +1785,8 @@ function Feedback({
             </button>
           </div>
 
-          {firma === "disconformidad" && (
+          {firma ===
+            "disconformidad" && (
             <div style={{ marginTop: 20 }}>
               <label style={styles.label}>
                 Motivo de la disconformidad
@@ -802,9 +1794,13 @@ function Feedback({
 
               <textarea
                 value={motivo}
-                onChange={(e) => setMotivo(e.target.value)}
+                onChange={(e) =>
+                  setMotivo(e.target.value)
+                }
                 placeholder="Escribí el motivo..."
-                style={styles.feedbackTextarea}
+                style={
+                  styles.feedbackTextarea
+                }
               />
             </div>
           )}
@@ -812,7 +1808,9 @@ function Feedback({
 
         <button
           type="submit"
-          style={styles.primaryButtonLarge}
+          style={
+            styles.primaryButtonLarge
+          }
         >
           Guardar Feedback y cierre semanal
         </button>
@@ -829,16 +1827,22 @@ function MetricCard({
 }) {
   return (
     <div style={styles.metricCard}>
-      <div style={styles.metricIcon}>{icon}</div>
+      <div style={styles.metricIcon}>
+        {icon}
+      </div>
 
       <div>
-        <span style={styles.metricTitle}>{title}</span>
+        <span style={styles.metricTitle}>
+          {title}
+        </span>
 
         <strong style={styles.metricValue}>
           {value}
         </strong>
 
-        <span style={styles.metricDescription}>
+        <span
+          style={styles.metricDescription}
+        >
           {description}
         </span>
       </div>
@@ -853,26 +1857,44 @@ function QuickCard({
   onClick,
 }) {
   return (
-    <button onClick={onClick} style={styles.quickCard}>
-      <div style={styles.quickIcon}>{icon}</div>
+    <button
+      onClick={onClick}
+      style={styles.quickCard}
+    >
+      <div style={styles.quickIcon}>
+        {icon}
+      </div>
 
       <div style={{ textAlign: "left" }}>
-        <h3 style={{ margin: "0 0 7px" }}>
+        <h3
+          style={{
+            margin: "0 0 7px",
+          }}
+        >
           {title}
         </h3>
 
-        <p style={styles.quickText}>{text}</p>
+        <p style={styles.quickText}>
+          {text}
+        </p>
       </div>
 
-      <span style={styles.arrow}>→</span>
+      <span style={styles.arrow}>
+        →
+      </span>
     </button>
   );
 }
 
-function DataCard({ title, value }) {
+function DataCard({
+  title,
+  value,
+}) {
   return (
     <div style={styles.dataCard}>
-      <span style={styles.dataTitle}>{title}</span>
+      <span style={styles.dataTitle}>
+        {title}
+      </span>
 
       <strong style={styles.dataValue}>
         {value}
@@ -881,12 +1903,19 @@ function DataCard({ title, value }) {
   );
 }
 
-function WideDataCard({ title, text }) {
+function WideDataCard({
+  title,
+  text,
+}) {
   return (
     <div style={styles.wideDataCard}>
-      <span style={styles.dataTitle}>{title}</span>
+      <span style={styles.dataTitle}>
+        {title}
+      </span>
 
-      <p style={styles.muted}>{text}</p>
+      <p style={styles.muted}>
+        {text}
+      </p>
     </div>
   );
 }
@@ -970,6 +1999,18 @@ const styles = {
     cursor: "pointer",
   },
 
+  primaryButtonSmall: {
+    padding: "12px 18px",
+    border: "none",
+    borderRadius: "11px",
+    background: "#20242a",
+    color: "#ffffff",
+    fontSize: "13px",
+    fontWeight: "700",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  },
+
   primaryButtonLarge: {
     width: "100%",
     padding: "15px",
@@ -991,6 +2032,17 @@ const styles = {
     borderRadius: "10px",
     marginBottom: "18px",
     fontSize: "13px",
+  },
+
+  successBox: {
+    background: "#eaf7ef",
+    border: "1px solid #9dd0ad",
+    color: "#26733c",
+    padding: "13px",
+    borderRadius: "10px",
+    marginBottom: "18px",
+    fontSize: "13px",
+    fontWeight: "600",
   },
 
   portalPage: {
@@ -1160,6 +2212,16 @@ const styles = {
     justifyContent: "flex-end",
   },
 
+  adminBadge: {
+    padding: "10px 14px",
+    background: "#20242a",
+    color: "#ffffff",
+    borderRadius: "10px",
+    fontSize: "11px",
+    fontWeight: "700",
+    letterSpacing: "0.6px",
+  },
+
   weekDot: {
     width: "8px",
     height: "8px",
@@ -1207,7 +2269,8 @@ const styles = {
 
   heroWeek: {
     minWidth: "180px",
-    background: "rgba(255,255,255,0.10)",
+    background:
+      "rgba(255,255,255,0.10)",
     borderRadius: "14px",
     padding: "15px",
   },
@@ -1406,7 +2469,8 @@ const styles = {
     alignItems: "center",
     gap: "12px",
     paddingBottom: "18px",
-    borderBottom: "1px solid #edf0f2",
+    borderBottom:
+      "1px solid #edf0f2",
     marginBottom: "18px",
   },
 
@@ -1545,7 +2609,8 @@ const styles = {
     padding: "14px",
     borderRadius: "12px",
     border: "1px solid #d9dce3",
-    fontFamily: "Arial, sans-serif",
+    fontFamily:
+      "Arial, sans-serif",
     fontSize: "14px",
     marginTop: "15px",
     outline: "none",
@@ -1587,5 +2652,122 @@ const styles = {
     background: "#fff1f1",
     border: "1px solid #e2aaaa",
     color: "#a52b2b",
+  },
+
+  adminToolbar: {
+    background: "#ffffff",
+    borderRadius: "17px",
+    padding: "20px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "20px",
+    marginBottom: "18px",
+    boxShadow:
+      "0 4px 18px rgba(0,0,0,0.05)",
+  },
+
+  adminForm: {
+    background: "#ffffff",
+    borderRadius: "18px",
+    padding: "23px",
+    marginBottom: "18px",
+    boxShadow:
+      "0 4px 18px rgba(0,0,0,0.05)",
+  },
+
+  formTitle: {
+    fontSize: "19px",
+    fontWeight: "700",
+    marginBottom: "20px",
+  },
+
+  formGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(240px, 1fr))",
+    gap: "15px",
+  },
+
+  adminTableCard: {
+    background: "#ffffff",
+    borderRadius: "18px",
+    overflow: "hidden",
+    boxShadow:
+      "0 4px 18px rgba(0,0,0,0.05)",
+  },
+
+  tableHeader: {
+    padding: "20px",
+    borderBottom:
+      "1px solid #edf0f2",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  tableCount: {
+    background: "#f1f3f5",
+    borderRadius: "20px",
+    padding: "5px 10px",
+    fontSize: "12px",
+    fontWeight: "700",
+  },
+
+  tableWrapper: {
+    width: "100%",
+    overflowX: "auto",
+  },
+
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+  },
+
+  th: {
+    textAlign: "left",
+    padding: "13px 18px",
+    fontSize: "11px",
+    color: "#9298a0",
+    letterSpacing: "0.5px",
+    borderBottom:
+      "1px solid #edf0f2",
+    background: "#fafbfc",
+  },
+
+  td: {
+    padding: "15px 18px",
+    fontSize: "13px",
+    borderBottom:
+      "1px solid #f0f2f4",
+  },
+
+  activeBadge: {
+    display: "inline-block",
+    padding: "5px 9px",
+    borderRadius: "20px",
+    background: "#eaf7ef",
+    color: "#26733c",
+    fontSize: "11px",
+    fontWeight: "700",
+  },
+
+  inactiveBadge: {
+    display: "inline-block",
+    padding: "5px 9px",
+    borderRadius: "20px",
+    background: "#fff1f1",
+    color: "#a52b2b",
+    fontSize: "11px",
+    fontWeight: "700",
+  },
+
+  emptyAdmin: {
+    background: "#ffffff",
+    borderRadius: "18px",
+    padding: "45px",
+    textAlign: "center",
+    boxShadow:
+      "0 4px 18px rgba(0,0,0,0.05)",
   },
 };

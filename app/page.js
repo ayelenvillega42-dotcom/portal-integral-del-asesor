@@ -1,7 +1,7 @@
+```javascript
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "./lib/supabase";
+import { useState } from "react";
 
 const asesores = [
   ["Acosta, Pamela", "8134", "acosta.pamela@portalcalidad.com"],
@@ -48,103 +48,46 @@ const pestañas = [
 ];
 
 export default function Page() {
-  const [session, setSession] = useState(null);
-  const [cargando, setCargando] = useState(true);
-
-  const [modo, setModo] = useState("login");
-
+  const [logueado, setLogueado] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const [loginError, setLoginError] = useState("");
-  const [entrando, setEntrando] = useState(false);
+  const [error, setError] = useState("");
 
   const [asesorActual, setAsesorActual] = useState(null);
 
-  useEffect(() => {
-    verificarSesion();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nuevaSesion) => {
-      setSession(nuevaSesion);
-      setCargando(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  async function verificarSesion() {
-    const {
-      data: { session: sesionActual },
-    } = await supabase.auth.getSession();
-
-    setSession(sesionActual);
-
-    if (sesionActual?.user?.email) {
-      const asesor = buscarAsesorPorEmail(sesionActual.user.email);
-      setAsesorActual(asesor);
-    }
-
-    setCargando(false);
-  }
-
-  function buscarAsesorPorEmail(correo) {
-    return asesores.find(
-      ([, , emailAsesor]) =>
-        emailAsesor.toLowerCase() === correo.toLowerCase()
-    );
-  }
-
-  async function iniciarSesion(e) {
+  function iniciarSesion(e) {
     e.preventDefault();
+    setError("");
 
-    setLoginError("");
-    setEntrando(true);
+    const asesor = asesores.find(
+      ([, , correo]) =>
+        correo.toLowerCase() === email.trim().toLowerCase()
+    );
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setLoginError("Correo o contraseña incorrectos.");
-      setEntrando(false);
+    if (!asesor) {
+      setError(
+        "El correo ingresado no está asociado a un asesor."
+      );
       return;
     }
 
-    const asesor = buscarAsesorPorEmail(data.user.email);
+    if (!password.trim()) {
+      setError("Ingresá una contraseña.");
+      return;
+    }
 
     setAsesorActual(asesor);
-    setSession(data.session);
-    setEntrando(false);
+    setLogueado(true);
   }
 
-  async function cerrarSesion() {
-    await supabase.auth.signOut();
-
-    setSession(null);
+  function cerrarSesion() {
+    setLogueado(false);
     setAsesorActual(null);
     setEmail("");
     setPassword("");
-    setModo("login");
   }
 
-  if (cargando) {
-    return (
-      <main style={styles.loadingPage}>
-        <div style={styles.loadingCard}>
-          <div style={styles.logoCircle}>P</div>
-          <h2 style={{ marginBottom: 8 }}>Portal Integral del Asesor</h2>
-          <p style={styles.muted}>Cargando...</p>
-        </div>
-      </main>
-    );
-  }
-
-  if (!session) {
+  if (!logueado) {
     return (
       <main style={styles.loginPage}>
         <div style={styles.loginCard}>
@@ -159,7 +102,9 @@ export default function Page() {
           </p>
 
           <form onSubmit={iniciarSesion}>
-            <label style={styles.label}>Correo electrónico</label>
+            <label style={styles.label}>
+              Correo electrónico
+            </label>
 
             <input
               type="email"
@@ -170,7 +115,9 @@ export default function Page() {
               required
             />
 
-            <label style={styles.label}>Contraseña</label>
+            <label style={styles.label}>
+              Contraseña
+            </label>
 
             <input
               type="password"
@@ -181,44 +128,19 @@ export default function Page() {
               required
             />
 
-            {loginError && (
+            {error && (
               <div style={styles.errorBox}>
-                {loginError}
+                {error}
               </div>
             )}
 
             <button
               type="submit"
-              disabled={entrando}
-              style={{
-                ...styles.primaryButton,
-                opacity: entrando ? 0.7 : 1,
-              }}
+              style={styles.primaryButton}
             >
-              {entrando ? "Ingresando..." : "Ingresar"}
+              Ingresar
             </button>
           </form>
-        </div>
-      </main>
-    );
-  }
-
-  if (!asesorActual) {
-    return (
-      <main style={styles.loadingPage}>
-        <div style={styles.loadingCard}>
-          <h2>Usuario no identificado</h2>
-
-          <p style={styles.muted}>
-            El usuario ingresado todavía no está asociado a un asesor.
-          </p>
-
-          <button
-            onClick={cerrarSesion}
-            style={styles.secondaryButton}
-          >
-            Cerrar sesión
-          </button>
         </div>
       </main>
     );
@@ -233,24 +155,30 @@ export default function Page() {
 }
 
 function AsesorPortal({ asesor, cerrarSesion }) {
-  const [pestañaActiva, setPestañaActiva] = useState("inicio");
-  const [semanaSeleccionada, setSemanaSeleccionada] = useState(
-    "Semana 4 · Agosto"
-  );
+  const [pestañaActiva, setPestañaActiva] =
+    useState("inicio");
+
+  const [semanaSeleccionada, setSemanaSeleccionada] =
+    useState("Semana 4 · Agosto");
 
   const nombreCompleto = asesor[0];
-  const nombre = nombreCompleto.split(",")[1]?.trim() || nombreCompleto;
+  const nombre =
+    nombreCompleto.split(",")[1]?.trim() ||
+    nombreCompleto;
+
   const usuario = asesor[1];
 
   return (
     <main style={styles.portalPage}>
       <div style={styles.portalLayout}>
+
         <aside style={styles.sidebar}>
+
           <div style={styles.brand}>
             <div style={styles.brandIcon}>P</div>
 
             <div>
-              <strong style={{ display: "block" }}>
+              <strong>
                 Portal Integral
               </strong>
 
@@ -285,22 +213,30 @@ function AsesorPortal({ asesor, cerrarSesion }) {
 
           <nav style={styles.navigation}>
             {pestañas.map((item) => {
-              const activa = pestañaActiva === item.id;
+
+              const activa =
+                pestañaActiva === item.id;
 
               return (
                 <button
                   key={item.id}
-                  onClick={() => setPestañaActiva(item.id)}
+                  onClick={() =>
+                    setPestañaActiva(item.id)
+                  }
                   style={{
                     ...styles.navButton,
-                    ...(activa ? styles.navButtonActive : {}),
+                    ...(activa
+                      ? styles.navButtonActive
+                      : {}),
                   }}
                 >
                   <span style={styles.navIcon}>
                     {item.icon}
                   </span>
 
-                  <span>{item.label}</span>
+                  <span>
+                    {item.label}
+                  </span>
                 </button>
               );
             })}
@@ -315,7 +251,9 @@ function AsesorPortal({ asesor, cerrarSesion }) {
         </aside>
 
         <section style={styles.mainArea}>
+
           <header style={styles.topbar}>
+
             <div>
               <div style={styles.topbarKicker}>
                 PORTAL INTEGRAL DEL ASESOR
@@ -329,11 +267,15 @@ function AsesorPortal({ asesor, cerrarSesion }) {
             <div style={styles.weekBadge}>
               <span style={styles.weekDot}></span>
               Semana vigente
-              <strong>{semanaSeleccionada}</strong>
+              <strong>
+                {semanaSeleccionada}
+              </strong>
             </div>
+
           </header>
 
           <div style={styles.content}>
+
             {pestañaActiva === "inicio" && (
               <Inicio
                 nombre={nombre}
@@ -412,6 +354,7 @@ function AsesorPortal({ asesor, cerrarSesion }) {
                 setSemana={setSemanaSeleccionada}
               />
             )}
+
           </div>
         </section>
       </div>
@@ -419,10 +362,15 @@ function AsesorPortal({ asesor, cerrarSesion }) {
   );
 }
 
-function Inicio({ nombre, semana, cambiarPestaña }) {
+function Inicio({
+  nombre,
+  semana,
+  cambiarPestaña,
+}) {
   return (
     <>
       <div style={styles.hero}>
+
         <div>
           <span style={styles.heroLabel}>
             RESUMEN SEMANAL
@@ -433,18 +381,21 @@ function Inicio({ nombre, semana, cambiarPestaña }) {
           </h2>
 
           <p style={styles.heroText}>
-            Acá vas a encontrar toda la información de tu
-            seguimiento y evolución.
+            Acá vas a encontrar toda la información
+            de tu seguimiento y evolución.
           </p>
         </div>
 
         <div style={styles.heroWeek}>
           <span>Semana vigente</span>
+
           <strong>{semana}</strong>
         </div>
+
       </div>
 
       <div style={styles.metricsGrid}>
+
         <MetricCard
           title="Calidad"
           value="—"
@@ -472,22 +423,22 @@ function Inicio({ nombre, semana, cambiarPestaña }) {
           description="Seguimiento semanal"
           icon="🚫"
         />
+
       </div>
 
       <div style={styles.sectionHeader}>
-        <div>
-          <h2 style={styles.sectionTitle}>
-            Tu semana
-          </h2>
+        <h2 style={styles.sectionTitle}>
+          Tu semana
+        </h2>
 
-          <p style={styles.sectionDescription}>
-            Accedé rápidamente a la información correspondiente a la
-            semana vigente.
-          </p>
-        </div>
+        <p style={styles.sectionDescription}>
+          Accedé rápidamente a la información correspondiente
+          a la semana vigente.
+        </p>
       </div>
 
       <div style={styles.cardsGrid}>
+
         <QuickCard
           icon="📊"
           title="Calidad"
@@ -499,47 +450,60 @@ function Inicio({ nombre, semana, cambiarPestaña }) {
           icon="📈"
           title="Productividad"
           text="Consultá tu SPH, ventas y seguimiento."
-          onClick={() => cambiarPestaña("productividad")}
+          onClick={() =>
+            cambiarPestaña("productividad")
+          }
         />
 
         <QuickCard
           icon="🏷️"
           title="Tipificaciones"
           text="Revisá tus resultados y oportunidades de mejora."
-          onClick={() => cambiarPestaña("tipificaciones")}
+          onClick={() =>
+            cambiarPestaña("tipificaciones")
+          }
         />
 
         <QuickCard
           icon="🚫"
           title="No Ventas"
           text="Consultá tus gestiones y aspectos trabajados."
-          onClick={() => cambiarPestaña("no-ventas")}
+          onClick={() =>
+            cambiarPestaña("no-ventas")
+          }
         />
 
         <QuickCard
           icon="🏆"
           title="Mis Felicitaciones"
           text="Mirá los reconocimientos que recibiste."
-          onClick={() => cambiarPestaña("felicitaciones")}
+          onClick={() =>
+            cambiarPestaña("felicitaciones")
+          }
         />
 
         <QuickCard
           icon="💬"
           title="Feedback"
           text="Dejá tu comentario y realizá el cierre semanal."
-          onClick={() => cambiarPestaña("feedback")}
+          onClick={() =>
+            cambiarPestaña("feedback")
+          }
         />
+
       </div>
 
       <div style={styles.infoBanner}>
         <div style={styles.infoIcon}>ℹ️</div>
 
         <div>
-          <strong>Tu información está organizada por semana</strong>
+          <strong>
+            Tu información está organizada por semana
+          </strong>
 
-          <p style={{ margin: "5px 0 0", color: "#68707b" }}>
-            Cada sección del portal muestra claramente lo correspondiente
-            a cada semana.
+          <p style={styles.muted}>
+            Cada sección del portal muestra claramente
+            lo correspondiente a cada semana.
           </p>
         </div>
       </div>
@@ -558,22 +522,23 @@ function SeccionSemanal({
   return (
     <>
       <div style={styles.pageHeading}>
-        <div>
-          <div style={styles.pageHeadingIcon}>
-            {icon}
-          </div>
 
-          <h2 style={styles.pageHeadingTitle}>
-            {titulo}
-          </h2>
-
-          <p style={styles.pageHeadingText}>
-            {descripcion}
-          </p>
+        <div style={styles.pageHeadingIcon}>
+          {icon}
         </div>
+
+        <h2 style={styles.pageHeadingTitle}>
+          {titulo}
+        </h2>
+
+        <p style={styles.pageHeadingText}>
+          {descripcion}
+        </p>
+
       </div>
 
       <div style={styles.weekSelectorCard}>
+
         <div>
           <span style={styles.selectorLabel}>
             SEMANA
@@ -586,20 +551,30 @@ function SeccionSemanal({
 
         <select
           value={semana}
-          onChange={(e) => setSemana(e.target.value)}
+          onChange={(e) =>
+            setSemana(e.target.value)
+          }
           style={styles.weekSelect}
         >
           {semanas.map((item) => (
-            <option key={item} value={item}>
+            <option
+              key={item}
+              value={item}
+            >
               {item}
             </option>
           ))}
         </select>
+
       </div>
 
       <div style={styles.weekContent}>
+
         <div style={styles.weekHeader}>
-          <span style={styles.weekHeaderIcon}>📅</span>
+
+          <span style={styles.weekHeaderIcon}>
+            📅
+          </span>
 
           <div>
             <span style={styles.weekHeaderSmall}>
@@ -610,9 +585,11 @@ function SeccionSemanal({
               {semana}
             </h3>
           </div>
+
         </div>
 
         {children}
+
       </div>
     </>
   );
@@ -621,10 +598,26 @@ function SeccionSemanal({
 function CalidadSemana() {
   return (
     <div style={styles.placeholderGrid}>
-      <DataCard title="Nota de calidad" value="—" />
-      <DataCard title="Evolución" value="—" />
-      <DataCard title="Desvíos" value="—" />
-      <DataCard title="Fortalezas" value="—" />
+
+      <DataCard
+        title="Nota de calidad"
+        value="—"
+      />
+
+      <DataCard
+        title="Evolución"
+        value="—"
+      />
+
+      <DataCard
+        title="Desvíos"
+        value="—"
+      />
+
+      <DataCard
+        title="Fortalezas"
+        value="—"
+      />
 
       <WideDataCard
         title="Devoluciones"
@@ -635,6 +628,7 @@ function CalidadSemana() {
         title="Aspectos trabajados"
         text="Los aspectos registrados durante la semana aparecerán acá."
       />
+
     </div>
   );
 }
@@ -642,10 +636,17 @@ function CalidadSemana() {
 function ProductividadSemana() {
   return (
     <div style={styles.placeholderGrid}>
+
       <DataCard title="SPH" value="—" />
       <DataCard title="Ventas" value="—" />
-      <DataCard title="Objetivo SPH" value="—" />
-      <DataCard title="Objetivo ventas" value="—" />
+      <DataCard
+        title="Objetivo SPH"
+        value="—"
+      />
+      <DataCard
+        title="Objetivo ventas"
+        value="—"
+      />
 
       <WideDataCard
         title="Aspectos trabajados"
@@ -656,6 +657,7 @@ function ProductividadSemana() {
         title="Acciones"
         text="Las acciones realizadas durante la semana aparecerán acá."
       />
+
     </div>
   );
 }
@@ -663,10 +665,26 @@ function ProductividadSemana() {
 function TipificacionesSemana() {
   return (
     <div style={styles.placeholderGrid}>
-      <DataCard title="Resultado" value="—" />
-      <DataCard title="Objetivo" value="—" />
-      <DataCard title="Desvío" value="—" />
-      <DataCard title="Evolución" value="—" />
+
+      <DataCard
+        title="Resultado"
+        value="—"
+      />
+
+      <DataCard
+        title="Objetivo"
+        value="—"
+      />
+
+      <DataCard
+        title="Desvío"
+        value="—"
+      />
+
+      <DataCard
+        title="Evolución"
+        value="—"
+      />
 
       <WideDataCard
         title="Tipificaciones auditadas"
@@ -677,6 +695,7 @@ function TipificacionesSemana() {
         title="Devoluciones"
         text="Las devoluciones de tipificaciones correspondientes a esta semana aparecerán acá."
       />
+
     </div>
   );
 }
@@ -684,10 +703,26 @@ function TipificacionesSemana() {
 function NoVentasSemana() {
   return (
     <div style={styles.placeholderGrid}>
-      <DataCard title="Cantidad" value="—" />
-      <DataCard title="Coaching" value="—" />
-      <DataCard title="Registro en sistema" value="—" />
-      <DataCard title="Compromiso" value="—" />
+
+      <DataCard
+        title="Cantidad"
+        value="—"
+      />
+
+      <DataCard
+        title="Coaching"
+        value="—"
+      />
+
+      <DataCard
+        title="Registro en sistema"
+        value="—"
+      />
+
+      <DataCard
+        title="Compromiso"
+        value="—"
+      />
 
       <WideDataCard
         title="Principales O.M."
@@ -698,6 +733,7 @@ function NoVentasSemana() {
         title="Fortalezas"
         text="Las fortalezas destacadas durante la semana aparecerán acá."
       />
+
     </div>
   );
 }
@@ -705,16 +741,20 @@ function NoVentasSemana() {
 function FelicitacionesSemana() {
   return (
     <div style={styles.emptyCard}>
-      <div style={styles.emptyIcon}>🏆</div>
 
-      <h3 style={{ margin: "0 0 8px" }}>
+      <div style={styles.emptyIcon}>
+        🏆
+      </div>
+
+      <h3>
         Felicitaciones de la semana
       </h3>
 
       <p style={styles.muted}>
-        Los reconocimientos que sean cargados para esta semana aparecerán
-        acá.
+        Los reconocimientos que sean cargados
+        para esta semana aparecerán acá.
       </p>
+
     </div>
   );
 }
@@ -723,116 +763,121 @@ function Evolutivo() {
   return (
     <>
       <div style={styles.pageHeading}>
-        <div>
-          <div style={styles.pageHeadingIcon}>📈</div>
 
-          <h2 style={styles.pageHeadingTitle}>
-            Evolutivo
-          </h2>
-
-          <p style={styles.pageHeadingText}>
-            Comparación de tu desempeño a través de las semanas.
-          </p>
+        <div style={styles.pageHeadingIcon}>
+          📈
         </div>
+
+        <h2 style={styles.pageHeadingTitle}>
+          Evolutivo
+        </h2>
+
+        <p style={styles.pageHeadingText}>
+          Comparación de tu desempeño a través de las semanas.
+        </p>
+
       </div>
 
-      <div style={styles.evolutionCard}>
-        <div style={styles.evolutionHeader}>
-          <div>
-            <span style={styles.selectorLabel}>
-              CALIDAD
-            </span>
+      <EvolutionBlock title="Calidad" />
 
-            <h3 style={{ margin: "5px 0 0" }}>
-              Evolución semanal
-            </h3>
-          </div>
-        </div>
-
-        <div style={styles.evolutionRows}>
-          {semanas.map((semana) => (
-            <div key={semana} style={styles.evolutionRow}>
-              <span>{semana}</span>
-
-              <div style={styles.evolutionLine}>
-                <div style={styles.evolutionBar}>
-                  <div style={styles.evolutionBarFill}></div>
-                </div>
-
-                <strong>—</strong>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={styles.evolutionCard}>
-        <div style={styles.evolutionHeader}>
-          <div>
-            <span style={styles.selectorLabel}>
-              PRODUCTIVIDAD
-            </span>
-
-            <h3 style={{ margin: "5px 0 0" }}>
-              Evolución semanal
-            </h3>
-          </div>
-        </div>
-
-        <div style={styles.evolutionRows}>
-          {semanas.map((semana) => (
-            <div key={semana} style={styles.evolutionRow}>
-              <span>{semana}</span>
-
-              <div style={styles.evolutionLine}>
-                <div style={styles.evolutionBar}>
-                  <div style={styles.evolutionBarFill}></div>
-                </div>
-
-                <strong>—</strong>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <EvolutionBlock title="Productividad" />
     </>
   );
 }
 
-function Feedback({ semana, setSemana }) {
-  const [feedback, setFeedback] = useState("");
-  const [firma, setFirma] = useState("");
-  const [motivo, setMotivo] = useState("");
+function EvolutionBlock({ title }) {
+  return (
+    <div style={styles.evolutionCard}>
+
+      <span style={styles.selectorLabel}>
+        {title.toUpperCase()}
+      </span>
+
+      <h3 style={{ margin: "5px 0 18px" }}>
+        Evolución semanal
+      </h3>
+
+      <div style={styles.evolutionRows}>
+
+        {semanas.map((semana) => (
+          <div
+            key={semana}
+            style={styles.evolutionRow}
+          >
+            <span>{semana}</span>
+
+            <div style={styles.evolutionLine}>
+
+              <div style={styles.evolutionBar}>
+                <div
+                  style={styles.evolutionBarFill}
+                ></div>
+              </div>
+
+              <strong>—</strong>
+
+            </div>
+          </div>
+        ))}
+
+      </div>
+    </div>
+  );
+}
+
+function Feedback({
+  semana,
+  setSemana,
+}) {
+  const [feedback, setFeedback] =
+    useState("");
+
+  const [firma, setFirma] =
+    useState("");
+
+  const [motivo, setMotivo] =
+    useState("");
 
   function guardarFeedback(e) {
     e.preventDefault();
 
     if (!feedback.trim()) {
+      alert("Escribí tu feedback antes de guardar.");
+      return;
+    }
+
+    if (!firma) {
+      alert(
+        "Seleccioná conformidad o disconformidad."
+      );
       return;
     }
 
     alert(
-      "El Feedback queda preparado para guardarse en Supabase en el próximo paso."
+      "El feedback y el cierre semanal quedaron preparados para guardarse."
     );
   }
 
   return (
     <>
       <div style={styles.pageHeading}>
-        <div>
-          <div style={styles.pageHeadingIcon}>💬</div>
 
-          <h2 style={styles.pageHeadingTitle}>
-            Feedback
-          </h2>
-
-          <p style={styles.pageHeadingText}>
-            Un feedback correspondiente a cada semana.
-          </p>
+        <div style={styles.pageHeadingIcon}>
+          💬
         </div>
+
+        <h2 style={styles.pageHeadingTitle}>
+          Feedback
+        </h2>
+
+        <p style={styles.pageHeadingText}>
+          Un feedback correspondiente a cada semana.
+        </p>
+
       </div>
 
       <div style={styles.weekSelectorCard}>
+
         <div>
           <span style={styles.selectorLabel}>
             FEEDBACK DE
@@ -845,19 +890,27 @@ function Feedback({ semana, setSemana }) {
 
         <select
           value={semana}
-          onChange={(e) => setSemana(e.target.value)}
+          onChange={(e) =>
+            setSemana(e.target.value)
+          }
           style={styles.weekSelect}
         >
           {semanas.map((item) => (
-            <option key={item} value={item}>
+            <option
+              key={item}
+              value={item}
+            >
               {item}
             </option>
           ))}
         </select>
+
       </div>
 
       <form onSubmit={guardarFeedback}>
+
         <div style={styles.feedbackCard}>
+
           <span style={styles.selectorLabel}>
             TU FEEDBACK SEMANAL
           </span>
@@ -867,19 +920,24 @@ function Feedback({ semana, setSemana }) {
           </h3>
 
           <p style={styles.muted}>
-            Podés escribir consultas, pedidos, comentarios, aclaraciones,
-            propuestas o cualquier cuestión que quieras comunicar.
+            Podés escribir consultas, pedidos,
+            comentarios, aclaraciones, propuestas
+            o cualquier cuestión que quieras comunicar.
           </p>
 
           <textarea
             value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
+            onChange={(e) =>
+              setFeedback(e.target.value)
+            }
             placeholder="Escribí acá tu feedback de la semana..."
             style={styles.feedbackTextarea}
           />
+
         </div>
 
         <div style={styles.signatureCard}>
+
           <span style={styles.selectorLabel}>
             CIERRE DE LA SEMANA
           </span>
@@ -889,14 +947,17 @@ function Feedback({ semana, setSemana }) {
           </h3>
 
           <p style={styles.muted}>
-            La firma corresponde al cierre de todo lo ocurrido durante
-            esta semana.
+            La firma corresponde al cierre de todo
+            lo ocurrido durante esta semana.
           </p>
 
           <div style={styles.signatureOptions}>
+
             <button
               type="button"
-              onClick={() => setFirma("conformidad")}
+              onClick={() =>
+                setFirma("conformidad")
+              }
               style={{
                 ...styles.signatureButton,
                 ...(firma === "conformidad"
@@ -909,7 +970,9 @@ function Feedback({ semana, setSemana }) {
 
             <button
               type="button"
-              onClick={() => setFirma("disconformidad")}
+              onClick={() =>
+                setFirma("disconformidad")
+              }
               style={{
                 ...styles.signatureButton,
                 ...(firma === "disconformidad"
@@ -919,22 +982,28 @@ function Feedback({ semana, setSemana }) {
             >
               ✕ Firmar en disconformidad
             </button>
+
           </div>
 
           {firma === "disconformidad" && (
             <div style={{ marginTop: 20 }}>
+
               <label style={styles.label}>
                 Motivo de la disconformidad
               </label>
 
               <textarea
                 value={motivo}
-                onChange={(e) => setMotivo(e.target.value)}
+                onChange={(e) =>
+                  setMotivo(e.target.value)
+                }
                 placeholder="Escribí el motivo..."
                 style={styles.feedbackTextarea}
               />
+
             </div>
           )}
+
         </div>
 
         <button
@@ -943,18 +1012,29 @@ function Feedback({ semana, setSemana }) {
         >
           Guardar Feedback y cierre semanal
         </button>
+
       </form>
     </>
   );
 }
 
-function MetricCard({ title, value, description, icon }) {
+function MetricCard({
+  title,
+  value,
+  description,
+  icon,
+}) {
   return (
     <div style={styles.metricCard}>
-      <div style={styles.metricIcon}>{icon}</div>
+
+      <div style={styles.metricIcon}>
+        {icon}
+      </div>
 
       <div>
-        <span style={styles.metricTitle}>{title}</span>
+        <span style={styles.metricTitle}>
+          {title}
+        </span>
 
         <strong style={styles.metricValue}>
           {value}
@@ -964,19 +1044,29 @@ function MetricCard({ title, value, description, icon }) {
           {description}
         </span>
       </div>
+
     </div>
   );
 }
 
-function QuickCard({ icon, title, text, onClick }) {
+function QuickCard({
+  icon,
+  title,
+  text,
+  onClick,
+}) {
   return (
     <button
       onClick={onClick}
       style={styles.quickCard}
     >
-      <div style={styles.quickIcon}>{icon}</div>
+
+      <div style={styles.quickIcon}>
+        {icon}
+      </div>
 
       <div style={{ textAlign: "left" }}>
+
         <h3 style={{ margin: "0 0 7px" }}>
           {title}
         </h3>
@@ -984,55 +1074,56 @@ function QuickCard({ icon, title, text, onClick }) {
         <p style={styles.quickText}>
           {text}
         </p>
+
       </div>
 
-      <span style={styles.arrow}>→</span>
+      <span style={styles.arrow}>
+        →
+      </span>
+
     </button>
   );
 }
 
-function DataCard({ title, value }) {
+function DataCard({
+  title,
+  value,
+}) {
   return (
     <div style={styles.dataCard}>
-      <span style={styles.dataTitle}>{title}</span>
+
+      <span style={styles.dataTitle}>
+        {title}
+      </span>
 
       <strong style={styles.dataValue}>
         {value}
       </strong>
+
     </div>
   );
 }
 
-function WideDataCard({ title, text }) {
+function WideDataCard({
+  title,
+  text,
+}) {
   return (
     <div style={styles.wideDataCard}>
-      <span style={styles.dataTitle}>{title}</span>
+
+      <span style={styles.dataTitle}>
+        {title}
+      </span>
 
       <p style={styles.muted}>
         {text}
       </p>
+
     </div>
   );
 }
 
 const styles = {
-  loadingPage: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#f4f6f8",
-    fontFamily: "Arial, sans-serif",
-    color: "#20242a",
-  },
-
-  loadingCard: {
-    background: "#ffffff",
-    padding: "40px",
-    borderRadius: "22px",
-    textAlign: "center",
-    boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
-  },
 
   loginPage: {
     minHeight: "100vh",
@@ -1051,7 +1142,8 @@ const styles = {
     background: "#ffffff",
     borderRadius: "24px",
     padding: "42px",
-    boxShadow: "0 12px 40px rgba(0,0,0,0.10)",
+    boxShadow:
+      "0 12px 40px rgba(0,0,0,0.10)",
     boxSizing: "border-box",
   },
 
@@ -1124,16 +1216,6 @@ const styles = {
     marginTop: "18px",
   },
 
-  secondaryButton: {
-    padding: "11px 18px",
-    border: "1px solid #d9dce3",
-    borderRadius: "10px",
-    background: "#ffffff",
-    color: "#20242a",
-    cursor: "pointer",
-    fontWeight: "600",
-  },
-
   errorBox: {
     background: "#fff1f1",
     border: "1px solid #efb5b5",
@@ -1190,6 +1272,7 @@ const styles = {
   },
 
   sidebarSubtitle: {
+    display: "block",
     color: "#8a919b",
     fontSize: "12px",
   },
@@ -1377,7 +1460,8 @@ const styles = {
     display: "flex",
     gap: "14px",
     alignItems: "center",
-    boxShadow: "0 4px 18px rgba(0,0,0,0.05)",
+    boxShadow:
+      "0 4px 18px rgba(0,0,0,0.05)",
   },
 
   metricIcon: {
@@ -1514,7 +1598,8 @@ const styles = {
     alignItems: "center",
     gap: "20px",
     marginBottom: "18px",
-    boxShadow: "0 4px 18px rgba(0,0,0,0.05)",
+    boxShadow:
+      "0 4px 18px rgba(0,0,0,0.05)",
   },
 
   selectorLabel: {
@@ -1545,7 +1630,8 @@ const styles = {
     background: "#ffffff",
     borderRadius: "19px",
     padding: "22px",
-    boxShadow: "0 4px 18px rgba(0,0,0,0.05)",
+    boxShadow:
+      "0 4px 18px rgba(0,0,0,0.05)",
   },
 
   weekHeader: {
@@ -1636,13 +1722,8 @@ const styles = {
     borderRadius: "18px",
     padding: "22px",
     marginBottom: "18px",
-    boxShadow: "0 4px 18px rgba(0,0,0,0.05)",
-  },
-
-  evolutionHeader: {
-    paddingBottom: "15px",
-    borderBottom: "1px solid #edf0f2",
-    marginBottom: "14px",
+    boxShadow:
+      "0 4px 18px rgba(0,0,0,0.05)",
   },
 
   evolutionRows: {
@@ -1684,7 +1765,8 @@ const styles = {
     background: "#ffffff",
     borderRadius: "18px",
     padding: "23px",
-    boxShadow: "0 4px 18px rgba(0,0,0,0.05)",
+    boxShadow:
+      "0 4px 18px rgba(0,0,0,0.05)",
     marginBottom: "18px",
   },
 
@@ -1706,7 +1788,8 @@ const styles = {
     background: "#ffffff",
     borderRadius: "18px",
     padding: "23px",
-    boxShadow: "0 4px 18px rgba(0,0,0,0.05)",
+    boxShadow:
+      "0 4px 18px rgba(0,0,0,0.05)",
   },
 
   signatureOptions: {
@@ -1739,3 +1822,4 @@ const styles = {
     color: "#a52b2b",
   },
 };
+```

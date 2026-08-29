@@ -98,26 +98,63 @@ export default function Page() {
   async function cargarPerfil(usuarioAuth) {
     if (!supabase || !usuarioAuth) return;
 
-    const { data, error } = await supabase
-      .from("perfiles")
-      .select("*")
-      .eq("id", usuarioAuth.id)
-      .single();
+    setError("");
 
-    if (error) {
-      console.error("Error cargando perfil:", error);
-      setError(
-        "Tu usuario existe, pero no encontramos tu perfil."
-      );
+    // Primero buscamos el perfil por el ID de Auth.
+    const { data: perfilPorId, error: errorPorId } =
+      await supabase
+        .from("perfiles")
+        .select("*")
+        .eq("id", usuarioAuth.id)
+        .maybeSingle();
+
+    if (perfilPorId) {
+      setPerfil({
+        ...perfilPorId,
+        authUser: usuarioAuth,
+      });
+
+      setLogueado(true);
       return;
     }
 
-    setPerfil({
-      ...data,
-      authUser: usuarioAuth,
-    });
+    // Si no aparece por ID, intentamos encontrarlo por email.
+    const { data: perfilPorEmail, error: errorPorEmail } =
+      await supabase
+        .from("perfiles")
+        .select("*")
+        .eq(
+          "email",
+          usuarioAuth.email?.toLowerCase()
+        )
+        .maybeSingle();
 
-    setLogueado(true);
+    if (perfilPorEmail) {
+      setPerfil({
+        ...perfilPorEmail,
+        authUser: usuarioAuth,
+      });
+
+      setLogueado(true);
+      return;
+    }
+
+    console.error(
+      "Perfil no encontrado por ID:",
+      errorPorId
+    );
+
+    console.error(
+      "Perfil no encontrado por email:",
+      errorPorEmail
+    );
+
+    setPerfil(null);
+    setLogueado(false);
+
+    setError(
+      "Tu usuario existe, pero no encontramos tu perfil en el portal."
+    );
   }
 
   async function iniciarSesion(e) {
@@ -149,9 +186,12 @@ export default function Page() {
         });
 
       if (error) {
+        console.error(error);
+
         setError(
           "El correo o la contraseña no son correctos."
         );
+
         return;
       }
 
@@ -163,6 +203,7 @@ export default function Page() {
       await cargarPerfil(data.user);
     } catch (error) {
       console.error(error);
+
       setError(
         "Ocurrió un error al iniciar sesión."
       );
@@ -773,6 +814,7 @@ function AdminAsesores() {
 
     if (error) {
       console.error(error);
+
       setError(
         "No se pudieron cargar los asesores."
       );
@@ -805,6 +847,7 @@ function AdminAsesores() {
       setError(
         "Completá todos los campos."
       );
+
       return;
     }
 
@@ -812,6 +855,7 @@ function AdminAsesores() {
       setError(
         "La contraseña debe tener al menos 6 caracteres."
       );
+
       return;
     }
 
@@ -826,6 +870,7 @@ function AdminAsesores() {
         setError(
           "La sesión del administrador expiró."
         );
+
         return;
       }
 
@@ -833,19 +878,25 @@ function AdminAsesores() {
         "/api/admin/usuarios",
         {
           method: "POST",
+
           headers: {
             "Content-Type":
               "application/json",
+
             Authorization:
               `Bearer ${session.access_token}`,
           },
+
           body: JSON.stringify({
             nombre:
               formulario.nombre.trim(),
+
             usuario:
               formulario.usuario.trim(),
+
             email:
-              formulario.email.trim(),
+              formulario.email.trim().toLowerCase(),
+
             password:
               formulario.password,
           }),
@@ -860,6 +911,7 @@ function AdminAsesores() {
           resultado.error ||
             "No se pudo crear el asesor."
         );
+
         return;
       }
 
@@ -1604,9 +1656,7 @@ function EvolutionBlock({ title }) {
             <span>{semana}</span>
 
             <div style={styles.evolutionLine}>
-              <div
-                style={styles.evolutionBar}
-              >
+              <div style={styles.evolutionBar}>
                 <div
                   style={
                     styles.evolutionBarFill
@@ -1643,6 +1693,7 @@ function Feedback({
       alert(
         "Escribí tu feedback antes de guardar."
       );
+
       return;
     }
 
@@ -1650,6 +1701,7 @@ function Feedback({
       alert(
         "Seleccioná conformidad o disconformidad."
       );
+
       return;
     }
 

@@ -1,3 +1,4 @@
+```javascript
 "use client";
 
 import { useEffect, useState } from "react";
@@ -98,11 +99,28 @@ export default function Page() {
   async function cargarPerfil(usuarioAuth) {
     if (!supabase || !usuarioAuth) return;
 
-    const emailAuth = usuarioAuth.email?.trim().toLowerCase();
+    setError("");
+
+    /*
+      IMPORTANTE:
+      Buscamos el perfil por EMAIL.
+
+      Antes se buscaba:
+      .eq("id", usuarioAuth.id)
+
+      Eso provocaba el error cuando el UUID de perfiles
+      no coincidía con el UUID real de auth.users.
+
+      Como los perfiles ya tienen sus emails cargados,
+      usamos el email del usuario autenticado.
+    */
+
+    const emailAuth =
+      usuarioAuth.email?.trim().toLowerCase();
 
     if (!emailAuth) {
       setError(
-        "Tu usuario no tiene un correo electrónico asociado."
+        "El usuario autenticado no tiene un correo electrónico."
       );
       setPerfil(null);
       setLogueado(false);
@@ -113,22 +131,34 @@ export default function Page() {
       .from("perfiles")
       .select("*")
       .eq("email", emailAuth)
-      .single();
+      .eq("activo", true)
+      .maybeSingle();
 
     if (error) {
-      console.error("Error cargando perfil:", error);
-      setError(
-        "Tu usuario existe, pero no encontramos tu perfil en el portal."
+      console.error(
+        "Error cargando perfil:",
+        error
       );
+
+      setError(
+        "No pudimos consultar tu perfil en el portal."
+      );
+
       setPerfil(null);
       setLogueado(false);
       return;
     }
 
-    if (!data.activo) {
-      setError(
-        "Tu perfil está inactivo. Comunicate con el administrador."
+    if (!data) {
+      console.error(
+        "No se encontró perfil para:",
+        emailAuth
       );
+
+      setError(
+        "Tu usuario existe, pero no encontramos tu perfil en el portal."
+      );
+
       setPerfil(null);
       setLogueado(false);
       return;
@@ -172,7 +202,10 @@ export default function Page() {
         });
 
       if (error) {
-        console.error("Error de login:", error);
+        console.error(
+          "Error de inicio de sesión:",
+          error
+        );
 
         setError(
           "El correo o la contraseña no son correctos."
@@ -181,7 +214,9 @@ export default function Page() {
       }
 
       if (!data.user) {
-        setError("No se pudo iniciar sesión.");
+        setError(
+          "No se pudo iniciar sesión."
+        );
         return;
       }
 
@@ -799,6 +834,7 @@ function AdminAsesores() {
 
     if (error) {
       console.error(error);
+
       setError(
         "No se pudieron cargar los asesores."
       );
@@ -871,7 +907,7 @@ function AdminAsesores() {
             usuario:
               formulario.usuario.trim(),
             email:
-              formulario.email.trim().toLowerCase(),
+              formulario.email.trim(),
             password:
               formulario.password,
           }),
@@ -2795,3 +2831,4 @@ const styles = {
       "0 4px 18px rgba(0,0,0,0.05)",
   },
 };
+```

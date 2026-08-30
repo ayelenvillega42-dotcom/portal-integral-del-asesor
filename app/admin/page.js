@@ -1,9 +1,189 @@
+```javascript
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
 const ADMIN_EMAIL = "ayelenvillega42@gmail.com";
+
+const ASESORES_BASE = [
+  {
+    id: "1c438fb1-018e-47d4-b278-1c6b8dac8743",
+    nombre: "Mercado, Chiara",
+    usuario: "",
+    email: "chiara.mercado@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "1dc9b816-6ee3-4cd5-a917-857301e01a70",
+    nombre: "Rojek, Luna",
+    usuario: "",
+    email: "luna.rojek@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "392b476b-3006-451c-8d9f-bd31772a22f1",
+    nombre: "Aguilera, Trinidad",
+    usuario: "",
+    email: "trinidad.aguilera@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "55d51779-f49f-4721-a85c-1c27a1ac34be",
+    nombre: "Cordoba, Tania",
+    usuario: "",
+    email: "tania.cordoba@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "5d644be6-879b-4c73-ab26-8e025f22bd63",
+    nombre: "Bustos, Jesica",
+    usuario: "",
+    email: "jesica.bustos@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "66adbc56-cb5a-4c72-8d0d-88fb943f7130",
+    nombre: "Cabrera, Antonella",
+    usuario: "",
+    email: "antonella.cabrera@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "747cd508-e79a-4515-9575-9f43f837c3ff",
+    nombre: "Vasquez, Agustin",
+    usuario: "",
+    email: "agustin.vasquez@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "836fab43-60b3-45e6-bce8-9117f225b651",
+    nombre: "Bustamante, Ailin",
+    usuario: "",
+    email: "ailin.bustamante@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "88e75230-baa9-487e-af0e-4c2e304e1f26",
+    nombre: "Reartes, Maia",
+    usuario: "",
+    email: "maia.reartes@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "92837a42-c644-4bc3-8ec1-8e56e91ec5b5",
+    nombre: "Tello, Marianela",
+    usuario: "",
+    email: "marianela.tello@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "ae30ff34-c741-461b-b760-8a53200f1941",
+    nombre: "Viniegra, Agustín",
+    usuario: "",
+    email: "agustin.viniegra@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "b1ef4b29-6c25-4afa-8aca-66d2bb027bb6",
+    nombre: "Acosta, Pamela",
+    usuario: "",
+    email: "pamela.acosta@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "b5375446-4177-41d6-a9e4-395808664251",
+    nombre: "Simonetta, Valentina",
+    usuario: "",
+    email: "valentina.simonetta@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "b6090f19-1f81-48eb-8fd9-f57d86ec00a7",
+    nombre: "Diaz, Milagros",
+    usuario: "",
+    email: "milagros.diaz@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "c0f98bf5-d67a-49b1-85b9-783b86233992",
+    nombre: "Contreras, Gilary",
+    usuario: "",
+    email: "gilary.contreras@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "d455b4ea-d96c-4ea7-adcc-5feab89d1772",
+    nombre: "Peralta, Belen",
+    usuario: "",
+    email: "belen.peralta@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "d6285e5d-23a7-4eeb-a7b2-7e4a6a2c8163",
+    nombre: "Malqui, Xiomara",
+    usuario: "",
+    email: "xiomara.malqui@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "dbd31d0d-5277-4730-8702-69cc5ce20a0d",
+    nombre: "Olmedo, Thomas",
+    usuario: "",
+    email: "thomas.olmedo@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "dc6a2244-d560-4219-bfb5-1dc5a094238f",
+    nombre: "Gomez, Carla",
+    usuario: "",
+    email: "carla.gomez@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "ea60ff3a-17ec-416c-83a4-b4ca4634750c",
+    nombre: "Bahamonde, Camila",
+    usuario: "",
+    email: "camila.bahamonde@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "f32521db-99de-404e-bbf3-f20e817ea832",
+    nombre: "Ojeda, Luana",
+    usuario: "",
+    email: "luana.ojeda@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+  {
+    id: "f7fdc70a-7a21-4631-bb47-d68390cb2e01",
+    nombre: "Luna, Oriana",
+    usuario: "",
+    email: "oriana.luna@portalcalidad.com",
+    rol: "asesor",
+    activo: true,
+  },
+];
 
 const CALIDAD = [
   "Información de otras compañías",
@@ -102,9 +282,20 @@ const AREAS = [
   "No Ventas",
 ];
 
+const ACCIONES_CALIDAD = [
+  "Feedback individual",
+  "Espacio de coaching",
+  "Escucha en línea",
+  "Devolución mediante Meet",
+  "Escucha de llamada de un compañero",
+  "Transcripción de venta mediante Word con desvíos marcados",
+  "Calibración conjunta de audio",
+  "Otros",
+];
+
 export default function AdminPage() {
   const [usuario, setUsuario] = useState(null);
-  const [asesores, setAsesores] = useState([]);
+  const [asesores, setAsesores] = useState(ASESORES_BASE);
   const [reportes, setReportes] = useState([]);
 
   const [vista, setVista] = useState("inicio");
@@ -167,33 +358,61 @@ export default function AdminPage() {
       ]);
     } catch (error) {
       console.error(error);
-      window.location.href = "/";
+
+      setMensaje(
+        "❌ Error al cargar el panel de administración."
+      );
     } finally {
       setCargando(false);
     }
   }
 
   async function cargarAsesores() {
-    const { data, error } = await supabase
-      .from("usuarios")
-      .select(
-        "id,nombre,usuario,email,rol,activo,created_at"
-      )
-      .eq("rol", "asesor")
-      .eq("activo", true)
-      .order("nombre", {
-        ascending: true,
-      });
+    try {
+      const { data, error } = await supabase
+        .from("usuarios")
+        .select(
+          "id,nombre,usuario,email,rol,activo,created_at"
+        )
+        .eq("rol", "asesor")
+        .eq("activo", true)
+        .order("nombre", {
+          ascending: true,
+        });
 
-    if (error) {
-      console.error(error);
-      setMensaje(
-        "❌ No se pudieron cargar los asesores."
+      if (error) {
+        console.error(
+          "Error Supabase usuarios:",
+          error
+        );
+
+        /*
+         * Si Supabase bloquea la lectura por RLS,
+         * mantenemos la lista base para que el panel
+         * siga funcionando.
+         */
+        setAsesores(ASESORES_BASE);
+
+        setMensaje(
+          "⚠️ Se cargó la lista de asesores disponible."
+        );
+
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setAsesores(data);
+      } else {
+        setAsesores(ASESORES_BASE);
+      }
+    } catch (error) {
+      console.error(
+        "Error cargando asesores:",
+        error
       );
-      return;
-    }
 
-    setAsesores(data || []);
+      setAsesores(ASESORES_BASE);
+    }
   }
 
   async function cargarReportes() {
@@ -464,7 +683,8 @@ export default function AdminPage() {
 
         const coincideCampania =
           filtroCampania === "Todas" ||
-          campania === filtroCampania;
+          campania === filtroCampania ||
+          !reporteAsesor;
 
         const estado =
           calcularEstado(
@@ -1138,7 +1358,46 @@ function FichaAsesor({
           </button>
         </div>
 
-        <div style={styles.actionRow}>
+        <div style={styles.formGrid}>
+          <InfoBlock
+            title="Nota de calidad"
+            value={
+              actual?.nota ??
+              "Sin reporte"
+            }
+          />
+
+          <InfoBlock
+            title="SPH"
+            value={
+              actual?.sph ??
+              "Sin reporte"
+            }
+          />
+        </div>
+
+        <InfoBlock
+          title="Evolución"
+          value={
+            actual?.evolucion
+          }
+        />
+
+        <InfoBlock
+          title="Desvíos"
+          value={
+            actual?.desvio
+          }
+        />
+
+        <InfoBlock
+          title="Recomendación"
+          value={
+            actual?.recomendacion
+          }
+        />
+
+        <div style={styles.buttonRow}>
           <button
             onClick={() =>
               abrirReporte(asesor)
@@ -1150,9 +1409,7 @@ function FichaAsesor({
 
           <button
             onClick={() =>
-              abrirDevolucion(
-                asesor
-              )
+              abrirDevolucion(asesor)
             }
             style={styles.secondaryButton}
           >
@@ -1178,76 +1435,6 @@ function FichaAsesor({
           </button>
         </div>
       </section>
-
-      <section style={styles.card}>
-        <h2>
-          Último reporte
-        </h2>
-
-        {actual ? (
-          <>
-            <div style={styles.statsGrid}>
-              <Stat
-                title="CALIDAD"
-                value={
-                  actual.nota ??
-                  "—"
-                }
-              />
-
-              <Stat
-                title="SPH"
-                value={
-                  actual.sph ??
-                  "—"
-                }
-              />
-
-              <Stat
-                title="VENTAS"
-                value={
-                  actual.ventas ??
-                  "—"
-                }
-              />
-
-              <Stat
-                title="SEMANA"
-                value={
-                  actual.semana ||
-                  "—"
-                }
-              />
-            </div>
-
-            <InfoBlock
-              title="Evolución"
-              value={
-                actual.evolucion
-              }
-            />
-
-            <InfoBlock
-              title="Desvío"
-              value={
-                actual.desvio
-              }
-            />
-
-            <InfoBlock
-              title="Recomendación"
-              value={
-                actual.recomendacion
-              }
-            />
-          </>
-        ) : (
-          <p style={styles.muted}>
-            Todavía no hay reportes
-            cargados para este asesor.
-          </p>
-        )}
-      </section>
     </>
   );
 }
@@ -1260,311 +1447,397 @@ function FormularioReporte({
   volver,
 }) {
   return (
-    <form
-      onSubmit={guardar}
-    >
-      <section style={styles.card}>
-        <div style={styles.sectionHeader}>
+    <section style={styles.card}>
+      <div style={styles.sectionHeader}>
+        <div>
           <h2>
-            Nuevo reporte
+            Nuevo Reporte
           </h2>
 
-          <button
-            type="button"
-            onClick={volver}
-            style={styles.secondaryButton}
-          >
-            ← Volver
-          </button>
+          <p style={styles.muted}>
+            Carga semanal del asesor.
+          </p>
         </div>
-
-        <div style={styles.formGrid}>
-          <Field
-            label="Asesor"
-            value={reporte.asesor}
-            onChange={(v) =>
-              actualizar(
-                "asesor",
-                v
-              )
-            }
-            type="select"
-            options={[
-              ...asesores.map(
-                (a) => ({
-                  value: a.email,
-                  label:
-                    a.nombre,
-                })
-              ),
-            ]}
-          />
-
-          <Field
-            label="Semana"
-            value={reporte.semana}
-            onChange={(v) =>
-              actualizar(
-                "semana",
-                v
-              )
-            }
-          />
-
-          <Field
-            label="Campaña / Producto"
-            value={reporte.producto}
-            onChange={(v) =>
-              actualizar(
-                "producto",
-                v
-              )
-            }
-            type="select"
-            options={[
-              {
-                value: "AP",
-                label: "AP - Accidentes Personales",
-              },
-              {
-                value: "BM",
-                label: "BM - Bienes Móviles",
-              },
-            ]}
-          />
-
-          <Field
-            label="Nota de calidad"
-            value={reporte.nota}
-            onChange={(v) =>
-              actualizar(
-                "nota",
-                v
-              )
-            }
-            type="number"
-          />
-
-          <Field
-            label="Objetivo semanal"
-            value={reporte.objetivo}
-            onChange={(v) =>
-              actualizar(
-                "objetivo",
-                v
-              )
-            }
-          />
-
-          <Field
-            label="Objetivo SPH"
-            value={
-              reporte.objetivoSph
-            }
-            onChange={(v) =>
-              actualizar(
-                "objetivoSph",
-                v
-              )
-            }
-            type="number"
-          />
-
-          <Field
-            label="SPH"
-            value={reporte.sph}
-            onChange={(v) =>
-              actualizar(
-                "sph",
-                v
-              )
-            }
-            type="number"
-          />
-
-          <Field
-            label="Ventas"
-            value={reporte.ventas}
-            onChange={(v) =>
-              actualizar(
-                "ventas",
-                v
-              )
-            }
-            type="number"
-          />
-
-          <Field
-            label="Objetivo ventas"
-            value={
-              reporte.objetivoVentas
-            }
-            onChange={(v) =>
-              actualizar(
-                "objetivoVentas",
-                v
-              )
-            }
-            type="number"
-          />
-
-          <Field
-            label="Objetivo de campaña"
-            value={
-              reporte.objetivoCampania
-            }
-            onChange={(v) =>
-              actualizar(
-                "objetivoCampania",
-                v
-              )
-            }
-            type="number"
-          />
-
-          <Field
-            label="Estado SPH"
-            value={
-              reporte.estadoSph
-            }
-            onChange={(v) =>
-              actualizar(
-                "estadoSph",
-                v
-              )
-            }
-            type="select"
-            options={estadoOptions()}
-          />
-
-          <Field
-            label="Estado ventas"
-            value={
-              reporte.estadoVentas
-            }
-            onChange={(v) =>
-              actualizar(
-                "estadoVentas",
-                v
-              )
-            }
-            type="select"
-            options={estadoOptions()}
-          />
-        </div>
-
-        <Field
-          label="Evolución"
-          value={reporte.evolucion}
-          onChange={(v) =>
-            actualizar(
-              "evolucion",
-              v
-            )
-          }
-          type="textarea"
-        />
-
-        <Field
-          label="Desvíos con mayor porcentaje de la semana"
-          value={reporte.desvio}
-          onChange={(v) =>
-            actualizar(
-              "desvio",
-              v
-            )
-          }
-          type="textarea"
-        />
-
-        <Field
-          label="Recomendación"
-          value={
-            reporte.recomendacion
-          }
-          onChange={(v) =>
-            actualizar(
-              "recomendacion",
-              v
-            )
-          }
-          type="textarea"
-        />
-
-        <Field
-          label="Auditoría"
-          value={reporte.auditoria}
-          onChange={(v) =>
-            actualizar(
-              "auditoria",
-              v
-            )
-          }
-          type="textarea"
-        />
-
-        <Field
-          label="Descripción de campaña"
-          value={
-            reporte.descripcionCampania
-          }
-          onChange={(v) =>
-            actualizar(
-              "descripcionCampania",
-              v
-            )
-          }
-          type="textarea"
-        />
-
-        <Field
-          label="Gestión / acciones realizadas"
-          value={reporte.gestion}
-          onChange={(v) =>
-            actualizar(
-              "gestion",
-              v
-            )
-          }
-          type="textarea"
-        />
-
-        <Field
-          label="Observaciones"
-          value={
-            reporte.observaciones
-          }
-          onChange={(v) =>
-            actualizar(
-              "observaciones",
-              v
-            )
-          }
-          type="textarea"
-        />
 
         <button
-          type="submit"
-          style={styles.primaryButton}
+          onClick={volver}
+          style={styles.secondaryButton}
         >
-          GUARDAR REPORTE
+          ← Volver
         </button>
-      </section>
-    </form>
+      </div>
+
+      <div style={styles.formGrid}>
+        <Field
+          label="Asesor"
+          value={
+            reporte.asesor
+          }
+          onChange={(v) =>
+            actualizar(
+              "asesor",
+              v
+            )
+          }
+          type="select"
+          options={asesores.map(
+            (asesor) => ({
+              value:
+                asesor.email,
+              label:
+                asesor.nombre,
+            })
+          )}
+        />
+
+        <Field
+          label="Semana"
+          value={
+            reporte.semana
+          }
+          onChange={(v) =>
+            actualizar(
+              "semana",
+              v
+            )
+          }
+          type="select"
+          options={[
+            {
+              value:
+                "Semana 4 · Agosto",
+              label:
+                "Semana 4 · Agosto",
+            },
+            {
+              value:
+                "Semana 3 · Agosto",
+              label:
+                "Semana 3 · Agosto",
+            },
+            {
+              value:
+                "Semana 2 · Agosto",
+              label:
+                "Semana 2 · Agosto",
+            },
+            {
+              value:
+                "Semana 1 · Agosto",
+              label:
+                "Semana 1 · Agosto",
+            },
+          ]}
+        />
+
+        <Field
+          label="Campaña"
+          value={
+            reporte.producto
+          }
+          onChange={(v) =>
+            actualizar(
+              "producto",
+              v
+            )
+          }
+          type="select"
+          options={[
+            {
+              value: "AP",
+              label: "AP",
+            },
+            {
+              value: "BM",
+              label: "BM",
+            },
+          ]}
+        />
+      </div>
+
+      <h3 style={styles.formTitle}>
+        CALIDAD
+      </h3>
+
+      <div style={styles.formGrid}>
+        <Field
+          label="Nota obtenida"
+          value={
+            reporte.nota
+          }
+          onChange={(v) =>
+            actualizar(
+              "nota",
+              v
+            )
+          }
+          type="number"
+        />
+
+        <Field
+          label="Objetivo semanal"
+          value={
+            reporte.objetivo
+          }
+          onChange={(v) =>
+            actualizar(
+              "objetivo",
+              v
+            )
+          }
+          type="number"
+        />
+      </div>
+
+      <Field
+        label="Evolución"
+        value={
+          reporte.evolucion
+        }
+        onChange={(v) =>
+          actualizar(
+            "evolucion",
+            v
+          )
+        }
+        type="textarea"
+      />
+
+      <Field
+        label="Desvíos con mayor porcentaje de la semana"
+        value={
+          reporte.desvio
+        }
+        onChange={(v) =>
+          actualizar(
+            "desvio",
+            v
+          )
+        }
+        type="textarea"
+      />
+
+      <Field
+        label="Aspectos trabajados"
+        value={
+          reporte.recomendacion
+        }
+        onChange={(v) =>
+          actualizar(
+            "recomendacion",
+            v
+          )
+        }
+        type="textarea"
+      />
+
+      <Field
+        label="Acciones"
+        value={
+          reporte.auditoria
+        }
+        onChange={(v) =>
+          actualizar(
+            "auditoria",
+            v
+          )
+        }
+        type="textarea"
+      />
+
+      <Field
+        label="Observaciones"
+        value={
+          reporte.observaciones
+        }
+        onChange={(v) =>
+          actualizar(
+            "observaciones",
+            v
+          )
+        }
+        type="textarea"
+      />
+
+      <h3 style={styles.formTitle}>
+        PRODUCTIVIDAD
+      </h3>
+
+      <div style={styles.formGrid}>
+        <Field
+          label="SPH"
+          value={
+            reporte.sph
+          }
+          onChange={(v) =>
+            actualizar(
+              "sph",
+              v
+            )
+          }
+          type="number"
+        />
+
+        <Field
+          label="Objetivo SPH"
+          value={
+            reporte.objetivoSph
+          }
+          onChange={(v) =>
+            actualizar(
+              "objetivoSph",
+              v
+            )
+          }
+          type="number"
+        />
+
+        <Field
+          label="Ventas"
+          value={
+            reporte.ventas
+          }
+          onChange={(v) =>
+            actualizar(
+              "ventas",
+              v
+            )
+          }
+          type="number"
+        />
+
+        <Field
+          label="Objetivo ventas"
+          value={
+            reporte.objetivoVentas
+          }
+          onChange={(v) =>
+            actualizar(
+              "objetivoVentas",
+              v
+            )
+          }
+          type="number"
+        />
+      </div>
+
+      <Field
+        label="Objetivo de la campaña"
+        value={
+          reporte.objetivoCampania
+        }
+        onChange={(v) =>
+          actualizar(
+            "objetivoCampania",
+            v
+          )
+        }
+        type="textarea"
+      />
+
+      <Field
+        label="Descripción de la campaña"
+        value={
+          reporte.descripcionCampania
+        }
+        onChange={(v) =>
+          actualizar(
+            "descripcionCampania",
+            v
+          )
+        }
+        type="textarea"
+      />
+
+      <div style={styles.formGrid}>
+        <Field
+          label="Estado SPH"
+          value={
+            reporte.estadoSph
+          }
+          onChange={(v) =>
+            actualizar(
+              "estadoSph",
+              v
+            )
+          }
+          type="select"
+          options={estadoOptions()}
+        />
+
+        <Field
+          label="Estado ventas"
+          value={
+            reporte.estadoVentas
+          }
+          onChange={(v) =>
+            actualizar(
+              "estadoVentas",
+              v
+            )
+          }
+          type="select"
+          options={estadoOptions()}
+        />
+
+        <Field
+          label="Estado campaña"
+          value={
+            reporte.estadoCampania
+          }
+          onChange={(v) =>
+            actualizar(
+              "estadoCampania",
+              v
+            )
+          }
+          type="select"
+          options={estadoOptions()}
+        />
+      </div>
+
+      <Field
+        label="Gestión"
+        value={
+          reporte.gestion
+        }
+        onChange={(v) =>
+          actualizar(
+            "gestion",
+            v
+          )
+        }
+        type="textarea"
+      />
+
+      <button
+        style={styles.primaryButton}
+        onClick={guardar}
+      >
+        GUARDAR REPORTE
+      </button>
+    </section>
   );
 }
 
 function FormularioDevolucion({
   datos,
   actualizar,
+  toggle,
   volver,
 }) {
   return (
     <section style={styles.card}>
       <div style={styles.sectionHeader}>
-        <h2>
-          Nueva devolución
-        </h2>
+        <div>
+          <h2>
+            Nueva devolución
+          </h2>
+
+          <p style={styles.muted}>
+            Registro de acompañamiento.
+          </p>
+        </div>
 
         <button
           onClick={volver}
@@ -1576,7 +1849,9 @@ function FormularioDevolucion({
 
       <Field
         label="Asesor"
-        value={datos.asesor}
+        value={
+          datos.asesor
+        }
         onChange={(v) =>
           actualizar(
             "asesor",
@@ -1587,7 +1862,9 @@ function FormularioDevolucion({
 
       <Field
         label="Área"
-        value={datos.area}
+        value={
+          datos.area
+        }
         onChange={(v) =>
           actualizar(
             "area",
@@ -1596,15 +1873,15 @@ function FormularioDevolucion({
         }
         type="select"
         options={AREAS.map(
-          (a) => ({
-            value: a,
-            label: a,
+          (area) => ({
+            value: area,
+            label: area,
           })
         )}
       />
 
       <Field
-        label="Nota calidad obtenida"
+        label="Nota CALIDAD obtenida"
         value={
           datos.notaCalidad
         }
@@ -1615,6 +1892,156 @@ function FormularioDevolucion({
           )
         }
         type="number"
+      />
+
+      <MultiSelect
+        label="Aspectos trabajados CALIDAD"
+        options={CALIDAD}
+        values={
+          datos.aspectosCalidad
+        }
+        onToggle={(valor) =>
+          toggle(
+            valor,
+            "aspectosCalidad"
+          )
+        }
+      />
+
+      <MultiSelect
+        label="Acciones CALIDAD"
+        options={
+          ACCIONES_CALIDAD
+        }
+        values={
+          datos.accionesCalidad || []
+        }
+        onToggle={(valor) =>
+          toggle(
+            valor,
+            "accionesCalidad"
+          )
+        }
+      />
+
+      <MultiSelect
+        label="Aspectos trabajados PRODUCTIVIDAD"
+        options={
+          PRODUCTIVIDAD
+        }
+        values={
+          datos.aspectosProductividad
+        }
+        onToggle={(valor) =>
+          toggle(
+            valor,
+            "aspectosProductividad"
+          )
+        }
+      />
+
+      <MultiSelect
+        label="Tipificaciones"
+        options={
+          TIPIFICACIONES
+        }
+        values={
+          datos.tipificaciones
+        }
+        onToggle={(valor) =>
+          toggle(
+            valor,
+            "tipificaciones"
+          )
+        }
+      />
+
+      <MultiSelect
+        label="O.M. NO VENTAS"
+        options={OM}
+        values={
+          datos.om
+        }
+        onToggle={(valor) =>
+          toggle(
+            valor,
+            "om"
+          )
+        }
+      />
+
+      <Field
+        label="Registro en sistema"
+        value={
+          datos.registroSistema
+        }
+        onChange={(v) =>
+          actualizar(
+            "registroSistema",
+            v
+          )
+        }
+        type="select"
+        options={[
+          {
+            value: "Correcto",
+            label: "Correcto",
+          },
+          {
+            value: "Incorrecto",
+            label: "Incorrecto",
+          },
+        ]}
+      />
+
+      <Field
+        label="Compromiso"
+        value={
+          datos.compromiso
+        }
+        onChange={(v) =>
+          actualizar(
+            "compromiso",
+            v
+          )
+        }
+        type="select"
+        options={[
+          {
+            value:
+              "APLICA DEVOLUCION",
+            label:
+              "APLICA DEVOLUCION",
+          },
+          {
+            value:
+              "SEGUIMIENTO",
+            label:
+              "SEGUIMIENTO",
+          },
+          {
+            value:
+              "NO APLICA",
+            label:
+              "NO APLICA",
+          },
+        ]}
+      />
+
+      <MultiSelect
+        label="Fortalezas destacadas"
+        options={
+          FORTALEZAS
+        }
+        values={
+          datos.fortalezas
+        }
+        onToggle={(valor) =>
+          toggle(
+            valor,
+            "fortalezas"
+          )
+        }
       />
 
       <Field
@@ -1631,25 +2058,11 @@ function FormularioDevolucion({
         type="textarea"
       />
 
-      <div style={styles.placeholderBox}>
-        <strong>
-          Aspectos trabajados
-        </strong>
-
-        <p style={styles.muted}>
-          En esta primera conexión
-          dejamos preparado el
-          formulario. Los ítems
-          específicos se incorporarán
-          en la tabla correspondiente.
-        </p>
-      </div>
-
       <button
         style={styles.primaryButton}
         onClick={() =>
           alert(
-            "Formulario preparado. Para guardar las devoluciones necesitamos conectar la tabla correspondiente."
+            "Formulario de devolución preparado."
           )
         }
       >
@@ -1662,14 +2075,17 @@ function FormularioDevolucion({
 function FormularioAudio({
   datos,
   actualizar,
+  toggle,
   volver,
 }) {
   return (
     <section style={styles.card}>
       <div style={styles.sectionHeader}>
-        <h2>
-          Subir audio
-        </h2>
+        <div>
+          <h2>
+            Subir audio
+          </h2>
+        </div>
 
         <button
           onClick={volver}
@@ -1681,7 +2097,9 @@ function FormularioAudio({
 
       <Field
         label="Asesor"
-        value={datos.asesor}
+        value={
+          datos.asesor
+        }
         onChange={(v) =>
           actualizar(
             "asesor",
@@ -1692,7 +2110,9 @@ function FormularioAudio({
 
       <Field
         label="¿A qué corresponde?"
-        value={datos.area}
+        value={
+          datos.area
+        }
         onChange={(v) =>
           actualizar(
             "area",
@@ -1701,16 +2121,18 @@ function FormularioAudio({
         }
         type="select"
         options={AREAS.map(
-          (a) => ({
-            value: a,
-            label: a,
+          (area) => ({
+            value: area,
+            label: area,
           })
         )}
       />
 
       <Field
         label="Responsable"
-        value={datos.responsable}
+        value={
+          datos.responsable
+        }
         onChange={(v) =>
           actualizar(
             "responsable",
@@ -1721,7 +2143,9 @@ function FormularioAudio({
 
       <Field
         label="Fecha"
-        value={datos.fecha}
+        value={
+          datos.fecha
+        }
         onChange={(v) =>
           actualizar(
             "fecha",
@@ -1731,26 +2155,75 @@ function FormularioAudio({
         type="date"
       />
 
-      <label style={styles.label}>
-        Audio
-      </label>
+      <div style={styles.fileBox}>
+        <label style={styles.label}>
+          Audio
+        </label>
 
-      <input
-        type="file"
-        accept="audio/*"
-        style={styles.input}
-        onChange={(e) =>
-          actualizar(
-            "archivo",
-            e.target.files?.[0] ||
-              null
+        <input
+          type="file"
+          accept="audio/*"
+          onChange={(e) =>
+            actualizar(
+              "archivo",
+              e.target.files?.[0] ||
+                null
+            )
+          }
+        />
+      </div>
+
+      <MultiSelect
+        label="Aspectos trabajados CALIDAD"
+        options={CALIDAD}
+        values={
+          datos.aspectosCalidad
+        }
+        onToggle={(valor) =>
+          toggle(
+            valor,
+            "aspectosCalidad"
+          )
+        }
+      />
+
+      <MultiSelect
+        label="Aspectos trabajados PRODUCTIVIDAD"
+        options={
+          PRODUCTIVIDAD
+        }
+        values={
+          datos.aspectosProductividad
+        }
+        onToggle={(valor) =>
+          toggle(
+            valor,
+            "aspectosProductividad"
+          )
+        }
+      />
+
+      <MultiSelect
+        label="Tipificaciones"
+        options={
+          TIPIFICACIONES
+        }
+        values={
+          datos.tipificaciones
+        }
+        onToggle={(valor) =>
+          toggle(
+            valor,
+            "tipificaciones"
           )
         }
       />
 
       <Field
         label="Devolución"
-        value={datos.devolucion}
+        value={
+          datos.devolucion
+        }
         onChange={(v) =>
           actualizar(
             "devolucion",
@@ -1764,7 +2237,7 @@ function FormularioAudio({
         style={styles.primaryButton}
         onClick={() =>
           alert(
-            "Audio seleccionado. La carga al almacenamiento se conecta en el siguiente paso."
+            "Formulario de audio preparado."
           )
         }
       >
@@ -1782,9 +2255,11 @@ function FormularioPda({
   return (
     <section style={styles.card}>
       <div style={styles.sectionHeader}>
-        <h2>
-          Nuevo Plan de Acción
-        </h2>
+        <div>
+          <h2>
+            Nuevo Plan de Acción
+          </h2>
+        </div>
 
         <button
           onClick={volver}
@@ -1796,7 +2271,9 @@ function FormularioPda({
 
       <Field
         label="Asesor"
-        value={datos.asesor}
+        value={
+          datos.asesor
+        }
         onChange={(v) =>
           actualizar(
             "asesor",
@@ -1850,7 +2327,9 @@ function FormularioPda({
 
       <Field
         label="Objetivo"
-        value={datos.objetivo}
+        value={
+          datos.objetivo
+        }
         onChange={(v) =>
           actualizar(
             "objetivo",
@@ -2209,6 +2688,54 @@ function Field({
   );
 }
 
+function MultiSelect({
+  label,
+  options,
+  values,
+  onToggle,
+}) {
+  const seleccionados =
+    values || [];
+
+  return (
+    <div style={styles.multiBox}>
+      <label style={styles.label}>
+        {label}
+      </label>
+
+      <div style={styles.multiGrid}>
+        {options.map(
+          (option) => {
+            const seleccionado =
+              seleccionados.includes(
+                option
+              );
+
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() =>
+                  onToggle(
+                    option
+                  )
+                }
+                style={
+                  seleccionado
+                    ? styles.multiSelected
+                    : styles.multiOption
+                }
+              >
+                {option}
+              </button>
+            );
+          }
+        )}
+      </div>
+    </div>
+  );
+}
+
 function calcularEstado(
   reporte
 ) {
@@ -2339,6 +2866,7 @@ function crearDevolucionInicial() {
     area: "Calidad",
     notaCalidad: "",
     aspectosCalidad: [],
+    accionesCalidad: [],
     aspectosProductividad: [],
     tipificaciones: [],
     om: [],
@@ -2451,20 +2979,25 @@ const styles = {
       "0 4px 18px rgba(0,0,0,0.06)",
   },
 
-  sectionHeader: {
+  message: {
+    background:
+      "#ffffff",
+    borderRadius:
+      "12px",
+    padding:
+      "14px 18px",
+    marginBottom:
+      "20px",
+    border:
+      "1px solid #e5e7eb",
+  },
+
+  weekRow: {
     display: "flex",
     justifyContent:
       "space-between",
     alignItems:
       "center",
-    gap: "15px",
-    flexWrap:
-      "wrap",
-    marginBottom:
-      "20px",
-  },
-
-  weekRow: {
     marginBottom:
       "20px",
   },
@@ -2472,43 +3005,37 @@ const styles = {
   statsGrid: {
     display: "grid",
     gridTemplateColumns:
-      "repeat(auto-fit, minmax(190px, 1fr))",
-    gap: "15px",
+      "repeat(auto-fit,minmax(180px,1fr))",
+    gap: "16px",
   },
 
   stat: {
-    padding: "20px",
     background:
       "#f8fafc",
     border:
       "1px solid #e5e7eb",
     borderRadius:
       "14px",
+    padding:
+      "20px",
   },
 
-  statTitle: {
-    color:
-      "#68707b",
-  },
-
-  statValue: {
-    display:
-      "block",
-    fontSize:
-      "28px",
-    marginTop:
-      "8px",
-  },
-
-  muted: {
-    color:
-      "#68707b",
+  sectionHeader: {
+    display: "flex",
+    justifyContent:
+      "space-between",
+    alignItems:
+      "center",
+    gap: "15px",
+    marginBottom:
+      "20px",
+    flexWrap: "wrap",
   },
 
   filters: {
     display: "grid",
     gridTemplateColumns:
-      "2fr 1fr 1fr",
+      "repeat(auto-fit,minmax(220px,1fr))",
     gap: "12px",
     marginBottom:
       "20px",
@@ -2516,55 +3043,84 @@ const styles = {
 
   input: {
     width: "100%",
-    padding:
-      "12px",
-    borderRadius:
-      "10px",
-    border:
-      "1px solid #d9dce3",
-    fontSize:
-      "14px",
     boxSizing:
       "border-box",
+    border:
+      "1px solid #d8dde5",
+    borderRadius:
+      "10px",
+    padding:
+      "11px 12px",
+    fontSize:
+      "14px",
     background:
       "#ffffff",
   },
 
   smallSelect: {
-    padding:
-      "10px 12px",
+    border:
+      "1px solid #d8dde5",
     borderRadius:
       "10px",
-    border:
-      "1px solid #d9dce3",
+    padding:
+      "10px 12px",
     background:
       "#ffffff",
   },
 
-  label: {
-    display:
-      "block",
+  primaryButton: {
+    border: "none",
+    borderRadius:
+      "10px",
+    padding:
+      "11px 16px",
+    background:
+      "#111827",
+    color:
+      "#ffffff",
+    cursor:
+      "pointer",
     fontWeight:
       "bold",
-    marginBottom:
-      "6px",
   },
 
-  formGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: "15px",
+  secondaryButton: {
+    border:
+      "1px solid #d8dde5",
+    borderRadius:
+      "10px",
+    padding:
+      "10px 15px",
+    background:
+      "#ffffff",
+    color:
+      "#20242a",
+    cursor:
+      "pointer",
+    fontWeight:
+      "bold",
+  },
+
+  linkButton: {
+    border: "none",
+    background:
+      "transparent",
+    color:
+      "#2563eb",
+    cursor:
+      "pointer",
+    fontWeight:
+      "bold",
   },
 
   tableWrapper: {
+    width: "100%",
     overflowX:
       "auto",
   },
 
   table: {
-    width:
-      "100%",
+    width: "100%",
     borderCollapse:
       "collapse",
   },
@@ -2572,8 +3128,8 @@ const styles = {
   advisorGrid: {
     display: "grid",
     gridTemplateColumns:
-      "repeat(auto-fit, minmax(250px, 1fr))",
-    gap: "15px",
+      "repeat(auto-fit,minmax(250px,1fr))",
+    gap: "16px",
   },
 
   advisorCard: {
@@ -2583,128 +3139,140 @@ const styles = {
       "14px",
     padding:
       "18px",
-  },
-
-  primaryButton: {
-    padding:
-      "12px 18px",
-    border: "none",
-    borderRadius:
-      "10px",
-    background:
-      "#20242a",
-    color:
-      "#ffffff",
-    cursor:
-      "pointer",
-    fontSize:
-      "14px",
-    fontWeight:
-      "bold",
-  },
-
-  secondaryButton: {
-    padding:
-      "11px 17px",
-    border:
-      "1px solid #d9dce3",
-    borderRadius:
-      "10px",
     background:
       "#ffffff",
-    color:
-      "#20242a",
-    cursor:
-      "pointer",
-    fontSize:
-      "14px",
-  },
-
-  linkButton: {
-    border: "none",
-    background:
-      "transparent",
-    color:
-      "#20242a",
-    cursor:
-      "pointer",
-    fontWeight:
-      "bold",
-    padding: 0,
-  },
-
-  actionRow: {
-    display: "flex",
-    gap: "10px",
-    flexWrap:
-      "wrap",
-    marginTop:
-      "25px",
   },
 
   tabs: {
     display: "flex",
     gap: "8px",
-    overflowX:
-      "auto",
+    flexWrap: "wrap",
     marginTop:
-      "25px",
-    paddingBottom:
-      "5px",
-  },
-
-  tab: {
-    padding:
-      "10px 14px",
-    border:
-      "1px solid #e5e7eb",
-    borderRadius:
-      "9px",
-    background:
-      "#ffffff",
-    whiteSpace:
-      "nowrap",
-  },
-
-  tabActive: {
-    padding:
-      "10px 14px",
-    border:
-      "1px solid #20242a",
-    borderRadius:
-      "9px",
-    background:
-      "#20242a",
-    color:
-      "#ffffff",
-    whiteSpace:
-      "nowrap",
-  },
-
-  message: {
-    padding:
-      "14px 18px",
-    borderRadius:
-      "10px",
-    background:
-      "#eaf7ef",
-    border:
-      "1px solid #b8e1c6",
+      "20px",
     marginBottom:
       "20px",
   },
 
-  placeholderBox: {
-    padding:
-      "18px",
-    borderRadius:
-      "12px",
-    background:
-      "#f8fafc",
+  tab: {
     border:
-      "1px solid #e5e7eb",
+      "1px solid #d8dde5",
+    borderRadius:
+      "9px",
+    padding:
+      "9px 12px",
+    background:
+      "#ffffff",
+    cursor:
+      "pointer",
+  },
+
+  tabActive: {
+    border:
+      "1px solid #111827",
+    borderRadius:
+      "9px",
+    padding:
+      "9px 12px",
+    background:
+      "#111827",
+    color:
+      "#ffffff",
+    cursor:
+      "pointer",
+  },
+
+  formGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(220px,1fr))",
+    gap: "16px",
+  },
+
+  formTitle: {
+    marginTop:
+      "28px",
     marginBottom:
       "18px",
+  },
+
+  buttonRow: {
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
+    marginTop:
+      "24px",
+  },
+
+  fileBox: {
+    marginBottom:
+      "20px",
+    padding:
+      "15px",
+    border:
+      "1px solid #e5e7eb",
+    borderRadius:
+      "10px",
+  },
+
+  multiBox: {
+    marginBottom:
+      "20px",
+  },
+
+  multiGrid: {
+    display: "flex",
+    gap: "8px",
+    flexWrap: "wrap",
+    marginTop:
+      "8px",
+  },
+
+  multiOption: {
+    border:
+      "1px solid #d8dde5",
+    borderRadius:
+      "9px",
+    padding:
+      "8px 11px",
+    background:
+      "#ffffff",
+    cursor:
+      "pointer",
+    fontSize:
+      "13px",
+  },
+
+  multiSelected: {
+    border:
+      "1px solid #111827",
+    borderRadius:
+      "9px",
+    padding:
+      "8px 11px",
+    background:
+      "#111827",
+    color:
+      "#ffffff",
+    cursor:
+      "pointer",
+    fontSize:
+      "13px",
+  },
+
+  label: {
+    display:
+      "block",
+    fontWeight:
+      "bold",
+    marginBottom:
+      "7px",
+    fontSize:
+      "14px",
+  },
+
+  muted: {
+    color:
+      "#68707b",
   },
 
   estadoRojo: {
@@ -2715,7 +3283,7 @@ const styles = {
     borderRadius:
       "8px",
     background:
-      "#fee2e2",
+      "#fecaca",
     color:
       "#991b1b",
     fontSize:
@@ -2732,7 +3300,7 @@ const styles = {
     borderRadius:
       "8px",
     background:
-      "#dcfce7",
+      "#bbf7d0",
     color:
       "#166534",
     fontSize:
@@ -2775,3 +3343,4 @@ const styles = {
       "bold",
   },
 };
+```

@@ -1,101 +1,101 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseAdmin = createClient(
+const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SECRET_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 );
+
+export async function GET() {
+  try {
+    const { data, error } = await supabase
+      .from("usuarios")
+      .select("id,nombre,usuario,email,rol,activo,created_at")
+      .eq("activo", true)
+      .order("nombre", { ascending: true });
+
+    if (error) {
+      console.error("Error cargando usuarios:", error);
+
+      return NextResponse.json(
+        {
+          ok: false,
+          error: error.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      usuarios: data || [],
+    });
+  } catch (error) {
+    console.error("Error inesperado:", error);
+
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Error interno al cargar los usuarios",
+      },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(request) {
   try {
     const body = await request.json();
 
-    const {
-      nombre,
-      usuario,
-      email,
-      password,
-    } = body;
+    const { nombre, usuario, email, rol, activo = true } = body;
 
-    if (!nombre || !usuario || !email || !password) {
+    if (!nombre || !email || !rol) {
       return NextResponse.json(
         {
-          error:
-            "Nombre, usuario, email y contraseña son obligatorios.",
+          ok: false,
+          error: "Faltan datos obligatorios.",
         },
         { status: 400 }
       );
     }
 
-    if (password.length < 6) {
+    const { data, error } = await supabase
+      .from("usuarios")
+      .insert([
+        {
+          nombre,
+          usuario: usuario || null,
+          email,
+          rol,
+          activo,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creando usuario:", error);
+
       return NextResponse.json(
         {
-          error:
-            "La contraseña debe tener al menos 6 caracteres.",
+          ok: false,
+          error: error.message,
         },
-        { status: 400 }
+        { status: 500 }
       );
     }
 
-    const {
-      data: usuarioCreado,
-      error: errorAuth,
-    } = await supabaseAdmin.auth.admin.createUser({
-      email: email.trim().toLowerCase(),
-      password,
-      email_confirm: true,
+    return NextResponse.json({
+      ok: true,
+      usuario: data,
     });
-
-    if (errorAuth) {
-      return NextResponse.json(
-        {
-          error: errorAuth.message,
-        },
-        { status: 400 }
-      );
-    }
-
-    const { data: perfilCreado, error: errorPerfil } =
-      await supabaseAdmin
-        .from("perfiles")
-        .insert({
-          id: usuarioCreado.user.id,
-          nombre: nombre.trim(),
-          usuario: usuario.trim(),
-          email: email.trim().toLowerCase(),
-          rol: "asesor",
-          activo: true,
-        })
-        .select()
-        .single();
-
-    if (errorPerfil) {
-      await supabaseAdmin.auth.admin.deleteUser(
-        usuarioCreado.user.id
-      );
-
-      return NextResponse.json(
-        {
-          error: errorPerfil.message,
-        },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: true,
-        mensaje: "Asesor creado correctamente.",
-        perfil: perfilCreado,
-      },
-      { status: 201 }
-    );
   } catch (error) {
+    console.error("Error inesperado:", error);
+
     return NextResponse.json(
       {
-        error:
-          error?.message ||
-          "Ocurrió un error al crear el asesor.",
+        ok: false,
+        error: "Error interno al crear el usuario.",
       },
       { status: 500 }
     );

@@ -1,198 +1,256 @@
-```javascript
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "../lib/supabase";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-const supabase =
-  supabaseUrl && supabaseKey
-    ? createClient(supabaseUrl, supabaseKey)
-    : null;
-
-const semanas = [
-  "Semana 1 · Agosto",
-  "Semana 2 · Agosto",
-  "Semana 3 · Agosto",
-  "Semana 4 · Agosto",
-];
-
-const pestañasAsesor = [
-  { id: "inicio", label: "Inicio", icon: "🏠" },
-  { id: "calidad", label: "Calidad", icon: "📊" },
-  { id: "productividad", label: "Productividad", icon: "📈" },
-  { id: "tipificaciones", label: "Tipificaciones", icon: "🏷️" },
-  { id: "no-ventas", label: "No Ventas", icon: "🚫" },
-  { id: "felicitaciones", label: "Mis Felicitaciones", icon: "🏆" },
-  { id: "evolutivo", label: "Evolutivo", icon: "📈" },
-  { id: "feedback", label: "Feedback", icon: "💬" },
-];
-
-const pestañasAdmin = [
-  { id: "admin-inicio", label: "Inicio", icon: "🏠" },
-  { id: "admin-asesores", label: "Asesores", icon: "👥" },
-  { id: "admin-reportes", label: "Reportes", icon: "📋" },
-];
+const ADMIN_EMAIL = "ayelenvillega42@gmail.com";
 
 export default function Page() {
+  const [session, setSession] = useState(null);
   const [cargando, setCargando] = useState(true);
-  const [logueado, setLogueado] = useState(false);
-  const [perfil, setPerfil] = useState(null);
+  const [modo, setModo] = useState("login");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [iniciando, setIniciando] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [entrando, setEntrando] = useState(false);
+
+  const [usuarioActual, setUsuarioActual] = useState(null);
+  const [reportes, setReportes] = useState([]);
+  const [cargandoReportes, setCargandoReportes] = useState(false);
 
   useEffect(() => {
-    verificarSesion();
+    let activo = true;
 
-    if (!supabase) {
-      setCargando(false);
-      return;
+    async function verificarSesion() {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!activo) return;
+
+        setSession(session);
+
+        if (session?.user?.email) {
+          await identificarUsuario(session.user.email);
+        }
+      } catch (error) {
+        console.error("Error verificando sesión:", error);
+        if (activo) {
+          setModo("login");
+        }
+      } finally {
+        if (activo) {
+          setCargando(false);
+        }
+      }
     }
+
+    verificarSesion();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          await cargarPerfil(session.user);
-        } else {
-          setPerfil(null);
-          setLogueado(false);
-        }
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!activo) return;
 
-        setCargando(false);
+      setSession(session);
+
+      if (!session?.user?.email) {
+        setUsuarioActual(null);
+        setReportes([]);
+        setModo("login");
+        return;
       }
-    );
+
+      /*
+       * Evitamos volver a consultar innecesariamente durante
+       * cada cambio interno de estado de Supabase.
+       */
+      if (_event === "SIGNED_IN") {
+        await identificarUsuario(session.user.email);
+      }
+    });
 
     return () => {
+      activo = false;
       subscription.unsubscribe();
     };
   }, []);
 
-  async function verificarSesion() {
-    if (!supabase) {
-      setCargando(false);
+  async function identificarUsuario(correo) {
+    const emailNormalizado = correo?.trim().toLowerCase();
+
+    if (!emailNormalizado) {
+      await supabase.auth.signOut();
+      setModo("login");
       return;
     }
-
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        await cargarPerfil(session.user);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setCargando(false);
-    }
-  }
-
-  async function cargarPerfil(usuarioAuth) {
-    if (!supabase || !usuarioAuth) return;
-
-    setError("");
 
     /*
-      IMPORTANTE:
-      Buscamos el perfil por EMAIL.
+     * Primero reconocemos al administrador por su email.
+     * La tabla usuarios también contiene su registro.
+     */
+    if (emailNormalizado === ADMIN_EMAIL.toLowerCase()) {
+      setUsuarioActual({
+        email: emailNormalizado,
+        nombre: "Ayelen Villega",
+        rol: "administrador",
+        activo: true,
+      });
 
-      Antes se buscaba:
-      .eq("id", usuarioAuth.id)
-
-      Eso provocaba el error cuando el UUID de perfiles
-      no coincidía con el UUID real de auth.users.
-
-      Como los perfiles ya tienen sus emails cargados,
-      usamos el email del usuario autenticado.
-    */
-
-    const emailAuth =
-      usuarioAuth.email?.trim().toLowerCase();
-
-    if (!emailAuth) {
-      setError(
-        "El usuario autenticado no tiene un correo electrónico."
-      );
-      setPerfil(null);
-      setLogueado(false);
+      setModo("admin");
       return;
     }
 
-    const { data, error } = await supabase
-      .from("perfiles")
-      .select("*")
-      .eq("email", emailAuth)
-      .eq("activo", true)
+    /*
+     * Para los asesores usamos la tabla usuarios.
+     */
+    const { data: usuario, error } = await supabase
+      .from("usuarios")
+      .select("id,nombre,usuario,email,rol,activo,created_at")
+      .eq("email", emailNormalizado)
       .maybeSingle();
 
     if (error) {
-      console.error(
-        "Error cargando perfil:",
-        error
+      console.error("Error consultando usuarios:", error);
+
+      await supabase.auth.signOut();
+
+      setUsuarioActual(null);
+      setModo("login");
+      setLoginError(
+        "No se pudo verificar tu usuario. Intentá nuevamente."
       );
 
-      setError(
-        "No pudimos consultar tu perfil en el portal."
-      );
-
-      setPerfil(null);
-      setLogueado(false);
       return;
     }
 
-    if (!data) {
-      console.error(
-        "No se encontró perfil para:",
-        emailAuth
+    if (!usuario) {
+      await supabase.auth.signOut();
+
+      setUsuarioActual(null);
+      setModo("login");
+      setLoginError(
+        "Tu cuenta no está asociada a un usuario registrado."
       );
 
-      setError(
-        "Tu usuario existe, pero no encontramos tu perfil en el portal."
-      );
-
-      setPerfil(null);
-      setLogueado(false);
       return;
     }
 
-    setPerfil({
-      ...data,
-      authUser: usuarioAuth,
-    });
+    if (usuario.activo !== true) {
+      await supabase.auth.signOut();
 
-    setLogueado(true);
-    setError("");
+      setUsuarioActual(null);
+      setModo("login");
+      setLoginError(
+        "Tu usuario se encuentra inactivo. Contactá a Calidad."
+      );
+
+      return;
+    }
+
+    if (usuario.rol !== "asesor") {
+      await supabase.auth.signOut();
+
+      setUsuarioActual(null);
+      setModo("login");
+      setLoginError(
+        "El rol de tu cuenta no permite ingresar al portal."
+      );
+
+      return;
+    }
+
+    setUsuarioActual(usuario);
+    setModo("asesor");
+
+    await cargarReportes(usuario);
+  }
+
+  async function cargarReportes(usuario) {
+    if (!usuario) return;
+
+    setCargandoReportes(true);
+
+    try {
+      /*
+       * Primero buscamos por email.
+       *
+       * También contemplamos:
+       * - usuario, por si reportes guarda el identificador
+       * - nombre, porque los reportes anteriores pueden tener
+       *   "Gomez, Carla", "Mercado, Chiara", etc.
+       */
+      const emailUsuario = usuario.email?.trim().toLowerCase();
+      const nombreUsuario = usuario.nombre?.trim();
+
+      let resultados = [];
+
+      if (emailUsuario) {
+        const { data, error } = await supabase
+          .from("reportes")
+          .select("*")
+          .eq("usuario", emailUsuario)
+          .order("id", { ascending: false });
+
+        if (!error && data) {
+          resultados = data;
+        }
+      }
+
+      /*
+       * Si todavía no encontramos reportes, buscamos por nombre.
+       * Esto permite que los reportes históricos sigan apareciendo
+       * aunque hayan sido guardados con el nombre del asesor.
+       */
+      if (resultados.length === 0 && nombreUsuario) {
+        const { data, error } = await supabase
+          .from("reportes")
+          .select("*")
+          .eq("asesor", nombreUsuario)
+          .order("id", { ascending: false });
+
+        if (!error && data) {
+          resultados = data;
+        }
+      }
+
+      /*
+       * Si la columna usuario contiene el UUID del registro
+       * de usuarios, también lo contemplamos.
+       */
+      if (resultados.length === 0 && usuario.id) {
+        const { data, error } = await supabase
+          .from("reportes")
+          .select("*")
+          .eq("usuario", usuario.id)
+          .order("id", { ascending: false });
+
+        if (!error && data) {
+          resultados = data;
+        }
+      }
+
+      setReportes(resultados || []);
+    } catch (error) {
+      console.error("Error cargando reportes:", error);
+      setReportes([]);
+    } finally {
+      setCargandoReportes(false);
+    }
   }
 
   async function iniciarSesion(e) {
     e.preventDefault();
 
-    setError("");
-
-    if (!supabase) {
-      setError(
-        "No está configurada la conexión con Supabase."
-      );
+    if (!email || !password) {
+      setLoginError("Ingresá tu email y contraseña.");
       return;
     }
 
-    if (!email.trim() || !password.trim()) {
-      setError(
-        "Ingresá tu correo electrónico y contraseña."
-      );
-      return;
-    }
-
-    setIniciando(true);
+    setEntrando(true);
+    setLoginError("");
 
     try {
       const { data, error } =
@@ -202,2633 +260,690 @@ export default function Page() {
         });
 
       if (error) {
-        console.error(
-          "Error de inicio de sesión:",
-          error
+        console.error(error);
+
+        setLoginError(
+          "El email o la contraseña no son correctos."
         );
 
-        setError(
-          "El correo o la contraseña no son correctos."
-        );
+        setEntrando(false);
         return;
       }
 
-      if (!data.user) {
-        setError(
-          "No se pudo iniciar sesión."
+      const usuarioEmail = data.user?.email?.toLowerCase();
+
+      if (!usuarioEmail) {
+        setLoginError(
+          "No se pudo identificar el email de la cuenta."
         );
+
+        setEntrando(false);
         return;
       }
 
-      await cargarPerfil(data.user);
+      await identificarUsuario(usuarioEmail);
     } catch (error) {
-      console.error(error);
+      console.error("Error de inicio de sesión:", error);
 
-      setError(
-        "Ocurrió un error al iniciar sesión."
+      setLoginError(
+        "Ocurrió un error al ingresar. Intentá nuevamente."
       );
-    } finally {
-      setIniciando(false);
     }
+
+    setEntrando(false);
   }
 
   async function cerrarSesion() {
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
+    await supabase.auth.signOut();
 
-    setPerfil(null);
-    setLogueado(false);
+    setSession(null);
+    setUsuarioActual(null);
+    setReportes([]);
     setEmail("");
     setPassword("");
-    setError("");
+    setLoginError("");
+    setModo("login");
   }
 
   if (cargando) {
     return (
-      <main style={styles.loginPage}>
-        <div style={styles.loginCard}>
-          <div style={styles.logoCircle}>P</div>
+      <main style={styles.page}>
+        <div style={styles.centerBox}>
+          <div style={styles.card}>
+            <div style={styles.logo}>✓</div>
 
-          <h1 style={styles.loginTitle}>
-            Portal Integral del Asesor
-          </h1>
+            <h2 style={{ marginBottom: "8px" }}>
+              Portal de Calidad
+            </h2>
 
-          <p style={styles.loginSubtitle}>
-            Cargando tu información...
-          </p>
+            <p style={styles.muted}>
+              Verificando acceso...
+            </p>
+          </div>
         </div>
       </main>
     );
   }
 
-  if (!logueado || !perfil) {
+  /*
+   * ADMINISTRADOR
+   *
+   * La pantalla de administración está en:
+   * /admin
+   *
+   * No mostramos información administrativa dentro del
+   * portal del asesor.
+   */
+  if (modo === "admin") {
     return (
-      <main style={styles.loginPage}>
-        <div style={styles.loginCard}>
-          <div style={styles.logoCircle}>P</div>
+      <main style={styles.page}>
+        <div style={styles.centerBox}>
+          <div style={styles.card}>
+            <div style={styles.logo}>✓</div>
 
-          <h1 style={styles.loginTitle}>
-            Portal Integral del Asesor
-          </h1>
+            <h2>Portal de Calidad</h2>
 
-          <p style={styles.loginSubtitle}>
-            Ingresá para consultar tu información semanal.
-          </p>
+            <p style={styles.muted}>
+              Bienvenida, Administradora
+            </p>
 
-          <form onSubmit={iniciarSesion}>
-            <label style={styles.label}>
-              Correo electrónico
-            </label>
-
-            <input
-              type="email"
-              value={email}
-              onChange={(e) =>
-                setEmail(e.target.value)
-              }
-              placeholder="Ingresá tu correo"
-              style={styles.input}
-              required
-            />
-
-            <label style={styles.label}>
-              Contraseña
-            </label>
-
-            <input
-              type="password"
-              value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
-              placeholder="Ingresá tu contraseña"
-              style={styles.input}
-              required
-            />
-
-            {error && (
-              <div style={styles.errorBox}>
-                {error}
-              </div>
-            )}
+            <p style={styles.muted}>
+              Cargando panel de administración...
+            </p>
 
             <button
-              type="submit"
-              style={{
-                ...styles.primaryButton,
-                opacity: iniciando ? 0.7 : 1,
+              onClick={() => {
+                window.location.href = "/admin";
               }}
-              disabled={iniciando}
+              style={styles.primaryButton}
             >
-              {iniciando
-                ? "Ingresando..."
-                : "Ingresar"}
+              IR AL PANEL DE ADMINISTRACIÓN
             </button>
-          </form>
+
+            <button
+              onClick={cerrarSesion}
+              style={{
+                ...styles.secondaryButton,
+                width: "100%",
+                marginTop: "10px",
+              }}
+            >
+              CERRAR SESIÓN
+            </button>
+          </div>
         </div>
       </main>
     );
   }
 
-  if (perfil.rol === "administrador") {
+  if (modo === "login") {
     return (
-      <AdministradorPortal
-        perfil={perfil}
-        cerrarSesion={cerrarSesion}
-      />
-    );
-  }
+      <main style={styles.page}>
+        <div style={styles.loginContainer}>
+          <div style={styles.loginCard}>
+            <div style={styles.logo}>✓</div>
 
-  return (
-    <AsesorPortal
-      perfil={perfil}
-      cerrarSesion={cerrarSesion}
-    />
-  );
-}
+            <h1 style={{ marginBottom: "8px" }}>
+              Portal de Calidad
+            </h1>
 
-function AsesorPortal({ perfil, cerrarSesion }) {
-  const [pestañaActiva, setPestañaActiva] =
-    useState("inicio");
+            <p style={styles.muted}>
+              Ingresá con tu usuario y contraseña
+            </p>
 
-  const [semanaSeleccionada, setSemanaSeleccionada] =
-    useState("Semana 4 · Agosto");
-
-  const nombreCompleto =
-    perfil.nombre ||
-    perfil.email ||
-    "Asesor";
-
-  const nombre =
-    nombreCompleto.includes(",")
-      ? nombreCompleto.split(",")[1]?.trim() ||
-        nombreCompleto
-      : nombreCompleto;
-
-  const usuario =
-    perfil.usuario ||
-    "—";
-
-  return (
-    <main style={styles.portalPage}>
-      <div style={styles.portalLayout}>
-        <aside style={styles.sidebar}>
-          <div style={styles.brand}>
-            <div style={styles.brandIcon}>P</div>
-
-            <div>
-              <strong>Portal Integral</strong>
-
-              <span style={styles.sidebarSubtitle}>
-                del Asesor
-              </span>
-            </div>
-          </div>
-
-          <div style={styles.userBox}>
-            <div style={styles.avatar}>
-              {nombre.charAt(0).toUpperCase()}
-            </div>
-
-            <div style={{ minWidth: 0 }}>
-              <strong
-                style={{
-                  display: "block",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {nombre}
-              </strong>
-
-              <span style={styles.userSmall}>
-                Usuario {usuario}
-              </span>
-            </div>
-          </div>
-
-          <nav style={styles.navigation}>
-            {pestañasAsesor.map((item) => {
-              const activa =
-                pestañaActiva === item.id;
-
-              return (
-                <button
-                  key={item.id}
-                  onClick={() =>
-                    setPestañaActiva(item.id)
-                  }
-                  style={{
-                    ...styles.navButton,
-                    ...(activa
-                      ? styles.navButtonActive
-                      : {}),
-                  }}
-                >
-                  <span style={styles.navIcon}>
-                    {item.icon}
-                  </span>
-
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-
-          <button
-            onClick={cerrarSesion}
-            style={styles.logoutButton}
-          >
-            Cerrar sesión
-          </button>
-        </aside>
-
-        <section style={styles.mainArea}>
-          <header style={styles.topbar}>
-            <div>
-              <div style={styles.topbarKicker}>
-                PORTAL INTEGRAL DEL ASESOR
+            {loginError && (
+              <div style={styles.error}>
+                {loginError}
               </div>
-
-              <h1 style={styles.topbarTitle}>
-                {nombre}
-              </h1>
-            </div>
-
-            <div style={styles.weekBadge}>
-              <span style={styles.weekDot}></span>
-              Semana vigente
-
-              <strong>
-                {semanaSeleccionada}
-              </strong>
-            </div>
-          </header>
-
-          <div style={styles.content}>
-            {pestañaActiva === "inicio" && (
-              <Inicio
-                nombre={nombre}
-                semana={semanaSeleccionada}
-                cambiarPestaña={
-                  setPestañaActiva
-                }
-              />
             )}
 
-            {pestañaActiva === "calidad" && (
-              <SeccionSemanal
-                titulo="Calidad"
-                icon="📊"
-                descripcion="Tu desempeño de calidad organizado por semana."
-                semana={semanaSeleccionada}
-                setSemana={
-                  setSemanaSeleccionada
-                }
-              >
-                <CalidadSemana />
-              </SeccionSemanal>
-            )}
-
-            {pestañaActiva === "productividad" && (
-              <SeccionSemanal
-                titulo="Productividad"
-                icon="📈"
-                descripcion="Tu desempeño de productividad organizado por semana."
-                semana={semanaSeleccionada}
-                setSemana={
-                  setSemanaSeleccionada
-                }
-              >
-                <ProductividadSemana />
-              </SeccionSemanal>
-            )}
-
-            {pestañaActiva === "tipificaciones" && (
-              <SeccionSemanal
-                titulo="Tipificaciones"
-                icon="🏷️"
-                descripcion="Resultados y seguimiento de tus tipificaciones."
-                semana={semanaSeleccionada}
-                setSemana={
-                  setSemanaSeleccionada
-                }
-              >
-                <TipificacionesSemana />
-              </SeccionSemanal>
-            )}
-
-            {pestañaActiva === "no-ventas" && (
-              <SeccionSemanal
-                titulo="No Ventas"
-                icon="🚫"
-                descripcion="Seguimiento de tus gestiones de no venta."
-                semana={semanaSeleccionada}
-                setSemana={
-                  setSemanaSeleccionada
-                }
-              >
-                <NoVentasSemana />
-              </SeccionSemanal>
-            )}
-
-            {pestañaActiva === "felicitaciones" && (
-              <SeccionSemanal
-                titulo="Mis Felicitaciones"
-                icon="🏆"
-                descripcion="Reconocimientos recibidos durante cada semana."
-                semana={semanaSeleccionada}
-                setSemana={
-                  setSemanaSeleccionada
-                }
-              >
-                <FelicitacionesSemana />
-              </SeccionSemanal>
-            )}
-
-            {pestañaActiva === "evolutivo" && (
-              <Evolutivo />
-            )}
-
-            {pestañaActiva === "feedback" && (
-              <Feedback
-                semana={semanaSeleccionada}
-                setSemana={
-                  setSemanaSeleccionada
-                }
-              />
-            )}
-          </div>
-        </section>
-      </div>
-    </main>
-  );
-}
-
-function AdministradorPortal({
-  perfil,
-  cerrarSesion,
-}) {
-  const [pestañaActiva, setPestañaActiva] =
-    useState("admin-inicio");
-
-  const nombre =
-    perfil.nombre ||
-    perfil.email ||
-    "Administrador";
-
-  return (
-    <main style={styles.portalPage}>
-      <div style={styles.portalLayout}>
-        <aside style={styles.sidebar}>
-          <div style={styles.brand}>
-            <div style={styles.brandIcon}>P</div>
-
-            <div>
-              <strong>Portal Integral</strong>
-
-              <span style={styles.sidebarSubtitle}>
-                Administración
-              </span>
-            </div>
-          </div>
-
-          <div style={styles.userBox}>
-            <div style={styles.avatar}>
-              {nombre.charAt(0).toUpperCase()}
-            </div>
-
-            <div style={{ minWidth: 0 }}>
-              <strong
-                style={{
-                  display: "block",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {nombre}
-              </strong>
-
-              <span style={styles.userSmall}>
-                Administrador
-              </span>
-            </div>
-          </div>
-
-          <nav style={styles.navigation}>
-            {pestañasAdmin.map((item) => {
-              const activa =
-                pestañaActiva === item.id;
-
-              return (
-                <button
-                  key={item.id}
-                  onClick={() =>
-                    setPestañaActiva(item.id)
-                  }
-                  style={{
-                    ...styles.navButton,
-                    ...(activa
-                      ? styles.navButtonActive
-                      : {}),
-                  }}
-                >
-                  <span style={styles.navIcon}>
-                    {item.icon}
-                  </span>
-
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-
-          <button
-            onClick={cerrarSesion}
-            style={styles.logoutButton}
-          >
-            Cerrar sesión
-          </button>
-        </aside>
-
-        <section style={styles.mainArea}>
-          <header style={styles.topbar}>
-            <div>
-              <div style={styles.topbarKicker}>
-                PORTAL INTEGRAL DEL ASESOR
-              </div>
-
-              <h1 style={styles.topbarTitle}>
-                Administración
-              </h1>
-            </div>
-
-            <div style={styles.adminBadge}>
-              ADMINISTRADOR
-            </div>
-          </header>
-
-          <div style={styles.content}>
-            {pestañaActiva ===
-              "admin-inicio" && (
-              <AdminInicio
-                nombre={nombre}
-                cambiarPestaña={
-                  setPestañaActiva
-                }
-              />
-            )}
-
-            {pestañaActiva ===
-              "admin-asesores" && (
-              <AdminAsesores />
-            )}
-
-            {pestañaActiva ===
-              "admin-reportes" && (
-              <AdminReportes />
-            )}
-          </div>
-        </section>
-      </div>
-    </main>
-  );
-}
-
-function AdminInicio({
-  nombre,
-  cambiarPestaña,
-}) {
-  return (
-    <>
-      <div style={styles.hero}>
-        <div>
-          <span style={styles.heroLabel}>
-            PANEL DE ADMINISTRACIÓN
-          </span>
-
-          <h2 style={styles.heroTitle}>
-            Hola, {nombre}
-          </h2>
-
-          <p style={styles.heroText}>
-            Desde acá podés administrar los asesores
-            y gestionar la información del portal.
-          </p>
-        </div>
-
-        <div style={styles.heroWeek}>
-          <span>Estado</span>
-          <strong>Panel activo</strong>
-        </div>
-      </div>
-
-      <div style={styles.metricsGrid}>
-        <MetricCard
-          title="Asesores"
-          value="—"
-          description="Perfiles registrados"
-          icon="👥"
-        />
-
-        <MetricCard
-          title="Reportes"
-          value="—"
-          description="Reportes cargados"
-          icon="📋"
-        />
-
-        <MetricCard
-          title="Seguimiento"
-          value="—"
-          description="Gestiones activas"
-          icon="📈"
-        />
-
-        <MetricCard
-          title="Estado"
-          value="Activo"
-          description="Portal operativo"
-          icon="✓"
-        />
-      </div>
-
-      <div style={styles.sectionHeader}>
-        <h2 style={styles.sectionTitle}>
-          Administración
-        </h2>
-
-        <p style={styles.sectionDescription}>
-          Gestioná desde acá la información principal
-          del portal.
-        </p>
-      </div>
-
-      <div style={styles.cardsGrid}>
-        <QuickCard
-          icon="👥"
-          title="Asesores"
-          text="Crear, consultar y administrar los perfiles de los asesores."
-          onClick={() =>
-            cambiarPestaña("admin-asesores")
-          }
-        />
-
-        <QuickCard
-          icon="📋"
-          title="Reportes"
-          text="Gestionar los reportes y la información semanal."
-          onClick={() =>
-            cambiarPestaña("admin-reportes")
-          }
-        />
-      </div>
-    </>
-  );
-}
-
-function AdminAsesores() {
-  const [asesores, setAsesores] =
-    useState([]);
-
-  const [cargando, setCargando] =
-    useState(true);
-
-  const [mostrarFormulario, setMostrarFormulario] =
-    useState(false);
-
-  const [mensaje, setMensaje] =
-    useState("");
-
-  const [error, setError] =
-    useState("");
-
-  const [formulario, setFormulario] =
-    useState({
-      nombre: "",
-      usuario: "",
-      email: "",
-      password: "",
-    });
-
-  useEffect(() => {
-    cargarAsesores();
-  }, []);
-
-  async function cargarAsesores() {
-    if (!supabase) return;
-
-    setCargando(true);
-    setError("");
-
-    const { data, error } = await supabase
-      .from("perfiles")
-      .select("*")
-      .eq("rol", "asesor")
-      .order("nombre", {
-        ascending: true,
-      });
-
-    if (error) {
-      console.error(error);
-
-      setError(
-        "No se pudieron cargar los asesores."
-      );
-    } else {
-      setAsesores(data || []);
-    }
-
-    setCargando(false);
-  }
-
-  function cambiarCampo(campo, valor) {
-    setFormulario((actual) => ({
-      ...actual,
-      [campo]: valor,
-    }));
-  }
-
-  async function crearAsesor(e) {
-    e.preventDefault();
-
-    setMensaje("");
-    setError("");
-
-    if (
-      !formulario.nombre.trim() ||
-      !formulario.usuario.trim() ||
-      !formulario.email.trim() ||
-      !formulario.password.trim()
-    ) {
-      setError(
-        "Completá todos los campos."
-      );
-      return;
-    }
-
-    if (formulario.password.length < 6) {
-      setError(
-        "La contraseña debe tener al menos 6 caracteres."
-      );
-      return;
-    }
-
-    try {
-      const {
-        data: {
-          session,
-        },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        setError(
-          "La sesión del administrador expiró."
-        );
-        return;
-      }
-
-      const respuesta = await fetch(
-        "/api/admin/usuarios",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-            Authorization:
-              `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            nombre:
-              formulario.nombre.trim(),
-            usuario:
-              formulario.usuario.trim(),
-            email:
-              formulario.email.trim(),
-            password:
-              formulario.password,
-          }),
-        }
-      );
-
-      const resultado =
-        await respuesta.json();
-
-      if (!respuesta.ok) {
-        setError(
-          resultado.error ||
-            "No se pudo crear el asesor."
-        );
-        return;
-      }
-
-      setMensaje(
-        "Asesor creado correctamente."
-      );
-
-      setFormulario({
-        nombre: "",
-        usuario: "",
-        email: "",
-        password: "",
-      });
-
-      setMostrarFormulario(false);
-
-      await cargarAsesores();
-    } catch (error) {
-      console.error(error);
-
-      setError(
-        "Ocurrió un error al crear el asesor."
-      );
-    }
-  }
-
-  return (
-    <>
-      <div style={styles.pageHeading}>
-        <div style={styles.pageHeadingIcon}>
-          👥
-        </div>
-
-        <h2 style={styles.pageHeadingTitle}>
-          Asesores
-        </h2>
-
-        <p style={styles.pageHeadingText}>
-          Administración de los perfiles de los asesores.
-        </p>
-      </div>
-
-      {mensaje && (
-        <div style={styles.successBox}>
-          {mensaje}
-        </div>
-      )}
-
-      {error && (
-        <div style={styles.errorBox}>
-          {error}
-        </div>
-      )}
-
-      <div style={styles.adminToolbar}>
-        <div>
-          <strong>
-            Base de asesores
-          </strong>
-
-          <p style={styles.muted}>
-            Los asesores que aparecen acá
-            provienen directamente de Supabase.
-          </p>
-        </div>
-
-        <button
-          onClick={() =>
-            setMostrarFormulario(
-              !mostrarFormulario
-            )
-          }
-          style={styles.primaryButtonSmall}
-        >
-          {mostrarFormulario
-            ? "Cancelar"
-            : "+ Nuevo asesor"}
-        </button>
-      </div>
-
-      {mostrarFormulario && (
-        <form
-          onSubmit={crearAsesor}
-          style={styles.adminForm}
-        >
-          <div style={styles.formTitle}>
-            Nuevo asesor
-          </div>
-
-          <div style={styles.formGrid}>
-            <div>
-              <label style={styles.label}>
-                Nombre y apellido
-              </label>
-
-              <input
-                value={formulario.nombre}
-                onChange={(e) =>
-                  cambiarCampo(
-                    "nombre",
-                    e.target.value
-                  )
-                }
-                placeholder="Ej. Carla Gomez"
-                style={styles.input}
-              />
-            </div>
-
-            <div>
-              <label style={styles.label}>
-                Usuario
-              </label>
-
-              <input
-                value={formulario.usuario}
-                onChange={(e) =>
-                  cambiarCampo(
-                    "usuario",
-                    e.target.value
-                  )
-                }
-                placeholder="Ej. 8126"
-                style={styles.input}
-              />
-            </div>
-
-            <div>
-              <label style={styles.label}>
-                Correo electrónico
-              </label>
+            <form onSubmit={iniciarSesion}>
+              <label>Email</label>
 
               <input
                 type="email"
-                value={formulario.email}
+                value={email}
                 onChange={(e) =>
-                  cambiarCampo(
-                    "email",
-                    e.target.value
-                  )
+                  setEmail(e.target.value)
                 }
-                placeholder="correo@empresa.com"
+                placeholder="Ingresá tu email"
                 style={styles.input}
+                autoComplete="email"
               />
-            </div>
 
-            <div>
-              <label style={styles.label}>
-                Contraseña inicial
-              </label>
+              <label>Contraseña</label>
 
               <input
                 type="password"
-                value={formulario.password}
+                value={password}
                 onChange={(e) =>
-                  cambiarCampo(
-                    "password",
-                    e.target.value
-                  )
+                  setPassword(e.target.value)
                 }
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Ingresá tu contraseña"
                 style={styles.input}
+                autoComplete="current-password"
               />
-            </div>
-          </div>
 
-          <button
-            type="submit"
-            style={styles.primaryButtonLarge}
-          >
-            Crear asesor
-          </button>
-        </form>
-      )}
-
-      <div style={styles.adminTableCard}>
-        <div style={styles.tableHeader}>
-          <strong>
-            Asesores registrados
-          </strong>
-
-          <span style={styles.tableCount}>
-            {asesores.length}
-          </span>
-        </div>
-
-        {cargando ? (
-          <div style={styles.emptyAdmin}>
-            Cargando asesores...
-          </div>
-        ) : asesores.length === 0 ? (
-          <div style={styles.emptyAdmin}>
-            <div style={styles.emptyIcon}>
-              👥
-            </div>
-
-            <strong>
-              Todavía no hay asesores
-            </strong>
-
-            <p style={styles.muted}>
-              Usá “+ Nuevo asesor” para
-              crear el primero.
-            </p>
-          </div>
-        ) : (
-          <div style={styles.tableWrapper}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>
-                    Nombre
-                  </th>
-
-                  <th style={styles.th}>
-                    Usuario
-                  </th>
-
-                  <th style={styles.th}>
-                    Email
-                  </th>
-
-                  <th style={styles.th}>
-                    Estado
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {asesores.map((asesor) => (
-                  <tr key={asesor.id}>
-                    <td style={styles.td}>
-                      <strong>
-                        {asesor.nombre ||
-                          "—"}
-                      </strong>
-                    </td>
-
-                    <td style={styles.td}>
-                      {asesor.usuario ||
-                        "—"}
-                    </td>
-
-                    <td style={styles.td}>
-                      {asesor.email ||
-                        "—"}
-                    </td>
-
-                    <td style={styles.td}>
-                      <span
-                        style={
-                          asesor.activo
-                            ? styles.activeBadge
-                            : styles.inactiveBadge
-                        }
-                      >
-                        {asesor.activo
-                          ? "Activo"
-                          : "Inactivo"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </>
-  );
-}
-
-function AdminReportes() {
-  return (
-    <>
-      <div style={styles.pageHeading}>
-        <div style={styles.pageHeadingIcon}>
-          📋
-        </div>
-
-        <h2 style={styles.pageHeadingTitle}>
-          Reportes
-        </h2>
-
-        <p style={styles.pageHeadingText}>
-          Gestión de los reportes semanales.
-        </p>
-      </div>
-
-      <div style={styles.emptyAdmin}>
-        <div style={styles.emptyIcon}>
-          📋
-        </div>
-
-        <h3>
-          Gestión de reportes
-        </h3>
-
-        <p style={styles.muted}>
-          Esta sección queda preparada para
-          conectar los reportes semanales que
-          carguemos desde el administrador.
-        </p>
-      </div>
-    </>
-  );
-}
-
-function Inicio({
-  nombre,
-  semana,
-  cambiarPestaña,
-}) {
-  return (
-    <>
-      <div style={styles.hero}>
-        <div>
-          <span style={styles.heroLabel}>
-            RESUMEN SEMANAL
-          </span>
-
-          <h2 style={styles.heroTitle}>
-            Hola, {nombre}
-          </h2>
-
-          <p style={styles.heroText}>
-            Acá vas a encontrar toda la información
-            de tu seguimiento y evolución.
-          </p>
-        </div>
-
-        <div style={styles.heroWeek}>
-          <span>Semana vigente</span>
-          <strong>{semana}</strong>
-        </div>
-      </div>
-
-      <div style={styles.metricsGrid}>
-        <MetricCard
-          title="Calidad"
-          value="—"
-          description="Resultado semanal"
-          icon="📊"
-        />
-
-        <MetricCard
-          title="Productividad"
-          value="—"
-          description="SPH semanal"
-          icon="📈"
-        />
-
-        <MetricCard
-          title="Tipificaciones"
-          value="—"
-          description="Resultado semanal"
-          icon="🏷️"
-        />
-
-        <MetricCard
-          title="No Ventas"
-          value="—"
-          description="Seguimiento semanal"
-          icon="🚫"
-        />
-      </div>
-
-      <div style={styles.sectionHeader}>
-        <h2 style={styles.sectionTitle}>
-          Tu semana
-        </h2>
-
-        <p style={styles.sectionDescription}>
-          Accedé rápidamente a la información
-          correspondiente a la semana vigente.
-        </p>
-      </div>
-
-      <div style={styles.cardsGrid}>
-        <QuickCard
-          icon="📊"
-          title="Calidad"
-          text="Consultá tu nota, fortalezas, desvíos y devoluciones."
-          onClick={() =>
-            cambiarPestaña("calidad")
-          }
-        />
-
-        <QuickCard
-          icon="📈"
-          title="Productividad"
-          text="Consultá tu SPH, ventas y seguimiento."
-          onClick={() =>
-            cambiarPestaña("productividad")
-          }
-        />
-
-        <QuickCard
-          icon="🏷️"
-          title="Tipificaciones"
-          text="Revisá tus resultados y oportunidades de mejora."
-          onClick={() =>
-            cambiarPestaña("tipificaciones")
-          }
-        />
-
-        <QuickCard
-          icon="🚫"
-          title="No Ventas"
-          text="Consultá tus gestiones y aspectos trabajados."
-          onClick={() =>
-            cambiarPestaña("no-ventas")
-          }
-        />
-
-        <QuickCard
-          icon="🏆"
-          title="Mis Felicitaciones"
-          text="Mirá los reconocimientos que recibiste."
-          onClick={() =>
-            cambiarPestaña("felicitaciones")
-          }
-        />
-
-        <QuickCard
-          icon="💬"
-          title="Feedback"
-          text="Dejá tu comentario y realizá el cierre semanal."
-          onClick={() =>
-            cambiarPestaña("feedback")
-          }
-        />
-      </div>
-
-      <div style={styles.infoBanner}>
-        <div style={styles.infoIcon}>
-          ℹ️
-        </div>
-
-        <div>
-          <strong>
-            Tu información está organizada por semana
-          </strong>
-
-          <p style={styles.muted}>
-            Cada sección del portal muestra claramente
-            lo correspondiente a cada semana.
-          </p>
-        </div>
-      </div>
-    </>
-  );
-}
-
-function SeccionSemanal({
-  titulo,
-  icon,
-  descripcion,
-  semana,
-  setSemana,
-  children,
-}) {
-  return (
-    <>
-      <div style={styles.pageHeading}>
-        <div style={styles.pageHeadingIcon}>
-          {icon}
-        </div>
-
-        <h2 style={styles.pageHeadingTitle}>
-          {titulo}
-        </h2>
-
-        <p style={styles.pageHeadingText}>
-          {descripcion}
-        </p>
-      </div>
-
-      <div style={styles.weekSelectorCard}>
-        <div>
-          <span style={styles.selectorLabel}>
-            SEMANA
-          </span>
-
-          <strong style={styles.selectedWeek}>
-            {semana}
-          </strong>
-        </div>
-
-        <select
-          value={semana}
-          onChange={(e) =>
-            setSemana(e.target.value)
-          }
-          style={styles.weekSelect}
-        >
-          {semanas.map((item) => (
-            <option
-              key={item}
-              value={item}
-            >
-              {item}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div style={styles.weekContent}>
-        <div style={styles.weekHeader}>
-          <span style={styles.weekHeaderIcon}>
-            📅
-          </span>
-
-          <div>
-            <span
-              style={styles.weekHeaderSmall}
-            >
-              INFORMACIÓN DE LA SEMANA
-            </span>
-
-            <h3
-              style={styles.weekHeaderTitle}
-            >
-              {semana}
-            </h3>
+              <button
+                type="submit"
+                disabled={entrando}
+                style={{
+                  ...styles.primaryButton,
+                  opacity: entrando ? 0.6 : 1,
+                }}
+              >
+                {entrando
+                  ? "INGRESANDO..."
+                  : "INGRESAR"}
+              </button>
+            </form>
           </div>
         </div>
-
-        {children}
-      </div>
-    </>
-  );
-}
-
-function CalidadSemana() {
-  return (
-    <div style={styles.placeholderGrid}>
-      <DataCard
-        title="Nota de calidad"
-        value="—"
-      />
-
-      <DataCard
-        title="Evolución"
-        value="—"
-      />
-
-      <DataCard
-        title="Desvíos"
-        value="—"
-      />
-
-      <DataCard
-        title="Fortalezas"
-        value="—"
-      />
-
-      <WideDataCard
-        title="Devoluciones"
-        text="Las devoluciones correspondientes a esta semana aparecerán acá."
-      />
-
-      <WideDataCard
-        title="Aspectos trabajados"
-        text="Los aspectos registrados durante la semana aparecerán acá."
-      />
-    </div>
-  );
-}
-
-function ProductividadSemana() {
-  return (
-    <div style={styles.placeholderGrid}>
-      <DataCard
-        title="SPH"
-        value="—"
-      />
-
-      <DataCard
-        title="Ventas"
-        value="—"
-      />
-
-      <DataCard
-        title="Objetivo SPH"
-        value="—"
-      />
-
-      <DataCard
-        title="Objetivo ventas"
-        value="—"
-      />
-
-      <WideDataCard
-        title="Aspectos trabajados"
-        text="Los aspectos de productividad registrados durante la semana aparecerán acá."
-      />
-
-      <WideDataCard
-        title="Acciones"
-        text="Las acciones realizadas durante la semana aparecerán acá."
-      />
-    </div>
-  );
-}
-
-function TipificacionesSemana() {
-  return (
-    <div style={styles.placeholderGrid}>
-      <DataCard
-        title="Resultado"
-        value="—"
-      />
-
-      <DataCard
-        title="Objetivo"
-        value="—"
-      />
-
-      <DataCard
-        title="Desvío"
-        value="—"
-      />
-
-      <DataCard
-        title="Evolución"
-        value="—"
-      />
-
-      <WideDataCard
-        title="Tipificaciones auditadas"
-        text="Las tipificaciones trabajadas durante la semana aparecerán acá."
-      />
-
-      <WideDataCard
-        title="Devoluciones"
-        text="Las devoluciones de tipificaciones correspondientes a esta semana aparecerán acá."
-      />
-    </div>
-  );
-}
-
-function NoVentasSemana() {
-  return (
-    <div style={styles.placeholderGrid}>
-      <DataCard
-        title="Cantidad"
-        value="—"
-      />
-
-      <DataCard
-        title="Coaching"
-        value="—"
-      />
-
-      <DataCard
-        title="Registro en sistema"
-        value="—"
-      />
-
-      <DataCard
-        title="Compromiso"
-        value="—"
-      />
-
-      <WideDataCard
-        title="Principales O.M."
-        text="Las oportunidades de mejora registradas durante la semana aparecerán acá."
-      />
-
-      <WideDataCard
-        title="Fortalezas"
-        text="Las fortalezas destacadas durante la semana aparecerán acá."
-      />
-    </div>
-  );
-}
-
-function FelicitacionesSemana() {
-  return (
-    <div style={styles.emptyCard}>
-      <div style={styles.emptyIcon}>
-        🏆
-      </div>
-
-      <h3>
-        Felicitaciones de la semana
-      </h3>
-
-      <p style={styles.muted}>
-        Los reconocimientos que sean cargados
-        para esta semana aparecerán acá.
-      </p>
-    </div>
-  );
-}
-
-function Evolutivo() {
-  return (
-    <>
-      <div style={styles.pageHeading}>
-        <div style={styles.pageHeadingIcon}>
-          📈
-        </div>
-
-        <h2 style={styles.pageHeadingTitle}>
-          Evolutivo
-        </h2>
-
-        <p style={styles.pageHeadingText}>
-          Comparación de tu desempeño a través
-          de las semanas.
-        </p>
-      </div>
-
-      <EvolutionBlock title="Calidad" />
-      <EvolutionBlock title="Productividad" />
-    </>
-  );
-}
-
-function EvolutionBlock({ title }) {
-  return (
-    <div style={styles.evolutionCard}>
-      <span style={styles.selectorLabel}>
-        {title.toUpperCase()}
-      </span>
-
-      <h3
-        style={{
-          margin: "5px 0 18px",
-        }}
-      >
-        Evolución semanal
-      </h3>
-
-      <div style={styles.evolutionRows}>
-        {semanas.map((semana) => (
-          <div
-            key={semana}
-            style={styles.evolutionRow}
-          >
-            <span>{semana}</span>
-
-            <div style={styles.evolutionLine}>
-              <div style={styles.evolutionBar}>
-                <div
-                  style={
-                    styles.evolutionBarFill
-                  }
-                ></div>
-              </div>
-
-              <strong>—</strong>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function Feedback({
-  semana,
-  setSemana,
-}) {
-  const [feedback, setFeedback] =
-    useState("");
-
-  const [firma, setFirma] =
-    useState("");
-
-  const [motivo, setMotivo] =
-    useState("");
-
-  function guardarFeedback(e) {
-    e.preventDefault();
-
-    if (!feedback.trim()) {
-      alert(
-        "Escribí tu feedback antes de guardar."
-      );
-      return;
-    }
-
-    if (!firma) {
-      alert(
-        "Seleccioná conformidad o disconformidad."
-      );
-      return;
-    }
-
-    alert(
-      "El feedback y el cierre semanal quedaron preparados para guardarse."
+      </main>
     );
   }
 
-  return (
-    <>
-      <div style={styles.pageHeading}>
-        <div style={styles.pageHeadingIcon}>
-          💬
-        </div>
+  if (modo === "asesor") {
+    const reporteActual = reportes[0];
 
-        <h2 style={styles.pageHeadingTitle}>
-          Feedback
-        </h2>
+    return (
+      <main style={styles.page}>
+        <div style={styles.container}>
+          <header style={styles.header}>
+            <div>
+              <h1 style={{ margin: 0 }}>
+                Portal de Calidad
+              </h1>
 
-        <p style={styles.pageHeadingText}>
-          Un feedback correspondiente a cada semana.
-        </p>
-      </div>
-
-      <div style={styles.weekSelectorCard}>
-        <div>
-          <span style={styles.selectorLabel}>
-            FEEDBACK DE
-          </span>
-
-          <strong style={styles.selectedWeek}>
-            {semana}
-          </strong>
-        </div>
-
-        <select
-          value={semana}
-          onChange={(e) =>
-            setSemana(e.target.value)
-          }
-          style={styles.weekSelect}
-        >
-          {semanas.map((item) => (
-            <option
-              key={item}
-              value={item}
-            >
-              {item}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <form onSubmit={guardarFeedback}>
-        <div style={styles.feedbackCard}>
-          <span style={styles.selectorLabel}>
-            TU FEEDBACK SEMANAL
-          </span>
-
-          <h3
-            style={{
-              margin: "7px 0 8px",
-            }}
-          >
-            ¿Querés contarnos algo?
-          </h3>
-
-          <p style={styles.muted}>
-            Podés escribir consultas, pedidos,
-            comentarios, aclaraciones, propuestas
-            o cualquier cuestión que quieras comunicar.
-          </p>
-
-          <textarea
-            value={feedback}
-            onChange={(e) =>
-              setFeedback(e.target.value)
-            }
-            placeholder="Escribí acá tu feedback de la semana..."
-            style={styles.feedbackTextarea}
-          />
-        </div>
-
-        <div style={styles.signatureCard}>
-          <span style={styles.selectorLabel}>
-            CIERRE DE LA SEMANA
-          </span>
-
-          <h3
-            style={{
-              margin: "7px 0 8px",
-            }}
-          >
-            ¿Cómo querés cerrar esta semana?
-          </h3>
-
-          <p style={styles.muted}>
-            La firma corresponde al cierre de todo
-            lo ocurrido durante esta semana.
-          </p>
-
-          <div style={styles.signatureOptions}>
-            <button
-              type="button"
-              onClick={() =>
-                setFirma("conformidad")
-              }
-              style={{
-                ...styles.signatureButton,
-                ...(firma ===
-                "conformidad"
-                  ? styles.signatureButtonGreen
-                  : {}),
-              }}
-            >
-              ✓ Firmar en conformidad
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                setFirma("disconformidad")
-              }
-              style={{
-                ...styles.signatureButton,
-                ...(firma ===
-                "disconformidad"
-                  ? styles.signatureButtonRed
-                  : {}),
-              }}
-            >
-              ✕ Firmar en disconformidad
-            </button>
-          </div>
-
-          {firma ===
-            "disconformidad" && (
-            <div style={{ marginTop: 20 }}>
-              <label style={styles.label}>
-                Motivo de la disconformidad
-              </label>
-
-              <textarea
-                value={motivo}
-                onChange={(e) =>
-                  setMotivo(e.target.value)
-                }
-                placeholder="Escribí el motivo..."
-                style={
-                  styles.feedbackTextarea
-                }
-              />
+              <p style={styles.muted}>
+                Bienvenido/a,{" "}
+                {usuarioActual?.nombre || "Asesor/a"}
+              </p>
             </div>
+
+            <button
+              onClick={cerrarSesion}
+              style={styles.secondaryButton}
+            >
+              Cerrar sesión
+            </button>
+          </header>
+
+          {cargandoReportes ? (
+            <div style={styles.card}>
+              <h2>Cargando información...</h2>
+
+              <p style={styles.muted}>
+                Estamos buscando tus reportes semanales.
+              </p>
+            </div>
+          ) : reportes.length === 0 ? (
+            <div style={styles.card}>
+              <h2>
+                Todavía no hay reportes
+              </h2>
+
+              <p style={styles.muted}>
+                Cuando Calidad cargue tu primer
+                reporte semanal, vas a poder verlo
+                desde acá.
+              </p>
+            </div>
+          ) : (
+            <>
+              <section style={styles.card}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: "15px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div>
+                    <p style={styles.muted}>
+                      Último reporte
+                    </p>
+
+                    <h2 style={{ margin: 0 }}>
+                      {reporteActual?.semana ||
+                        "Semana"}
+                    </h2>
+                  </div>
+
+                  <div style={styles.score}>
+                    {reporteActual?.nota ?? "-"}
+                  </div>
+                </div>
+              </section>
+
+              <section style={styles.card}>
+                <h2>Mi calidad</h2>
+
+                <div style={styles.grid}>
+                  <Metric
+                    title="Nota de calidad"
+                    value={
+                      reporteActual?.nota ?? "-"
+                    }
+                  />
+
+                  <Metric
+                    title="Producto"
+                    value={
+                      reporteActual?.producto ?? "-"
+                    }
+                  />
+
+                  <Metric
+                    title="Auditoría"
+                    value={
+                      reporteActual?.auditoria || "-"
+                    }
+                  />
+                </div>
+              </section>
+
+              <section style={styles.card}>
+                <h2>Evolución</h2>
+
+                <p>
+                  {reporteActual?.evolucion ||
+                    "No hay información cargada."}
+                </p>
+              </section>
+
+              <section style={styles.card}>
+                <h2>Objetivo de trabajo</h2>
+
+                <p>
+                  {reporteActual?.objetivo ||
+                    "No hay información cargada."}
+                </p>
+              </section>
+
+              <section style={styles.card}>
+                <h2>Desvío principal</h2>
+
+                <div style={styles.warning}>
+                  <strong>
+                    {reporteActual?.desvio ||
+                      "No hay desvíos cargados."}
+                  </strong>
+                </div>
+              </section>
+
+              <section style={styles.card}>
+                <h2>Recomendación</h2>
+
+                <p>
+                  {reporteActual?.recomendacion ||
+                    "No hay recomendaciones cargadas."}
+                </p>
+              </section>
+
+              <section style={styles.card}>
+                <h2>Auditoría</h2>
+
+                <p>
+                  {reporteActual?.auditoria ||
+                    "No hay información de auditoría."}
+                </p>
+
+                {reporteActual?.observaciones && (
+                  <>
+                    <h3>Observaciones</h3>
+
+                    <p>
+                      {reporteActual.observaciones}
+                    </p>
+                  </>
+                )}
+              </section>
+
+              <section style={styles.card}>
+                <h2>Mi productividad</h2>
+
+                <div style={styles.grid}>
+                  <Metric
+                    title="SPH"
+                    value={
+                      reporteActual?.sph ?? "-"
+                    }
+                    extra={`Objetivo: ${
+                      reporteActual?.objetivo_sph ??
+                      "-"
+                    }`}
+                  />
+
+                  <Metric
+                    title="Ventas"
+                    value={
+                      reporteActual?.ventas ?? "-"
+                    }
+                    extra={`Objetivo: ${
+                      reporteActual?.objetivo_ventas ??
+                      "-"
+                    }`}
+                  />
+
+                  <Metric
+                    title="Estado SPH"
+                    value={
+                      reporteActual?.estado_sph ||
+                      "-"
+                    }
+                  />
+
+                  <Metric
+                    title="Estado ventas"
+                    value={
+                      reporteActual?.estado_ventas ||
+                      "-"
+                    }
+                  />
+                </div>
+
+                {reporteActual?.objetivo_campania && (
+                  <div
+                    style={{
+                      marginTop: "25px",
+                    }}
+                  >
+                    <h3>
+                      Objetivo de campaña
+                    </h3>
+
+                    <p>
+                      {
+                        reporteActual.objetivo_campania
+                      }
+                    </p>
+
+                    {reporteActual?.descripcion_campania && (
+                      <p style={styles.muted}>
+                        {
+                          reporteActual.descripcion_campania
+                        }
+                      </p>
+                    )}
+
+                    <strong>
+                      Estado:{" "}
+                      {reporteActual?.estado_campania ||
+                        "-"}
+                    </strong>
+                  </div>
+                )}
+
+                {reporteActual?.gestion && (
+                  <div
+                    style={{
+                      marginTop: "25px",
+                    }}
+                  >
+                    <h3>
+                      ¿Qué se realizó durante la
+                      semana?
+                    </h3>
+
+                    <p>
+                      {reporteActual.gestion}
+                    </p>
+                  </div>
+                )}
+              </section>
+
+              <section style={styles.card}>
+                <h2>Historial semanal</h2>
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                  }}
+                >
+                  {reportes.map((reporte) => (
+                    <div
+                      key={reporte.id}
+                      style={styles.history}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent:
+                            "space-between",
+                          gap: "15px",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <strong>
+                          {reporte.semana}
+                        </strong>
+
+                        <strong>
+                          Nota:{" "}
+                          {reporte.nota ?? "-"}
+                        </strong>
+                      </div>
+
+                      {reporte.desvio && (
+                        <p
+                          style={{
+                            marginBottom: 0,
+                            color: "#68707b",
+                          }}
+                        >
+                          Desvío:{" "}
+                          {reporte.desvio}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </>
           )}
         </div>
+      </main>
+    );
+  }
 
-        <button
-          type="submit"
-          style={
-            styles.primaryButtonLarge
-          }
-        >
-          Guardar Feedback y cierre semanal
-        </button>
-      </form>
-    </>
-  );
+  return null;
 }
 
-function MetricCard({
-  title,
-  value,
-  description,
-  icon,
-}) {
+function Metric({ title, value, extra }) {
   return (
-    <div style={styles.metricCard}>
-      <div style={styles.metricIcon}>
-        {icon}
-      </div>
+    <div style={styles.metric}>
+      <small>{title}</small>
 
-      <div>
-        <span style={styles.metricTitle}>
-          {title}
-        </span>
-
-        <strong style={styles.metricValue}>
-          {value}
-        </strong>
-
-        <span
-          style={styles.metricDescription}
-        >
-          {description}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function QuickCard({
-  icon,
-  title,
-  text,
-  onClick,
-}) {
-  return (
-    <button
-      onClick={onClick}
-      style={styles.quickCard}
-    >
-      <div style={styles.quickIcon}>
-        {icon}
-      </div>
-
-      <div style={{ textAlign: "left" }}>
-        <h3
-          style={{
-            margin: "0 0 7px",
-          }}
-        >
-          {title}
-        </h3>
-
-        <p style={styles.quickText}>
-          {text}
-        </p>
-      </div>
-
-      <span style={styles.arrow}>
-        →
-      </span>
-    </button>
-  );
-}
-
-function DataCard({
-  title,
-  value,
-}) {
-  return (
-    <div style={styles.dataCard}>
-      <span style={styles.dataTitle}>
-        {title}
-      </span>
-
-      <strong style={styles.dataValue}>
+      <strong
+        style={{
+          display: "block",
+          fontSize: "24px",
+          marginTop: "8px",
+        }}
+      >
         {value}
       </strong>
-    </div>
-  );
-}
 
-function WideDataCard({
-  title,
-  text,
-}) {
-  return (
-    <div style={styles.wideDataCard}>
-      <span style={styles.dataTitle}>
-        {title}
-      </span>
-
-      <p style={styles.muted}>
-        {text}
-      </p>
+      {extra && (
+        <small
+          style={{
+            display: "block",
+            marginTop: "6px",
+            color: "#68707b",
+          }}
+        >
+          {extra}
+        </small>
+      )}
     </div>
   );
 }
 
 const styles = {
-  loginPage: {
+  page: {
     minHeight: "100vh",
+    background: "#f4f6f8",
+    padding: "30px",
+    fontFamily: "Arial, sans-serif",
+    color: "#20242a",
+    boxSizing: "border-box",
+  },
+
+  container: {
+    maxWidth: "1100px",
+    margin: "auto",
+  },
+
+  centerBox: {
+    minHeight: "calc(100vh - 60px)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background:
-      "linear-gradient(135deg, #f4f6f8 0%, #e9edf2 100%)",
-    padding: "24px",
-    fontFamily: "Arial, sans-serif",
+  },
+
+  loginContainer: {
+    minHeight: "calc(100vh - 60px)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   loginCard: {
     width: "100%",
-    maxWidth: "430px",
+    maxWidth: "420px",
     background: "#ffffff",
-    borderRadius: "24px",
-    padding: "42px",
-    boxShadow:
-      "0 12px 40px rgba(0,0,0,0.10)",
+    borderRadius: "18px",
+    padding: "35px",
+    boxShadow: "0 4px 18px rgba(0,0,0,0.06)",
     boxSizing: "border-box",
   },
 
-  logoCircle: {
-    width: "54px",
-    height: "54px",
-    borderRadius: "16px",
-    background: "#20242a",
+  card: {
+    background: "#ffffff",
+    borderRadius: "18px",
+    padding: "24px",
+    marginBottom: "20px",
+    boxShadow: "0 4px 18px rgba(0,0,0,0.06)",
+  },
+
+  header: {
+    background: "#ffffff",
+    borderRadius: "18px",
+    padding: "22px 24px",
+    marginBottom: "20px",
+    boxShadow: "0 4px 18px rgba(0,0,0,0.06)",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "20px",
+    flexWrap: "wrap",
+  },
+
+  logo: {
+    width: "52px",
+    height: "52px",
+    borderRadius: "14px",
+    background: "#111827",
     color: "#ffffff",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontWeight: "700",
-    fontSize: "22px",
-    marginBottom: "22px",
-  },
-
-  loginTitle: {
-    margin: "0 0 10px",
-    fontSize: "27px",
-  },
-
-  loginSubtitle: {
-    color: "#68707b",
-    margin: "0 0 28px",
-    lineHeight: 1.5,
-  },
-
-  label: {
-    display: "block",
-    fontSize: "13px",
-    fontWeight: "700",
-    marginBottom: "7px",
-    color: "#343941",
+    fontSize: "25px",
+    fontWeight: "bold",
+    marginBottom: "18px",
   },
 
   input: {
     width: "100%",
-    padding: "13px 14px",
-    borderRadius: "11px",
+    padding: "12px",
+    borderRadius: "10px",
     border: "1px solid #d9dce3",
-    marginBottom: "18px",
+    marginTop: "6px",
+    marginBottom: "16px",
     fontSize: "14px",
     boxSizing: "border-box",
-    outline: "none",
+    background: "#ffffff",
   },
 
   primaryButton: {
     width: "100%",
-    padding: "14px",
-    border: "none",
-    borderRadius: "11px",
-    background: "#20242a",
-    color: "#ffffff",
-    fontSize: "15px",
-    fontWeight: "700",
-    cursor: "pointer",
-  },
-
-  primaryButtonSmall: {
-    padding: "12px 18px",
-    border: "none",
-    borderRadius: "11px",
-    background: "#20242a",
-    color: "#ffffff",
-    fontSize: "13px",
-    fontWeight: "700",
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-  },
-
-  primaryButtonLarge: {
-    width: "100%",
-    padding: "15px",
-    border: "none",
-    borderRadius: "12px",
-    background: "#20242a",
-    color: "#ffffff",
-    fontSize: "15px",
-    fontWeight: "700",
-    cursor: "pointer",
-    marginTop: "18px",
-  },
-
-  errorBox: {
-    background: "#fff1f1",
-    border: "1px solid #efb5b5",
-    color: "#a52b2b",
-    padding: "12px",
-    borderRadius: "10px",
-    marginBottom: "18px",
-    fontSize: "13px",
-  },
-
-  successBox: {
-    background: "#eaf7ef",
-    border: "1px solid #9dd0ad",
-    color: "#26733c",
-    padding: "13px",
-    borderRadius: "10px",
-    marginBottom: "18px",
-    fontSize: "13px",
-    fontWeight: "600",
-  },
-
-  portalPage: {
-    minHeight: "100vh",
-    background: "#f4f6f8",
-    fontFamily: "Arial, sans-serif",
-    color: "#20242a",
-  },
-
-  portalLayout: {
-    display: "flex",
-    minHeight: "100vh",
-  },
-
-  sidebar: {
-    width: "260px",
-    background: "#ffffff",
-    borderRight: "1px solid #e3e6eb",
-    padding: "22px 16px",
-    boxSizing: "border-box",
-    display: "flex",
-    flexDirection: "column",
-    position: "sticky",
-    top: 0,
-    height: "100vh",
-  },
-
-  brand: {
-    display: "flex",
-    alignItems: "center",
-    gap: "11px",
-    padding: "4px 8px 22px",
-  },
-
-  brandIcon: {
-    width: "42px",
-    height: "42px",
-    borderRadius: "12px",
-    background: "#20242a",
-    color: "#ffffff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "700",
-    fontSize: "18px",
-  },
-
-  sidebarSubtitle: {
-    display: "block",
-    color: "#8a919b",
-    fontSize: "12px",
-  },
-
-  userBox: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    padding: "13px",
-    background: "#f6f7f9",
-    borderRadius: "14px",
-    marginBottom: "18px",
-  },
-
-  avatar: {
-    width: "38px",
-    height: "38px",
-    borderRadius: "12px",
-    background: "#e3e7eb",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "700",
-    color: "#20242a",
-    flexShrink: 0,
-  },
-
-  userSmall: {
-    display: "block",
-    color: "#8a919b",
-    fontSize: "11px",
-    marginTop: "3px",
-  },
-
-  navigation: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "5px",
-    overflowY: "auto",
-  },
-
-  navButton: {
-    width: "100%",
-    display: "flex",
-    alignItems: "center",
-    gap: "11px",
-    padding: "11px 12px",
+    padding: "13px 18px",
     border: "none",
     borderRadius: "10px",
-    background: "transparent",
-    color: "#68707b",
+    background: "#20242a",
+    color: "#ffffff",
     cursor: "pointer",
     fontSize: "14px",
-    textAlign: "left",
+    fontWeight: "bold",
   },
 
-  navButtonActive: {
-    background: "#20242a",
-    color: "#ffffff",
-    fontWeight: "700",
-  },
-
-  navIcon: {
-    width: "24px",
-    textAlign: "center",
-    fontSize: "16px",
-  },
-
-  logoutButton: {
-    marginTop: "auto",
-    padding: "11px",
-    border: "1px solid #e1e4e8",
-    borderRadius: "10px",
-    background: "#ffffff",
-    color: "#68707b",
-    cursor: "pointer",
-    fontWeight: "600",
-  },
-
-  mainArea: {
-    flex: 1,
-    minWidth: 0,
-  },
-
-  topbar: {
-    background: "#ffffff",
-    borderBottom: "1px solid #e3e6eb",
-    padding: "22px 34px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "20px",
-  },
-
-  topbarKicker: {
-    color: "#8a919b",
-    fontSize: "11px",
-    fontWeight: "700",
-    letterSpacing: "1px",
-    marginBottom: "5px",
-  },
-
-  topbarTitle: {
-    margin: 0,
-    fontSize: "24px",
-  },
-
-  weekBadge: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    padding: "10px 14px",
-    background: "#f6f7f9",
-    borderRadius: "12px",
-    fontSize: "12px",
-    color: "#68707b",
-    flexWrap: "wrap",
-    justifyContent: "flex-end",
-  },
-
-  adminBadge: {
-    padding: "10px 14px",
-    background: "#20242a",
-    color: "#ffffff",
-    borderRadius: "10px",
-    fontSize: "11px",
-    fontWeight: "700",
-    letterSpacing: "0.6px",
-  },
-
-  weekDot: {
-    width: "8px",
-    height: "8px",
-    borderRadius: "50%",
-    background: "#55a36a",
-    display: "inline-block",
-  },
-
-  content: {
-    maxWidth: "1200px",
-    margin: "0 auto",
-    padding: "30px 34px 50px",
-  },
-
-  hero: {
-    background: "#20242a",
-    color: "#ffffff",
-    borderRadius: "22px",
-    padding: "30px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "25px",
-    marginBottom: "22px",
-  },
-
-  heroLabel: {
-    fontSize: "11px",
-    letterSpacing: "1px",
-    opacity: 0.65,
-    fontWeight: "700",
-  },
-
-  heroTitle: {
-    margin: "8px 0",
-    fontSize: "29px",
-  },
-
-  heroText: {
-    margin: 0,
-    color: "#d4d8dd",
-    maxWidth: "600px",
-    lineHeight: 1.5,
-  },
-
-  heroWeek: {
-    minWidth: "180px",
-    background:
-      "rgba(255,255,255,0.10)",
-    borderRadius: "14px",
-    padding: "15px",
-  },
-
-  metricsGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(210px, 1fr))",
-    gap: "15px",
-    marginBottom: "30px",
-  },
-
-  metricCard: {
-    background: "#ffffff",
-    borderRadius: "17px",
-    padding: "19px",
-    display: "flex",
-    gap: "14px",
-    alignItems: "center",
-    boxShadow:
-      "0 4px 18px rgba(0,0,0,0.05)",
-  },
-
-  metricIcon: {
-    width: "42px",
-    height: "42px",
-    borderRadius: "12px",
-    background: "#f1f3f5",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "18px",
-    flexShrink: 0,
-  },
-
-  metricTitle: {
-    display: "block",
-    fontSize: "12px",
-    color: "#68707b",
-  },
-
-  metricValue: {
-    display: "block",
-    fontSize: "25px",
-    margin: "4px 0",
-  },
-
-  metricDescription: {
-    display: "block",
-    fontSize: "11px",
-    color: "#9298a0",
-  },
-
-  sectionHeader: {
-    marginBottom: "16px",
-  },
-
-  sectionTitle: {
-    margin: 0,
-    fontSize: "21px",
-  },
-
-  sectionDescription: {
-    margin: "5px 0 0",
-    color: "#68707b",
-    fontSize: "13px",
-  },
-
-  cardsGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(280px, 1fr))",
-    gap: "15px",
-  },
-
-  quickCard: {
-    border: "1px solid #e4e7eb",
-    background: "#ffffff",
-    borderRadius: "17px",
-    padding: "20px",
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    cursor: "pointer",
-    position: "relative",
-    textAlign: "left",
-  },
-
-  quickIcon: {
-    width: "45px",
-    height: "45px",
-    borderRadius: "13px",
-    background: "#f1f3f5",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "19px",
-    flexShrink: 0,
-  },
-
-  quickText: {
-    margin: 0,
-    color: "#68707b",
-    fontSize: "12px",
-    lineHeight: 1.45,
-  },
-
-  arrow: {
-    marginLeft: "auto",
-    color: "#8a919b",
-    fontSize: "20px",
-  },
-
-  infoBanner: {
-    display: "flex",
-    gap: "12px",
-    alignItems: "flex-start",
-    background: "#ffffff",
-    border: "1px solid #e3e6eb",
-    borderRadius: "15px",
-    padding: "16px",
-    marginTop: "18px",
-  },
-
-  infoIcon: {
-    fontSize: "17px",
-  },
-
-  pageHeading: {
-    marginBottom: "20px",
-  },
-
-  pageHeadingIcon: {
-    fontSize: "25px",
-    marginBottom: "7px",
-  },
-
-  pageHeadingTitle: {
-    margin: 0,
-    fontSize: "27px",
-  },
-
-  pageHeadingText: {
-    margin: "7px 0 0",
-    color: "#68707b",
-    fontSize: "14px",
-  },
-
-  weekSelectorCard: {
-    background: "#ffffff",
-    borderRadius: "17px",
-    padding: "18px 20px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "20px",
-    marginBottom: "18px",
-    boxShadow:
-      "0 4px 18px rgba(0,0,0,0.05)",
-  },
-
-  selectorLabel: {
-    display: "block",
-    fontSize: "10px",
-    letterSpacing: "0.8px",
-    fontWeight: "700",
-    color: "#9298a0",
-  },
-
-  selectedWeek: {
-    display: "block",
-    marginTop: "4px",
-    fontSize: "17px",
-  },
-
-  weekSelect: {
-    padding: "11px 13px",
-    borderRadius: "10px",
+  secondaryButton: {
+    padding: "11px 18px",
     border: "1px solid #d9dce3",
+    borderRadius: "10px",
     background: "#ffffff",
-    minWidth: "190px",
-    fontSize: "13px",
+    color: "#20242a",
     cursor: "pointer",
-  },
-
-  weekContent: {
-    background: "#ffffff",
-    borderRadius: "19px",
-    padding: "22px",
-    boxShadow:
-      "0 4px 18px rgba(0,0,0,0.05)",
-  },
-
-  weekHeader: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    paddingBottom: "18px",
-    borderBottom:
-      "1px solid #edf0f2",
-    marginBottom: "18px",
-  },
-
-  weekHeaderIcon: {
-    width: "42px",
-    height: "42px",
-    borderRadius: "12px",
-    background: "#f1f3f5",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  weekHeaderSmall: {
-    fontSize: "10px",
-    color: "#9298a0",
-    letterSpacing: "0.8px",
-    fontWeight: "700",
-  },
-
-  weekHeaderTitle: {
-    margin: "3px 0 0",
-    fontSize: "19px",
-  },
-
-  placeholderGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "14px",
-  },
-
-  dataCard: {
-    background: "#f8f9fa",
-    borderRadius: "14px",
-    padding: "18px",
-    minHeight: "90px",
-  },
-
-  dataTitle: {
-    display: "block",
-    fontSize: "11px",
-    color: "#68707b",
-    fontWeight: "700",
-  },
-
-  dataValue: {
-    display: "block",
-    fontSize: "25px",
-    marginTop: "9px",
-  },
-
-  wideDataCard: {
-    background: "#f8f9fa",
-    borderRadius: "14px",
-    padding: "18px",
-    gridColumn: "span 2",
-  },
-
-  emptyCard: {
-    background: "#f8f9fa",
-    borderRadius: "15px",
-    padding: "35px",
-    textAlign: "center",
-  },
-
-  emptyIcon: {
-    fontSize: "34px",
-    marginBottom: "10px",
+    fontSize: "14px",
   },
 
   muted: {
     color: "#68707b",
-    lineHeight: 1.5,
-    fontSize: "13px",
   },
 
-  evolutionCard: {
-    background: "#ffffff",
-    borderRadius: "18px",
-    padding: "22px",
+  error: {
+    background: "#fff1f1",
+    border: "1px solid #f0b5b5",
+    padding: "12px",
+    borderRadius: "10px",
     marginBottom: "18px",
-    boxShadow:
-      "0 4px 18px rgba(0,0,0,0.05)",
+    color: "#991b1b",
   },
 
-  evolutionRows: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "15px",
-  },
-
-  evolutionRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "20px",
-    fontSize: "13px",
-  },
-
-  evolutionLine: {
-    flex: 1,
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-  },
-
-  evolutionBar: {
-    flex: 1,
-    height: "9px",
-    borderRadius: "20px",
-    background: "#edf0f2",
-    overflow: "hidden",
-  },
-
-  evolutionBarFill: {
-    width: "0%",
-    height: "100%",
-    borderRadius: "20px",
-    background: "#20242a",
-  },
-
-  feedbackCard: {
-    background: "#ffffff",
-    borderRadius: "18px",
-    padding: "23px",
-    boxShadow:
-      "0 4px 18px rgba(0,0,0,0.05)",
-    marginBottom: "18px",
-  },
-
-  feedbackTextarea: {
-    width: "100%",
-    minHeight: "150px",
-    resize: "vertical",
-    boxSizing: "border-box",
-    padding: "14px",
+  warning: {
+    padding: "18px",
     borderRadius: "12px",
-    border: "1px solid #d9dce3",
-    fontFamily:
-      "Arial, sans-serif",
-    fontSize: "14px",
-    marginTop: "15px",
-    outline: "none",
+    background: "#fff7ed",
+    border: "1px solid #fed7aa",
   },
 
-  signatureCard: {
-    background: "#ffffff",
-    borderRadius: "18px",
-    padding: "23px",
-    boxShadow:
-      "0 4px 18px rgba(0,0,0,0.05)",
-  },
-
-  signatureOptions: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(230px, 1fr))",
-    gap: "12px",
-    marginTop: "18px",
-  },
-
-  signatureButton: {
-    padding: "14px",
-    borderRadius: "11px",
-    border: "1px solid #d9dce3",
-    background: "#ffffff",
-    color: "#20242a",
-    cursor: "pointer",
-    fontWeight: "700",
-  },
-
-  signatureButtonGreen: {
-    background: "#eaf7ef",
-    border: "1px solid #9dd0ad",
-    color: "#26733c",
-  },
-
-  signatureButtonRed: {
-    background: "#fff1f1",
-    border: "1px solid #e2aaaa",
-    color: "#a52b2b",
-  },
-
-  adminToolbar: {
-    background: "#ffffff",
-    borderRadius: "17px",
+  metric: {
     padding: "20px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "20px",
-    marginBottom: "18px",
-    boxShadow:
-      "0 4px 18px rgba(0,0,0,0.05)",
+    background: "#f8fafc",
+    borderRadius: "12px",
+    border: "1px solid #e5e7eb",
   },
 
-  adminForm: {
-    background: "#ffffff",
-    borderRadius: "18px",
-    padding: "23px",
-    marginBottom: "18px",
-    boxShadow:
-      "0 4px 18px rgba(0,0,0,0.05)",
-  },
-
-  formTitle: {
-    fontSize: "19px",
-    fontWeight: "700",
-    marginBottom: "20px",
-  },
-
-  formGrid: {
+  grid: {
     display: "grid",
     gridTemplateColumns:
-      "repeat(auto-fit, minmax(240px, 1fr))",
+      "repeat(auto-fit, minmax(180px, 1fr))",
     gap: "15px",
+    marginTop: "20px",
   },
 
-  adminTableCard: {
-    background: "#ffffff",
-    borderRadius: "18px",
-    overflow: "hidden",
-    boxShadow:
-      "0 4px 18px rgba(0,0,0,0.05)",
-  },
-
-  tableHeader: {
-    padding: "20px",
-    borderBottom:
-      "1px solid #edf0f2",
+  score: {
+    width: "80px",
+    height: "80px",
+    borderRadius: "20px",
+    background: "#111827",
+    color: "#ffffff",
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
+    fontSize: "30px",
+    fontWeight: "bold",
   },
 
-  tableCount: {
-    background: "#f1f3f5",
-    borderRadius: "20px",
-    padding: "5px 10px",
-    fontSize: "12px",
-    fontWeight: "700",
-  },
-
-  tableWrapper: {
-    width: "100%",
-    overflowX: "auto",
-  },
-
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-  },
-
-  th: {
-    textAlign: "left",
-    padding: "13px 18px",
-    fontSize: "11px",
-    color: "#9298a0",
-    letterSpacing: "0.5px",
-    borderBottom:
-      "1px solid #edf0f2",
-    background: "#fafbfc",
-  },
-
-  td: {
-    padding: "15px 18px",
-    fontSize: "13px",
-    borderBottom:
-      "1px solid #f0f2f4",
-  },
-
-  activeBadge: {
-    display: "inline-block",
-    padding: "5px 9px",
-    borderRadius: "20px",
-    background: "#eaf7ef",
-    color: "#26733c",
-    fontSize: "11px",
-    fontWeight: "700",
-  },
-
-  inactiveBadge: {
-    display: "inline-block",
-    padding: "5px 9px",
-    borderRadius: "20px",
-    background: "#fff1f1",
-    color: "#a52b2b",
-    fontSize: "11px",
-    fontWeight: "700",
-  },
-
-  emptyAdmin: {
-    background: "#ffffff",
-    borderRadius: "18px",
-    padding: "45px",
-    textAlign: "center",
-    boxShadow:
-      "0 4px 18px rgba(0,0,0,0.05)",
+  history: {
+    padding: "18px",
+    border: "1px solid #e5e7eb",
+    borderRadius: "12px",
+    background: "#fafafa",
   },
 };
-```

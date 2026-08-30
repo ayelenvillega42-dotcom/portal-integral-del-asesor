@@ -1,189 +1,9 @@
-```javascript
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
 const ADMIN_EMAIL = "ayelenvillega42@gmail.com";
-
-const ASESORES_BASE = [
-  {
-    id: "1c438fb1-018e-47d4-b278-1c6b8dac8743",
-    nombre: "Mercado, Chiara",
-    usuario: "",
-    email: "chiara.mercado@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "1dc9b816-6ee3-4cd5-a917-857301e01a70",
-    nombre: "Rojek, Luna",
-    usuario: "",
-    email: "luna.rojek@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "392b476b-3006-451c-8d9f-bd31772a22f1",
-    nombre: "Aguilera, Trinidad",
-    usuario: "",
-    email: "trinidad.aguilera@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "55d51779-f49f-4721-a85c-1c27a1ac34be",
-    nombre: "Cordoba, Tania",
-    usuario: "",
-    email: "tania.cordoba@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "5d644be6-879b-4c73-ab26-8e025f22bd63",
-    nombre: "Bustos, Jesica",
-    usuario: "",
-    email: "jesica.bustos@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "66adbc56-cb5a-4c72-8d0d-88fb943f7130",
-    nombre: "Cabrera, Antonella",
-    usuario: "",
-    email: "antonella.cabrera@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "747cd508-e79a-4515-9575-9f43f837c3ff",
-    nombre: "Vasquez, Agustin",
-    usuario: "",
-    email: "agustin.vasquez@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "836fab43-60b3-45e6-bce8-9117f225b651",
-    nombre: "Bustamante, Ailin",
-    usuario: "",
-    email: "ailin.bustamante@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "88e75230-baa9-487e-af0e-4c2e304e1f26",
-    nombre: "Reartes, Maia",
-    usuario: "",
-    email: "maia.reartes@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "92837a42-c644-4bc3-8ec1-8e56e91ec5b5",
-    nombre: "Tello, Marianela",
-    usuario: "",
-    email: "marianela.tello@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "ae30ff34-c741-461b-b760-8a53200f1941",
-    nombre: "Viniegra, Agustín",
-    usuario: "",
-    email: "agustin.viniegra@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "b1ef4b29-6c25-4afa-8aca-66d2bb027bb6",
-    nombre: "Acosta, Pamela",
-    usuario: "",
-    email: "pamela.acosta@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "b5375446-4177-41d6-a9e4-395808664251",
-    nombre: "Simonetta, Valentina",
-    usuario: "",
-    email: "valentina.simonetta@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "b6090f19-1f81-48eb-8fd9-f57d86ec00a7",
-    nombre: "Diaz, Milagros",
-    usuario: "",
-    email: "milagros.diaz@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "c0f98bf5-d67a-49b1-85b9-783b86233992",
-    nombre: "Contreras, Gilary",
-    usuario: "",
-    email: "gilary.contreras@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "d455b4ea-d96c-4ea7-adcc-5feab89d1772",
-    nombre: "Peralta, Belen",
-    usuario: "",
-    email: "belen.peralta@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "d6285e5d-23a7-4eeb-a7b2-7e4a6a2c8163",
-    nombre: "Malqui, Xiomara",
-    usuario: "",
-    email: "xiomara.malqui@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "dbd31d0d-5277-4730-8702-69cc5ce20a0d",
-    nombre: "Olmedo, Thomas",
-    usuario: "",
-    email: "thomas.olmedo@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "dc6a2244-d560-4219-bfb5-1dc5a094238f",
-    nombre: "Gomez, Carla",
-    usuario: "",
-    email: "carla.gomez@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "ea60ff3a-17ec-416c-83a4-b4ca4634750c",
-    nombre: "Bahamonde, Camila",
-    usuario: "",
-    email: "camila.bahamonde@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "f32521db-99de-404e-bbf3-f20e817ea832",
-    nombre: "Ojeda, Luana",
-    usuario: "",
-    email: "luana.ojeda@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-  {
-    id: "f7fdc70a-7a21-4631-bb47-d68390cb2e01",
-    nombre: "Luna, Oriana",
-    usuario: "",
-    email: "oriana.luna@portalcalidad.com",
-    rol: "asesor",
-    activo: true,
-  },
-];
 
 const CALIDAD = [
   "Información de otras compañías",
@@ -282,20 +102,16 @@ const AREAS = [
   "No Ventas",
 ];
 
-const ACCIONES_CALIDAD = [
-  "Feedback individual",
-  "Espacio de coaching",
-  "Escucha en línea",
-  "Devolución mediante Meet",
-  "Escucha de llamada de un compañero",
-  "Transcripción de venta mediante Word con desvíos marcados",
-  "Calibración conjunta de audio",
-  "Otros",
+const SEMANAS = [
+  "Semana 4 · Agosto",
+  "Semana 3 · Agosto",
+  "Semana 2 · Agosto",
+  "Semana 1 · Agosto",
 ];
 
 export default function AdminPage() {
   const [usuario, setUsuario] = useState(null);
-  const [asesores, setAsesores] = useState(ASESORES_BASE);
+  const [asesores, setAsesores] = useState([]);
   const [reportes, setReportes] = useState([]);
 
   const [vista, setVista] = useState("inicio");
@@ -357,11 +173,12 @@ export default function AdminPage() {
         cargarReportes(),
       ]);
     } catch (error) {
-      console.error(error);
-
-      setMensaje(
-        "❌ Error al cargar el panel de administración."
+      console.error(
+        "ERROR VERIFICANDO ADMINISTRADOR:",
+        error
       );
+
+      window.location.href = "/";
     } finally {
       setCargando(false);
     }
@@ -382,54 +199,64 @@ export default function AdminPage() {
 
       if (error) {
         console.error(
-          "Error Supabase usuarios:",
+          "ERROR SUPABASE USUARIOS:",
           error
         );
 
-        /*
-         * Si Supabase bloquea la lectura por RLS,
-         * mantenemos la lista base para que el panel
-         * siga funcionando.
-         */
-        setAsesores(ASESORES_BASE);
+        setAsesores([]);
 
         setMensaje(
-          "⚠️ Se cargó la lista de asesores disponible."
+          "❌ No se pudieron cargar los asesores: " +
+            error.message
         );
 
         return;
       }
 
-      if (data && data.length > 0) {
-        setAsesores(data);
-      } else {
-        setAsesores(ASESORES_BASE);
-      }
+      console.log(
+        "ASESORES CARGADOS:",
+        data
+      );
+
+      setAsesores(data || []);
     } catch (error) {
       console.error(
-        "Error cargando asesores:",
+        "ERROR CARGANDO ASESORES:",
         error
       );
 
-      setAsesores(ASESORES_BASE);
+      setAsesores([]);
+
+      setMensaje(
+        "❌ No se pudieron cargar los asesores."
+      );
     }
   }
 
   async function cargarReportes() {
-    const { data, error } = await supabase
-      .from("reportes")
-      .select("*")
-      .order("id", {
-        ascending: false,
-      });
+    try {
+      const { data, error } = await supabase
+        .from("reportes")
+        .select("*")
+        .order("id", {
+          ascending: false,
+        });
 
-    if (error) {
+      if (error) {
+        console.error(
+          "ERROR CARGANDO REPORTES:",
+          error
+        );
+
+        setReportes([]);
+        return;
+      }
+
+      setReportes(data || []);
+    } catch (error) {
       console.error(error);
       setReportes([]);
-      return;
     }
-
-    setReportes(data || []);
   }
 
   async function cerrarSesion() {
@@ -489,6 +316,8 @@ export default function AdminPage() {
   async function guardarReporte(e) {
     e.preventDefault();
 
+    setMensaje("");
+
     if (!reporte.asesor) {
       setMensaje(
         "❌ Seleccioná un asesor."
@@ -520,13 +349,26 @@ export default function AdminPage() {
           ? null
           : Number(reporte.nota),
 
-      evolucion: reporte.evolucion,
-      objetivo: reporte.objetivo,
-      desvio: reporte.desvio,
+      evolucion:
+        reporte.evolucion,
+
+      objetivo:
+        reporte.objetivo === ""
+          ? null
+          : Number(reporte.objetivo),
+
+      desvio:
+        reporte.desvio,
+
       recomendacion:
         reporte.recomendacion,
-      auditoria: reporte.auditoria,
-      producto: reporte.producto,
+
+      auditoria:
+        reporte.auditoria,
+
+      producto:
+        reporte.producto,
+
       observaciones:
         reporte.observaciones,
 
@@ -538,7 +380,9 @@ export default function AdminPage() {
       objetivo_sph:
         reporte.objetivoSph === ""
           ? null
-          : Number(reporte.objetivoSph),
+          : Number(
+              reporte.objetivoSph
+            ),
 
       ventas:
         reporte.ventas === ""
@@ -548,7 +392,9 @@ export default function AdminPage() {
       objetivo_ventas:
         reporte.objetivoVentas === ""
           ? null
-          : Number(reporte.objetivoVentas),
+          : Number(
+              reporte.objetivoVentas
+            ),
 
       objetivo_campania:
         reporte.objetivoCampania,
@@ -577,7 +423,10 @@ export default function AdminPage() {
       });
 
     if (error) {
-      console.error(error);
+      console.error(
+        "ERROR GUARDANDO REPORTE:",
+        error
+      );
 
       setMensaje(
         "❌ No se pudo guardar el reporte: " +
@@ -598,7 +447,10 @@ export default function AdminPage() {
     }, 3000);
   }
 
-  function actualizarReporte(campo, valor) {
+  function actualizarReporte(
+    campo,
+    valor
+  ) {
     setReporte((prev) => ({
       ...prev,
       [campo]: valor,
@@ -636,13 +488,13 @@ export default function AdminPage() {
   }
 
   function toggleMulti(
-    lista,
     valor,
     setter,
     campo
   ) {
     setter((prev) => {
-      const actual = prev[campo] || [];
+      const actual =
+        prev[campo] || [];
 
       const existe =
         actual.includes(valor);
@@ -651,56 +503,66 @@ export default function AdminPage() {
         ...prev,
         [campo]: existe
           ? actual.filter(
-              (item) => item !== valor
+              (item) =>
+                item !== valor
             )
-          : [...actual, valor],
+          : [
+              ...actual,
+              valor,
+            ],
       };
     });
   }
 
   const asesoresFiltrados =
     useMemo(() => {
-      return asesores.filter((asesor) => {
-        const coincideBusqueda =
-          asesor.nombre
-            ?.toLowerCase()
-            .includes(
-              busqueda.toLowerCase()
+      return asesores.filter(
+        (asesor) => {
+          const coincideBusqueda =
+            asesor.nombre
+              ?.toLowerCase()
+              .includes(
+                busqueda
+                  .toLowerCase()
+              );
+
+          const reporteAsesor =
+            reportes.find(
+              (r) =>
+                r.usuario ===
+                  asesor.email ||
+                r.asesor ===
+                  asesor.nombre
             );
 
-        const reporteAsesor =
-          reportes.find(
-            (r) =>
-              r.usuario ===
-                asesor.email ||
-              r.asesor ===
-                asesor.nombre
+          const campania =
+            reporteAsesor?.producto ||
+            "";
+
+          const coincideCampania =
+            filtroCampania ===
+              "Todas" ||
+            campania ===
+              filtroCampania;
+
+          const estado =
+            calcularEstado(
+              reporteAsesor
+            );
+
+          const coincideEstado =
+            filtroEstado ===
+              "Todos" ||
+            estado ===
+              filtroEstado;
+
+          return (
+            coincideBusqueda &&
+            coincideCampania &&
+            coincideEstado
           );
-
-        const campania =
-          reporteAsesor?.producto ||
-          "";
-
-        const coincideCampania =
-          filtroCampania === "Todas" ||
-          campania === filtroCampania ||
-          !reporteAsesor;
-
-        const estado =
-          calcularEstado(
-            reporteAsesor
-          );
-
-        const coincideEstado =
-          filtroEstado === "Todos" ||
-          estado === filtroEstado;
-
-        return (
-          coincideBusqueda &&
-          coincideCampania &&
-          coincideEstado
-        );
-      });
+        }
+      );
     }, [
       asesores,
       reportes,
@@ -724,12 +586,17 @@ export default function AdminPage() {
         ).size;
 
       return {
-        asesores: cantidadAsesores,
-        reportes: reportesUnicos,
+        asesores:
+          cantidadAsesores,
+        reportes:
+          reportesUnicos,
         devoluciones: 0,
         anulaciones: 0,
       };
-    }, [asesores, reportes]);
+    }, [
+      asesores,
+      reportes,
+    ]);
 
   if (cargando) {
     return (
@@ -740,7 +607,8 @@ export default function AdminPage() {
           </h2>
 
           <p>
-            Cargando panel de administración...
+            Cargando panel de
+            administración...
           </p>
         </div>
       </main>
@@ -750,14 +618,21 @@ export default function AdminPage() {
   return (
     <main style={styles.page}>
       <div style={styles.container}>
-        <header style={styles.header}>
+        <header
+          style={styles.header}
+        >
           <div>
-            <h1 style={styles.title}>
+            <h1
+              style={styles.title}
+            >
               Portal de Calidad
             </h1>
 
-            <p style={styles.subtitle}>
-              Panel de Administración
+            <p
+              style={styles.subtitle}
+            >
+              Panel de
+              Administración
             </p>
           </div>
 
@@ -770,42 +645,117 @@ export default function AdminPage() {
           >
             <button
               onClick={() =>
-                setVista("inicio")
+                setVista(
+                  "inicio"
+                )
               }
-              style={styles.secondaryButton}
+              style={
+                styles.secondaryButton
+              }
             >
               Inicio
             </button>
 
             <button
+              onClick={() =>
+                setVista(
+                  "asesores"
+                )
+              }
+              style={
+                styles.secondaryButton
+              }
+            >
+              Asesores
+            </button>
+
+            <button
+              onClick={() =>
+                setVista(
+                  "reportes"
+                )
+              }
+              style={
+                styles.secondaryButton
+              }
+            >
+              Reportes
+            </button>
+
+            <button
+              onClick={() =>
+                setVista(
+                  "seguimiento"
+                )
+              }
+              style={
+                styles.secondaryButton
+              }
+            >
+              Seguimiento
+            </button>
+
+            <button
               onClick={cerrarSesion}
-              style={styles.secondaryButton}
+              style={
+                styles.secondaryButton
+              }
             >
               Cerrar sesión
             </button>
           </div>
         </header>
 
+        {usuario && (
+          <div
+            style={
+              styles.adminInfo
+            }
+          >
+            Administrador:
+            {" "}
+            <strong>
+              {usuario.email}
+            </strong>
+          </div>
+        )}
+
         {mensaje && (
-          <div style={styles.message}>
+          <div
+            style={
+              styles.message
+            }
+          >
             {mensaje}
           </div>
         )}
 
         {vista === "inicio" && (
           <Inicio
-            estadisticas={estadisticas}
-            asesores={asesoresFiltrados}
-            reportes={reportes}
-            busqueda={busqueda}
-            setBusqueda={setBusqueda}
+            estadisticas={
+              estadisticas
+            }
+            asesores={
+              asesoresFiltrados
+            }
+            reportes={
+              reportes
+            }
+            busqueda={
+              busqueda
+            }
+            setBusqueda={
+              setBusqueda
+            }
             filtroCampania={
               filtroCampania
             }
             setFiltroCampania={
               setFiltroCampania
             }
-            filtroEstado={filtroEstado}
+            filtroEstado={
+              filtroEstado
+            }
             setFiltroEstado={
               setFiltroEstado
             }
@@ -818,25 +768,37 @@ export default function AdminPage() {
           />
         )}
 
-        {vista === "asesores" && (
+        {vista ===
+          "asesores" && (
           <Asesores
-            asesores={asesoresFiltrados}
-            reportes={reportes}
-            busqueda={busqueda}
-            setBusqueda={setBusqueda}
+            asesores={
+              asesoresFiltrados
+            }
+            reportes={
+              reportes
+            }
+            busqueda={
+              busqueda
+            }
+            setBusqueda={
+              setBusqueda
+            }
             seleccionarAsesor={
               seleccionarAsesor
             }
           />
         )}
 
-        {vista === "asesor" &&
+        {vista ===
+          "asesor" &&
           asesorSeleccionado && (
             <FichaAsesor
               asesor={
                 asesorSeleccionado
               }
-              reportes={reportes}
+              reportes={
+                reportes
+              }
               abrirReporte={
                 abrirReporte
               }
@@ -846,14 +808,19 @@ export default function AdminPage() {
               abrirAudio={
                 abrirAudio
               }
-              abrirPda={abrirPda}
+              abrirPda={
+                abrirPda
+              }
               volver={() =>
-                setVista("asesores")
+                setVista(
+                  "asesores"
+                )
               }
             />
           )}
 
-        {vista === "reporte" && (
+        {vista ===
+          "reporte" && (
           <FormularioReporte
             reporte={reporte}
             actualizar={
@@ -862,7 +829,9 @@ export default function AdminPage() {
             guardar={
               guardarReporte
             }
-            asesores={asesores}
+            asesores={
+              asesores
+            }
             volver={() =>
               setVista(
                 asesorSeleccionado
@@ -873,15 +842,20 @@ export default function AdminPage() {
           />
         )}
 
-        {vista === "devolucion" && (
+        {vista ===
+          "devolucion" && (
           <FormularioDevolucion
-            datos={devolucion}
+            datos={
+              devolucion
+            }
             actualizar={
               actualizarDevolucion
             }
-            toggle={(valor, campo) =>
+            toggle={(
+              valor,
+              campo
+            ) =>
               toggleMulti(
-                null,
                 valor,
                 setDevolucion,
                 campo
@@ -897,15 +871,18 @@ export default function AdminPage() {
           />
         )}
 
-        {vista === "audios" && (
+        {vista ===
+          "audios" && (
           <FormularioAudio
             datos={audio}
             actualizar={
               actualizarAudio
             }
-            toggle={(valor, campo) =>
+            toggle={(
+              valor,
+              campo
+            ) =>
               toggleMulti(
-                null,
                 valor,
                 setAudio,
                 campo
@@ -937,20 +914,30 @@ export default function AdminPage() {
           />
         )}
 
-        {vista === "reportes" && (
+        {vista ===
+          "reportes" && (
           <ListaReportes
-            reportes={reportes}
-            asesores={asesores}
+            reportes={
+              reportes
+            }
+            asesores={
+              asesores
+            }
             abrirReporte={
               abrirReporte
             }
           />
         )}
 
-        {vista === "seguimiento" && (
+        {vista ===
+          "seguimiento" && (
           <Seguimiento
-            asesores={asesores}
-            reportes={reportes}
+            asesores={
+              asesores
+            }
+            reportes={
+              reportes
+            }
             seleccionarAsesor={
               seleccionarAsesor
             }
@@ -976,37 +963,49 @@ function Inicio({
 }) {
   return (
     <>
-      <section style={styles.card}>
-        <div style={styles.weekRow}>
+      <section
+        style={styles.card}
+      >
+        <div
+          style={
+            styles.weekRow
+          }
+        >
           <div>
-            <p style={styles.muted}>
+            <p
+              style={
+                styles.muted
+              }
+            >
               Semana
             </p>
 
             <select
-              style={styles.smallSelect}
-              defaultValue="Semana 4 · Agosto"
+              style={
+                styles.smallSelect
+              }
+              defaultValue={
+                SEMANAS[0]
+              }
             >
-              <option>
-                Semana 4 · Agosto
-              </option>
-
-              <option>
-                Semana 3 · Agosto
-              </option>
-
-              <option>
-                Semana 2 · Agosto
-              </option>
-
-              <option>
-                Semana 1 · Agosto
-              </option>
+              {SEMANAS.map(
+                (semana) => (
+                  <option
+                    key={semana}
+                  >
+                    {semana}
+                  </option>
+                )
+              )}
             </select>
           </div>
         </div>
 
-        <div style={styles.statsGrid}>
+        <div
+          style={
+            styles.statsGrid
+          }
+        >
           <Stat
             title="ASESORES"
             value={
@@ -1031,15 +1030,27 @@ function Inicio({
         </div>
       </section>
 
-      <section style={styles.card}>
-        <div style={styles.sectionHeader}>
+      <section
+        style={styles.card}
+      >
+        <div
+          style={
+            styles.sectionHeader
+          }
+        >
           <div>
             <h2>
-              Seguimiento del equipo
+              Seguimiento del
+              equipo
             </h2>
 
-            <p style={styles.muted}>
-              Vista general de los asesores.
+            <p
+              style={
+                styles.muted
+              }
+            >
+              Vista general de
+              los asesores.
             </p>
           </div>
 
@@ -1047,32 +1058,46 @@ function Inicio({
             onClick={() =>
               abrirReporte()
             }
-            style={styles.primaryButton}
+            style={
+              styles.primaryButton
+            }
           >
             + CARGAR REPORTE
           </button>
         </div>
 
-        <div style={styles.filters}>
+        <div
+          style={
+            styles.filters
+          }
+        >
           <input
-            value={busqueda}
+            value={
+              busqueda
+            }
             onChange={(e) =>
               setBusqueda(
                 e.target.value
               )
             }
             placeholder="Buscar asesor..."
-            style={styles.input}
+            style={
+              styles.input
+            }
           />
 
           <select
-            value={filtroCampania}
+            value={
+              filtroCampania
+            }
             onChange={(e) =>
               setFiltroCampania(
                 e.target.value
               )
             }
-            style={styles.input}
+            style={
+              styles.input
+            }
           >
             <option>
               Todas
@@ -1088,13 +1113,17 @@ function Inicio({
           </select>
 
           <select
-            value={filtroEstado}
+            value={
+              filtroEstado
+            }
             onChange={(e) =>
               setFiltroEstado(
                 e.target.value
               )
             }
-            style={styles.input}
+            style={
+              styles.input
+            }
           >
             <option>
               Todos
@@ -1114,16 +1143,36 @@ function Inicio({
           </select>
         </div>
 
-        <div style={styles.tableWrapper}>
-          <table style={styles.table}>
+        <div
+          style={
+            styles.tableWrapper
+          }
+        >
+          <table
+            style={
+              styles.table
+            }
+          >
             <thead>
               <tr>
-                <th>Asesor</th>
-                <th>Cuenta</th>
-                <th>Calidad</th>
-                <th>SPH</th>
-                <th>PDA</th>
-                <th>Estado</th>
+                <th>
+                  Asesor
+                </th>
+                <th>
+                  Cuenta
+                </th>
+                <th>
+                  Calidad
+                </th>
+                <th>
+                  SPH
+                </th>
+                <th>
+                  PDA
+                </th>
+                <th>
+                  Estado
+                </th>
                 <th></th>
               </tr>
             </thead>
@@ -1141,28 +1190,41 @@ function Inicio({
                     );
 
                   const estado =
-                    calcularEstado(r);
+                    calcularEstado(
+                      r
+                    );
 
                   return (
                     <tr
-                      key={asesor.id}
+                      key={
+                        asesor.id
+                      }
                     >
                       <td>
                         <strong>
-                          {asesor.nombre}
+                          {
+                            asesor.nombre
+                          }
                         </strong>
                       </td>
 
                       <td>
-                        Hipotecario Seguros
+                        Hipotecario
+                        Seguros
                       </td>
 
                       <td>
-                        {r?.nota ?? "—"}
+                        {
+                          r?.nota ??
+                          "—"
+                        }
                       </td>
 
                       <td>
-                        {r?.sph ?? "—"}
+                        {
+                          r?.sph ??
+                          "—"
+                        }
                       </td>
 
                       <td>
@@ -1171,7 +1233,9 @@ function Inicio({
 
                       <td>
                         <Estado
-                          estado={estado}
+                          estado={
+                            estado
+                          }
                         />
                       </td>
 
@@ -1209,23 +1273,50 @@ function Asesores({
   seleccionarAsesor,
 }) {
   return (
-    <section style={styles.card}>
-      <h2>
-        Asesores
-      </h2>
+    <section
+      style={styles.card}
+    >
+      <div
+        style={
+          styles.sectionHeader
+        }
+      >
+        <div>
+          <h2>
+            Asesores
+          </h2>
+
+          <p
+            style={
+              styles.muted
+            }
+          >
+            {asesores.length} asesores
+            activos.
+          </p>
+        </div>
+      </div>
 
       <input
-        value={busqueda}
+        value={
+          busqueda
+        }
         onChange={(e) =>
           setBusqueda(
             e.target.value
           )
         }
         placeholder="Buscar asesor..."
-        style={styles.input}
+        style={
+          styles.input
+        }
       />
 
-      <div style={styles.advisorGrid}>
+      <div
+        style={
+          styles.advisorGrid
+        }
+      >
         {asesores.map(
           (asesor) => {
             const r =
@@ -1239,43 +1330,76 @@ function Asesores({
 
             return (
               <div
-                key={asesor.id}
-                style={styles.advisorCard}
+                key={
+                  asesor.id
+                }
+                style={
+                  styles.advisorCard
+                }
               >
                 <h3>
-                  {asesor.nombre}
+                  {
+                    asesor.nombre
+                  }
                 </h3>
 
-                <p style={styles.muted}>
-                  {asesor.email}
+                <p
+                  style={
+                    styles.muted
+                  }
+                >
+                  {
+                    asesor.email
+                  }
                 </p>
 
                 <p>
                   Calidad:{" "}
                   <strong>
-                    {r?.nota ?? "—"}
+                    {
+                      r?.nota ??
+                      "—"
+                    }
                   </strong>
                 </p>
 
                 <p>
                   SPH:{" "}
                   <strong>
-                    {r?.sph ?? "—"}
+                    {
+                      r?.sph ??
+                      "—"
+                    }
                   </strong>
                 </p>
 
-                <button
-                  onClick={() =>
-                    seleccionarAsesor(
-                      asesor
+                <Estado
+                  estado={
+                    calcularEstado(
+                      r
                     )
                   }
-                  style={
-                    styles.primaryButton
-                  }
+                />
+
+                <div
+                  style={{
+                    marginTop:
+                      "16px",
+                  }}
                 >
-                  VER ASESOR
-                </button>
+                  <button
+                    onClick={() =>
+                      seleccionarAsesor(
+                        asesor
+                      )
+                    }
+                    style={
+                      styles.primaryButton
+                    }
+                  >
+                    VER ASESOR
+                  </button>
+                </div>
               </div>
             );
           }
@@ -1308,59 +1432,107 @@ function FichaAsesor({
 
   return (
     <>
-      <section style={styles.card}>
+      <section
+        style={styles.card}
+      >
         <button
-          onClick={volver}
-          style={styles.secondaryButton}
+          onClick={
+            volver
+          }
+          style={
+            styles.secondaryButton
+          }
         >
           ← Volver
         </button>
 
-        <div style={{ marginTop: "20px" }}>
+        <div
+          style={{
+            marginTop:
+              "20px",
+          }}
+        >
           <h2>
-            {asesor.nombre}
+            {
+              asesor.nombre
+            }
           </h2>
 
-          <p style={styles.muted}>
-            {asesor.email}
+          <p
+            style={
+              styles.muted
+            }
+          >
+            {
+              asesor.email
+            }
+          </p>
+
+          <p>
+            Cuenta:
+            {" "}
+            <strong>
+              Hipotecario
+              Seguros
+            </strong>
           </p>
         </div>
 
-        <div style={styles.tabs}>
+        <div
+          style={styles.tabs}
+        >
           <button
-            style={styles.tabActive}
+            style={
+              styles.tabActive
+            }
           >
             CALIDAD
           </button>
 
-          <button style={styles.tab}>
+          <button
+            style={styles.tab}
+          >
             PRODUCTIVIDAD
           </button>
 
-          <button style={styles.tab}>
+          <button
+            style={styles.tab}
+          >
             TIPIFICACIONES
           </button>
 
-          <button style={styles.tab}>
+          <button
+            style={styles.tab}
+          >
             NO VENTAS
           </button>
 
-          <button style={styles.tab}>
+          <button
+            style={styles.tab}
+          >
             AUDIOS
           </button>
 
-          <button style={styles.tab}>
+          <button
+            style={styles.tab}
+          >
             PDA
           </button>
 
-          <button style={styles.tab}>
+          <button
+            style={styles.tab}
+          >
             EVOLUCIÓN
           </button>
         </div>
 
-        <div style={styles.formGrid}>
+        <div
+          style={
+            styles.infoGrid
+          }
+        >
           <InfoBlock
-            title="Nota de calidad"
+            title="Calidad"
             value={
               actual?.nota ??
               "Sin reporte"
@@ -1374,66 +1546,189 @@ function FichaAsesor({
               "Sin reporte"
             }
           />
+
+          <InfoBlock
+            title="Semana"
+            value={
+              actual?.semana ??
+              "Sin reporte"
+            }
+          />
+
+          <InfoBlock
+            title="Estado"
+            value={
+              calcularEstado(
+                actual
+              )
+            }
+          />
         </div>
 
-        <InfoBlock
-          title="Evolución"
-          value={
-            actual?.evolucion
-          }
-        />
-
-        <InfoBlock
-          title="Desvíos"
-          value={
-            actual?.desvio
-          }
-        />
-
-        <InfoBlock
-          title="Recomendación"
-          value={
-            actual?.recomendacion
-          }
-        />
-
-        <div style={styles.buttonRow}>
+        <div
+          style={{
+            display:
+              "flex",
+            gap: "10px",
+            flexWrap:
+              "wrap",
+            marginTop:
+              "25px",
+          }}
+        >
           <button
             onClick={() =>
-              abrirReporte(asesor)
+              abrirReporte(
+                asesor
+              )
             }
-            style={styles.primaryButton}
+            style={
+              styles.primaryButton
+            }
           >
             + CARGAR REPORTE
           </button>
 
           <button
             onClick={() =>
-              abrirDevolucion(asesor)
+              abrirDevolucion(
+                asesor
+              )
             }
-            style={styles.secondaryButton}
+            style={
+              styles.secondaryButton
+            }
           >
             + CARGAR DEVOLUCIÓN
           </button>
 
           <button
             onClick={() =>
-              abrirPda(asesor)
+              abrirAudio(
+                asesor
+              )
             }
-            style={styles.secondaryButton}
+            style={
+              styles.secondaryButton
+            }
           >
-            + NUEVO PDA
+            + SUBIR AUDIO
           </button>
 
           <button
             onClick={() =>
-              abrirAudio(asesor)
+              abrirPda(
+                asesor
+              )
             }
-            style={styles.secondaryButton}
+            style={
+              styles.secondaryButton
+            }
           >
-            + SUBIR AUDIO
+            + NUEVO PDA
           </button>
         </div>
+      </section>
+
+      <section
+        style={styles.card}
+      >
+        <h2>
+          Historial de reportes
+        </h2>
+
+        {reportesAsesor.length ===
+        0 ? (
+          <p
+            style={
+              styles.muted
+            }
+          >
+            Todavía no hay
+            reportes cargados
+            para este asesor.
+          </p>
+        ) : (
+          <div
+            style={
+              styles.tableWrapper
+            }
+          >
+            <table
+              style={
+                styles.table
+              }
+            >
+              <thead>
+                <tr>
+                  <th>
+                    Semana
+                  </th>
+                  <th>
+                    Campaña
+                  </th>
+                  <th>
+                    Calidad
+                  </th>
+                  <th>
+                    SPH
+                  </th>
+                  <th>
+                    Estado
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {reportesAsesor.map(
+                  (r) => (
+                    <tr
+                      key={
+                        r.id
+                      }
+                    >
+                      <td>
+                        {
+                          r.semana
+                        }
+                      </td>
+
+                      <td>
+                        {
+                          r.producto
+                        }
+                      </td>
+
+                      <td>
+                        {
+                          r.nota ??
+                          "—"
+                        }
+                      </td>
+
+                      <td>
+                        {
+                          r.sph ??
+                          "—"
+                        }
+                      </td>
+
+                      <td>
+                        <Estado
+                          estado={
+                            calcularEstado(
+                              r
+                            )
+                          }
+                        />
+                      </td>
+                    </tr>
+                  )
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </>
   );
@@ -1447,309 +1742,344 @@ function FormularioReporte({
   volver,
 }) {
   return (
-    <section style={styles.card}>
-      <div style={styles.sectionHeader}>
-        <div>
+    <form
+      onSubmit={
+        guardar
+      }
+    >
+      <section
+        style={styles.card}
+      >
+        <div
+          style={
+            styles.sectionHeader
+          }
+        >
           <h2>
-            Nuevo Reporte
+            Nuevo reporte
           </h2>
 
-          <p style={styles.muted}>
-            Carga semanal del asesor.
-          </p>
+          <button
+            type="button"
+            onClick={
+              volver
+            }
+            style={
+              styles.secondaryButton
+            }
+          >
+            ← Volver
+          </button>
         </div>
 
-        <button
-          onClick={volver}
-          style={styles.secondaryButton}
+        <div
+          style={
+            styles.formGrid
+          }
         >
-          ← Volver
-        </button>
-      </div>
+          <div>
+            <label
+              style={
+                styles.label
+              }
+            >
+              Asesor
+            </label>
 
-      <div style={styles.formGrid}>
+            <select
+              value={
+                reporte.asesor
+              }
+              onChange={(e) =>
+                actualizar(
+                  "asesor",
+                  e.target.value
+                )
+              }
+              style={
+                styles.input
+              }
+            >
+              <option value="">
+                Seleccionar asesor
+              </option>
+
+              {asesores.map(
+                (asesor) => (
+                  <option
+                    key={
+                      asesor.id
+                    }
+                    value={
+                      asesor.email
+                    }
+                  >
+                    {
+                      asesor.nombre
+                    }
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+
+          <Field
+            label="Semana"
+            value={
+              reporte.semana
+            }
+            onChange={(v) =>
+              actualizar(
+                "semana",
+                v
+              )
+            }
+            type="select"
+            options={SEMANAS.map(
+              (s) => ({
+                value: s,
+                label: s,
+              })
+            )}
+          />
+
+          <Field
+            label="Campaña"
+            value={
+              reporte.producto
+            }
+            onChange={(v) =>
+              actualizar(
+                "producto",
+                v
+              )
+            }
+            type="select"
+            options={[
+              {
+                value: "AP",
+                label: "AP",
+              },
+              {
+                value: "BM",
+                label: "BM",
+              },
+            ]}
+          />
+        </div>
+      </section>
+
+      <section
+        style={styles.card}
+      >
+        <h2>
+          CALIDAD
+        </h2>
+
+        <div
+          style={
+            styles.formGrid
+          }
+        >
+          <Field
+            label="Nota obtenida"
+            value={
+              reporte.nota
+            }
+            onChange={(v) =>
+              actualizar(
+                "nota",
+                v
+              )
+            }
+            type="number"
+          />
+
+          <Field
+            label="Objetivo semanal"
+            value={
+              reporte.objetivo
+            }
+            onChange={(v) =>
+              actualizar(
+                "objetivo",
+                v
+              )
+            }
+            type="number"
+          />
+        </div>
+
         <Field
-          label="Asesor"
+          label="Evolución"
           value={
-            reporte.asesor
+            reporte.evolucion
           }
           onChange={(v) =>
             actualizar(
-              "asesor",
+              "evolucion",
               v
             )
           }
-          type="select"
-          options={asesores.map(
-            (asesor) => ({
-              value:
-                asesor.email,
-              label:
-                asesor.nombre,
-            })
-          )}
+          type="textarea"
         />
 
         <Field
-          label="Semana"
+          label="Desvíos con mayor porcentaje de la semana"
           value={
-            reporte.semana
+            reporte.desvio
           }
           onChange={(v) =>
             actualizar(
-              "semana",
+              "desvio",
               v
             )
           }
-          type="select"
-          options={[
-            {
-              value:
-                "Semana 4 · Agosto",
-              label:
-                "Semana 4 · Agosto",
-            },
-            {
-              value:
-                "Semana 3 · Agosto",
-              label:
-                "Semana 3 · Agosto",
-            },
-            {
-              value:
-                "Semana 2 · Agosto",
-              label:
-                "Semana 2 · Agosto",
-            },
-            {
-              value:
-                "Semana 1 · Agosto",
-              label:
-                "Semana 1 · Agosto",
-            },
-          ]}
+          type="textarea"
         />
 
         <Field
-          label="Campaña"
+          label="Recomendación"
           value={
-            reporte.producto
+            reporte.recomendacion
           }
           onChange={(v) =>
             actualizar(
-              "producto",
+              "recomendacion",
               v
             )
           }
-          type="select"
-          options={[
-            {
-              value: "AP",
-              label: "AP",
-            },
-            {
-              value: "BM",
-              label: "BM",
-            },
-          ]}
-        />
-      </div>
-
-      <h3 style={styles.formTitle}>
-        CALIDAD
-      </h3>
-
-      <div style={styles.formGrid}>
-        <Field
-          label="Nota obtenida"
-          value={
-            reporte.nota
-          }
-          onChange={(v) =>
-            actualizar(
-              "nota",
-              v
-            )
-          }
-          type="number"
+          type="textarea"
         />
 
         <Field
-          label="Objetivo semanal"
+          label="Auditoría"
           value={
-            reporte.objetivo
+            reporte.auditoria
           }
           onChange={(v) =>
             actualizar(
-              "objetivo",
+              "auditoria",
               v
             )
           }
-          type="number"
-        />
-      </div>
-
-      <Field
-        label="Evolución"
-        value={
-          reporte.evolucion
-        }
-        onChange={(v) =>
-          actualizar(
-            "evolucion",
-            v
-          )
-        }
-        type="textarea"
-      />
-
-      <Field
-        label="Desvíos con mayor porcentaje de la semana"
-        value={
-          reporte.desvio
-        }
-        onChange={(v) =>
-          actualizar(
-            "desvio",
-            v
-          )
-        }
-        type="textarea"
-      />
-
-      <Field
-        label="Aspectos trabajados"
-        value={
-          reporte.recomendacion
-        }
-        onChange={(v) =>
-          actualizar(
-            "recomendacion",
-            v
-          )
-        }
-        type="textarea"
-      />
-
-      <Field
-        label="Acciones"
-        value={
-          reporte.auditoria
-        }
-        onChange={(v) =>
-          actualizar(
-            "auditoria",
-            v
-          )
-        }
-        type="textarea"
-      />
-
-      <Field
-        label="Observaciones"
-        value={
-          reporte.observaciones
-        }
-        onChange={(v) =>
-          actualizar(
-            "observaciones",
-            v
-          )
-        }
-        type="textarea"
-      />
-
-      <h3 style={styles.formTitle}>
-        PRODUCTIVIDAD
-      </h3>
-
-      <div style={styles.formGrid}>
-        <Field
-          label="SPH"
-          value={
-            reporte.sph
-          }
-          onChange={(v) =>
-            actualizar(
-              "sph",
-              v
-            )
-          }
-          type="number"
+          type="textarea"
         />
 
         <Field
-          label="Objetivo SPH"
+          label="Observaciones"
           value={
-            reporte.objetivoSph
+            reporte.observaciones
           }
           onChange={(v) =>
             actualizar(
-              "objetivoSph",
+              "observaciones",
               v
             )
           }
-          type="number"
+          type="textarea"
+        />
+      </section>
+
+      <section
+        style={styles.card}
+      >
+        <h2>
+          PRODUCTIVIDAD
+        </h2>
+
+        <div
+          style={
+            styles.formGrid
+          }
+        >
+          <Field
+            label="SPH"
+            value={
+              reporte.sph
+            }
+            onChange={(v) =>
+              actualizar(
+                "sph",
+                v
+              )
+            }
+            type="number"
+            step="0.01"
+          />
+
+          <Field
+            label="Objetivo SPH"
+            value={
+              reporte.objetivoSph
+            }
+            onChange={(v) =>
+              actualizar(
+                "objetivoSph",
+                v
+              )
+            }
+            type="number"
+            step="0.01"
+          />
+
+          <Field
+            label="Ventas"
+            value={
+              reporte.ventas
+            }
+            onChange={(v) =>
+              actualizar(
+                "ventas",
+                v
+              )
+            }
+            type="number"
+          />
+
+          <Field
+            label="Objetivo ventas"
+            value={
+              reporte.objetivoVentas
+            }
+            onChange={(v) =>
+              actualizar(
+                "objetivoVentas",
+                v
+              )
+            }
+            type="number"
+          />
+        </div>
+
+        <Field
+          label="Objetivo de la campaña"
+          value={
+            reporte.objetivoCampania
+          }
+          onChange={(v) =>
+            actualizar(
+              "objetivoCampania",
+              v
+            )
+          }
+          type="textarea"
         />
 
         <Field
-          label="Ventas"
+          label="Descripción de campaña"
           value={
-            reporte.ventas
+            reporte.descripcionCampania
           }
           onChange={(v) =>
             actualizar(
-              "ventas",
+              "descripcionCampania",
               v
             )
           }
-          type="number"
+          type="textarea"
         />
 
-        <Field
-          label="Objetivo ventas"
-          value={
-            reporte.objetivoVentas
-          }
-          onChange={(v) =>
-            actualizar(
-              "objetivoVentas",
-              v
-            )
-          }
-          type="number"
-        />
-      </div>
-
-      <Field
-        label="Objetivo de la campaña"
-        value={
-          reporte.objetivoCampania
-        }
-        onChange={(v) =>
-          actualizar(
-            "objetivoCampania",
-            v
-          )
-        }
-        type="textarea"
-      />
-
-      <Field
-        label="Descripción de la campaña"
-        value={
-          reporte.descripcionCampania
-        }
-        onChange={(v) =>
-          actualizar(
-            "descripcionCampania",
-            v
-          )
-        }
-        type="textarea"
-      />
-
-      <div style={styles.formGrid}>
         <Field
           label="Estado SPH"
           value={
@@ -1794,29 +2124,31 @@ function FormularioReporte({
           type="select"
           options={estadoOptions()}
         />
-      </div>
 
-      <Field
-        label="Gestión"
-        value={
-          reporte.gestion
-        }
-        onChange={(v) =>
-          actualizar(
-            "gestion",
-            v
-          )
-        }
-        type="textarea"
-      />
+        <Field
+          label="Gestión"
+          value={
+            reporte.gestion
+          }
+          onChange={(v) =>
+            actualizar(
+              "gestion",
+              v
+            )
+          }
+          type="textarea"
+        />
 
-      <button
-        style={styles.primaryButton}
-        onClick={guardar}
-      >
-        GUARDAR REPORTE
-      </button>
-    </section>
+        <button
+          type="submit"
+          style={
+            styles.primaryButton
+          }
+        >
+          GUARDAR REPORTE
+        </button>
+      </section>
+    </form>
   );
 }
 
@@ -1827,21 +2159,25 @@ function FormularioDevolucion({
   volver,
 }) {
   return (
-    <section style={styles.card}>
-      <div style={styles.sectionHeader}>
-        <div>
-          <h2>
-            Nueva devolución
-          </h2>
-
-          <p style={styles.muted}>
-            Registro de acompañamiento.
-          </p>
-        </div>
+    <section
+      style={styles.card}
+    >
+      <div
+        style={
+          styles.sectionHeader
+        }
+      >
+        <h2>
+          Nueva devolución
+        </h2>
 
         <button
-          onClick={volver}
-          style={styles.secondaryButton}
+          onClick={
+            volver
+          }
+          style={
+            styles.secondaryButton
+          }
         >
           ← Volver
         </button>
@@ -1873,15 +2209,15 @@ function FormularioDevolucion({
         }
         type="select"
         options={AREAS.map(
-          (area) => ({
-            value: area,
-            label: area,
+          (a) => ({
+            value: a,
+            label: a,
           })
         )}
       />
 
       <Field
-        label="Nota CALIDAD obtenida"
+        label="Nota calidad obtenida"
         value={
           datos.notaCalidad
         }
@@ -1895,12 +2231,14 @@ function FormularioDevolucion({
       />
 
       <MultiSelect
-        label="Aspectos trabajados CALIDAD"
-        options={CALIDAD}
-        values={
+        title="Aspectos trabajados CALIDAD"
+        options={
+          CALIDAD
+        }
+        selected={
           datos.aspectosCalidad
         }
-        onToggle={(valor) =>
+        toggle={(valor) =>
           toggle(
             valor,
             "aspectosCalidad"
@@ -1909,30 +2247,14 @@ function FormularioDevolucion({
       />
 
       <MultiSelect
-        label="Acciones CALIDAD"
-        options={
-          ACCIONES_CALIDAD
-        }
-        values={
-          datos.accionesCalidad || []
-        }
-        onToggle={(valor) =>
-          toggle(
-            valor,
-            "accionesCalidad"
-          )
-        }
-      />
-
-      <MultiSelect
-        label="Aspectos trabajados PRODUCTIVIDAD"
+        title="Aspectos trabajados PRODUCTIVIDAD"
         options={
           PRODUCTIVIDAD
         }
-        values={
+        selected={
           datos.aspectosProductividad
         }
-        onToggle={(valor) =>
+        toggle={(valor) =>
           toggle(
             valor,
             "aspectosProductividad"
@@ -1941,14 +2263,14 @@ function FormularioDevolucion({
       />
 
       <MultiSelect
-        label="Tipificaciones"
+        title="TIPIFICACIONES"
         options={
           TIPIFICACIONES
         }
-        values={
+        selected={
           datos.tipificaciones
         }
-        onToggle={(valor) =>
+        toggle={(valor) =>
           toggle(
             valor,
             "tipificaciones"
@@ -1957,15 +2279,31 @@ function FormularioDevolucion({
       />
 
       <MultiSelect
-        label="O.M. NO VENTAS"
+        title="O.M. — NO VENTAS"
         options={OM}
-        values={
+        selected={
           datos.om
         }
-        onToggle={(valor) =>
+        toggle={(valor) =>
           toggle(
             valor,
             "om"
+          )
+        }
+      />
+
+      <MultiSelect
+        title="FORTALEZAS DESTACADAS"
+        options={
+          FORTALEZAS
+        }
+        selected={
+          datos.fortalezas
+        }
+        toggle={(valor) =>
+          toggle(
+            valor,
+            "fortalezas"
           )
         }
       />
@@ -1988,8 +2326,10 @@ function FormularioDevolucion({
             label: "Correcto",
           },
           {
-            value: "Incorrecto",
-            label: "Incorrecto",
+            value:
+              "Incorrecto",
+            label:
+              "Incorrecto",
           },
         ]}
       />
@@ -2028,22 +2368,6 @@ function FormularioDevolucion({
         ]}
       />
 
-      <MultiSelect
-        label="Fortalezas destacadas"
-        options={
-          FORTALEZAS
-        }
-        values={
-          datos.fortalezas
-        }
-        onToggle={(valor) =>
-          toggle(
-            valor,
-            "fortalezas"
-          )
-        }
-      />
-
       <Field
         label="Observaciones"
         value={
@@ -2059,7 +2383,9 @@ function FormularioDevolucion({
       />
 
       <button
-        style={styles.primaryButton}
+        style={
+          styles.primaryButton
+        }
         onClick={() =>
           alert(
             "Formulario de devolución preparado."
@@ -2079,17 +2405,25 @@ function FormularioAudio({
   volver,
 }) {
   return (
-    <section style={styles.card}>
-      <div style={styles.sectionHeader}>
-        <div>
-          <h2>
-            Subir audio
-          </h2>
-        </div>
+    <section
+      style={styles.card}
+    >
+      <div
+        style={
+          styles.sectionHeader
+        }
+      >
+        <h2>
+          Subir audio
+        </h2>
 
         <button
-          onClick={volver}
-          style={styles.secondaryButton}
+          onClick={
+            volver
+          }
+          style={
+            styles.secondaryButton
+          }
         >
           ← Volver
         </button>
@@ -2121,9 +2455,9 @@ function FormularioAudio({
         }
         type="select"
         options={AREAS.map(
-          (area) => ({
-            value: area,
-            label: area,
+          (a) => ({
+            value: a,
+            label: a,
           })
         )}
       />
@@ -2155,31 +2489,38 @@ function FormularioAudio({
         type="date"
       />
 
-      <div style={styles.fileBox}>
-        <label style={styles.label}>
-          Audio
-        </label>
+      <label
+        style={
+          styles.label
+        }
+      >
+        Audio
+      </label>
 
-        <input
-          type="file"
-          accept="audio/*"
-          onChange={(e) =>
-            actualizar(
-              "archivo",
-              e.target.files?.[0] ||
-                null
-            )
-          }
-        />
-      </div>
+      <input
+        type="file"
+        accept="audio/*"
+        style={
+          styles.input
+        }
+        onChange={(e) =>
+          actualizar(
+            "archivo",
+            e.target.files?.[0] ||
+              null
+          )
+        }
+      />
 
       <MultiSelect
-        label="Aspectos trabajados CALIDAD"
-        options={CALIDAD}
-        values={
+        title="Aspectos trabajados CALIDAD"
+        options={
+          CALIDAD
+        }
+        selected={
           datos.aspectosCalidad
         }
-        onToggle={(valor) =>
+        toggle={(valor) =>
           toggle(
             valor,
             "aspectosCalidad"
@@ -2188,14 +2529,14 @@ function FormularioAudio({
       />
 
       <MultiSelect
-        label="Aspectos trabajados PRODUCTIVIDAD"
+        title="Aspectos trabajados PRODUCTIVIDAD"
         options={
           PRODUCTIVIDAD
         }
-        values={
+        selected={
           datos.aspectosProductividad
         }
-        onToggle={(valor) =>
+        toggle={(valor) =>
           toggle(
             valor,
             "aspectosProductividad"
@@ -2204,14 +2545,14 @@ function FormularioAudio({
       />
 
       <MultiSelect
-        label="Tipificaciones"
+        title="TIPIFICACIONES"
         options={
           TIPIFICACIONES
         }
-        values={
+        selected={
           datos.tipificaciones
         }
-        onToggle={(valor) =>
+        toggle={(valor) =>
           toggle(
             valor,
             "tipificaciones"
@@ -2234,10 +2575,12 @@ function FormularioAudio({
       />
 
       <button
-        style={styles.primaryButton}
+        style={
+          styles.primaryButton
+        }
         onClick={() =>
           alert(
-            "Formulario de audio preparado."
+            "Audio seleccionado. La carga al almacenamiento se conecta en el siguiente paso."
           )
         }
       >
@@ -2253,17 +2596,25 @@ function FormularioPda({
   volver,
 }) {
   return (
-    <section style={styles.card}>
-      <div style={styles.sectionHeader}>
-        <div>
-          <h2>
-            Nuevo Plan de Acción
-          </h2>
-        </div>
+    <section
+      style={styles.card}
+    >
+      <div
+        style={
+          styles.sectionHeader
+        }
+      >
+        <h2>
+          Nuevo Plan de Acción
+        </h2>
 
         <button
-          onClick={volver}
-          style={styles.secondaryButton}
+          onClick={
+            volver
+          }
+          style={
+            styles.secondaryButton
+          }
         >
           ← Volver
         </button>
@@ -2295,7 +2646,11 @@ function FormularioPda({
         }
       />
 
-      <div style={styles.formGrid}>
+      <div
+        style={
+          styles.formGrid
+        }
+      >
         <Field
           label="Fecha desde"
           value={
@@ -2382,7 +2737,9 @@ function FormularioPda({
       />
 
       <button
-        style={styles.primaryButton}
+        style={
+          styles.primaryButton
+        }
         onClick={() =>
           alert(
             "Formulario de PDA preparado."
@@ -2401,8 +2758,14 @@ function ListaReportes({
   abrirReporte,
 }) {
   return (
-    <section style={styles.card}>
-      <div style={styles.sectionHeader}>
+    <section
+      style={styles.card}
+    >
+      <div
+        style={
+          styles.sectionHeader
+        }
+      >
         <h2>
           Reportes
         </h2>
@@ -2411,28 +2774,55 @@ function ListaReportes({
           onClick={() =>
             abrirReporte()
           }
-          style={styles.primaryButton}
+          style={
+            styles.primaryButton
+          }
         >
           + NUEVO REPORTE
         </button>
       </div>
 
-      <div style={styles.tableWrapper}>
-        <table style={styles.table}>
+      <div
+        style={
+          styles.tableWrapper
+        }
+      >
+        <table
+          style={
+            styles.table
+          }
+        >
           <thead>
             <tr>
-              <th>Asesor</th>
-              <th>Semana</th>
-              <th>Producto</th>
-              <th>Nota</th>
-              <th>SPH</th>
+              <th>
+                Asesor
+              </th>
+              <th>
+                Semana
+              </th>
+              <th>
+                Producto
+              </th>
+              <th>
+                Nota
+              </th>
+              <th>
+                SPH
+              </th>
+              <th>
+                Estado
+              </th>
             </tr>
           </thead>
 
           <tbody>
             {reportes.map(
               (r) => (
-                <tr key={r.id}>
+                <tr
+                  key={
+                    r.id
+                  }
+                >
                   <td>
                     {r.asesor ||
                       obtenerNombre(
@@ -2442,23 +2832,39 @@ function ListaReportes({
                   </td>
 
                   <td>
-                    {r.semana ||
-                      "—"}
+                    {
+                      r.semana
+                    }
                   </td>
 
                   <td>
-                    {r.producto ||
-                      "—"}
+                    {
+                      r.producto
+                    }
                   </td>
 
                   <td>
-                    {r.nota ??
-                      "—"}
+                    {
+                      r.nota ??
+                      "—"
+                    }
                   </td>
 
                   <td>
-                    {r.sph ??
-                      "—"}
+                    {
+                      r.sph ??
+                      "—"
+                    }
+                  </td>
+
+                  <td>
+                    <Estado
+                      estado={
+                        calcularEstado(
+                          r
+                        )
+                      }
+                    />
                   </td>
                 </tr>
               )
@@ -2476,12 +2882,28 @@ function Seguimiento({
   seleccionarAsesor,
 }) {
   return (
-    <section style={styles.card}>
+    <section
+      style={styles.card}
+    >
       <h2>
         Seguimiento
       </h2>
 
-      <div style={styles.advisorGrid}>
+      <p
+        style={
+          styles.muted
+        }
+      >
+        Lista general de
+        seguimiento del
+        equipo.
+      </p>
+
+      <div
+        style={
+          styles.advisorGrid
+        }
+      >
         {asesores.map(
           (asesor) => {
             const r =
@@ -2494,23 +2916,38 @@ function Seguimiento({
               );
 
             const estado =
-              calcularEstado(r);
+              calcularEstado(
+                r
+              );
 
             return (
               <div
-                key={asesor.id}
-                style={styles.advisorCard}
+                key={
+                  asesor.id
+                }
+                style={
+                  styles.advisorCard
+                }
               >
                 <h3>
-                  {asesor.nombre}
+                  {
+                    asesor.nombre
+                  }
                 </h3>
 
                 <Estado
-                  estado={estado}
+                  estado={
+                    estado
+                  }
                 />
 
-                <p style={styles.muted}>
-                  Último reporte:{" "}
+                <p
+                  style={
+                    styles.muted
+                  }
+                >
+                  Último reporte:
+                  {" "}
                   {r?.semana ||
                     "Pendiente"}
                 </p>
@@ -2536,12 +2973,77 @@ function Seguimiento({
   );
 }
 
+function MultiSelect({
+  title,
+  options,
+  selected,
+  toggle,
+}) {
+  return (
+    <div
+      style={
+        styles.multiContainer
+      }
+    >
+      <label
+        style={
+          styles.label
+        }
+      >
+        {title}
+      </label>
+
+      <div
+        style={
+          styles.multiGrid
+        }
+      >
+        {options.map(
+          (option) => {
+            const activo =
+              selected.includes(
+                option
+              );
+
+            return (
+              <button
+                type="button"
+                key={
+                  option
+                }
+                onClick={() =>
+                  toggle(
+                    option
+                  )
+                }
+                style={{
+                  ...styles.multiOption,
+                  ...(activo
+                    ? styles.multiOptionActive
+                    : {}),
+                }}
+              >
+                {activo
+                  ? "✓ "
+                  : ""}
+                {option}
+              </button>
+            );
+          }
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Stat({
   title,
   value,
 }) {
   return (
-    <div style={styles.stat}>
+    <div
+      style={styles.stat}
+    >
       <small>
         {title}
       </small>
@@ -2584,7 +3086,9 @@ function Estado({
   }
 
   return (
-    <span style={style}>
+    <span
+      style={style}
+    >
       {estado}
     </span>
   );
@@ -2597,17 +3101,37 @@ function InfoBlock({
   return (
     <div
       style={{
-        marginTop: "18px",
+        padding:
+          "18px",
+        border:
+          "1px solid #e5e7eb",
+        borderRadius:
+          "14px",
+        background:
+          "#fafafa",
       }}
     >
-      <h3>
+      <small
+        style={
+          styles.muted
+        }
+      >
         {title}
-      </h3>
+      </small>
 
-      <p>
+      <div
+        style={{
+          marginTop:
+            "8px",
+          fontSize:
+            "22px",
+          fontWeight:
+            "700",
+        }}
+      >
         {value ||
           "No hay información cargada."}
-      </p>
+      </div>
     </div>
   );
 }
@@ -2618,20 +3142,29 @@ function Field({
   onChange,
   type = "text",
   options = [],
+  step,
 }) {
   return (
     <div
       style={{
-        marginBottom: "16px",
+        marginBottom:
+          "16px",
       }}
     >
-      <label style={styles.label}>
+      <label
+        style={
+          styles.label
+        }
+      >
         {label}
       </label>
 
-      {type === "textarea" ? (
+      {type ===
+      "textarea" ? (
         <textarea
-          value={value ?? ""}
+          value={
+            value ?? ""
+          }
           onChange={(e) =>
             onChange(
               e.target.value
@@ -2639,19 +3172,26 @@ function Field({
           }
           style={{
             ...styles.input,
-            minHeight: "100px",
-            resize: "vertical",
+            minHeight:
+              "100px",
+            resize:
+              "vertical",
           }}
         />
-      ) : type === "select" ? (
+      ) : type ===
+        "select" ? (
         <select
-          value={value ?? ""}
+          value={
+            value ?? ""
+          }
           onChange={(e) =>
             onChange(
               e.target.value
             )
           }
-          style={styles.input}
+          style={
+            styles.input
+          }
         >
           <option value="">
             Seleccionar
@@ -2667,7 +3207,9 @@ function Field({
                   option.value
                 }
               >
-                {option.label}
+                {
+                  option.label
+                }
               </option>
             )
           )}
@@ -2675,63 +3217,20 @@ function Field({
       ) : (
         <input
           type={type}
-          value={value ?? ""}
+          step={step}
+          value={
+            value ?? ""
+          }
           onChange={(e) =>
             onChange(
               e.target.value
             )
           }
-          style={styles.input}
+          style={
+            styles.input
+          }
         />
       )}
-    </div>
-  );
-}
-
-function MultiSelect({
-  label,
-  options,
-  values,
-  onToggle,
-}) {
-  const seleccionados =
-    values || [];
-
-  return (
-    <div style={styles.multiBox}>
-      <label style={styles.label}>
-        {label}
-      </label>
-
-      <div style={styles.multiGrid}>
-        {options.map(
-          (option) => {
-            const seleccionado =
-              seleccionados.includes(
-                option
-              );
-
-            return (
-              <button
-                key={option}
-                type="button"
-                onClick={() =>
-                  onToggle(
-                    option
-                  )
-                }
-                style={
-                  seleccionado
-                    ? styles.multiSelected
-                    : styles.multiOption
-                }
-              >
-                {option}
-              </button>
-            );
-          }
-        )}
-      </div>
     </div>
   );
 }
@@ -2744,7 +3243,9 @@ function calcularEstado(
   }
 
   const nota =
-    Number(reporte.nota);
+    Number(
+      reporte.nota
+    );
 
   const objetivoCalidad =
     Number(
@@ -2752,7 +3253,9 @@ function calcularEstado(
     );
 
   const sph =
-    Number(reporte.sph);
+    Number(
+      reporte.sph
+    );
 
   const objetivoSph =
     Number(
@@ -2760,7 +3263,9 @@ function calcularEstado(
     );
 
   const calidadOk =
-    !Number.isNaN(nota) &&
+    !Number.isNaN(
+      nota
+    ) &&
     !Number.isNaN(
       objetivoCalidad
     ) &&
@@ -2768,7 +3273,9 @@ function calcularEstado(
       objetivoCalidad;
 
   const productividadOk =
-    !Number.isNaN(sph) &&
+    !Number.isNaN(
+      sph
+    ) &&
     !Number.isNaN(
       objetivoSph
     ) &&
@@ -2822,7 +3329,8 @@ function obtenerNombre(
   return (
     asesores.find(
       (a) =>
-        a.email === email
+        a.email ===
+        email
     )?.nombre ||
     email ||
     "—"
@@ -2832,29 +3340,42 @@ function obtenerNombre(
 function crearReporteInicial() {
   return {
     asesor: "",
-    nombreAsesor: "",
+    nombreAsesor:
+      "",
     semana:
       "Semana 4 · Agosto",
-    producto: "BM",
+    producto:
+      "BM",
 
     nota: "",
     objetivo: "",
-    evolucion: "",
+    evolucion:
+      "",
     desvio: "",
-    recomendacion: "",
-    auditoria: "",
-    observaciones: "",
+    recomendacion:
+      "",
+    auditoria:
+      "",
+    observaciones:
+      "",
 
     sph: "",
-    objetivoSph: "",
+    objetivoSph:
+      "",
     ventas: "",
-    objetivoVentas: "",
-    objetivoCampania: "",
-    descripcionCampania: "",
+    objetivoVentas:
+      "",
+    objetivoCampania:
+      "",
+    descripcionCampania:
+      "",
 
-    estadoSph: "",
-    estadoVentas: "",
-    estadoCampania: "",
+    estadoSph:
+      "",
+    estadoVentas:
+      "",
+    estadoCampania:
+      "",
 
     gestion: "",
   };
@@ -2864,16 +3385,23 @@ function crearDevolucionInicial() {
   return {
     asesor: "",
     area: "Calidad",
-    notaCalidad: "",
-    aspectosCalidad: [],
-    accionesCalidad: [],
-    aspectosProductividad: [],
-    tipificaciones: [],
+    notaCalidad:
+      "",
+    aspectosCalidad:
+      [],
+    aspectosProductividad:
+      [],
+    tipificaciones:
+      [],
     om: [],
-    fortalezas: [],
-    registroSistema: "",
-    compromiso: "",
-    observaciones: "",
+    fortalezas:
+      [],
+    registroSistema:
+      "",
+    compromiso:
+      "",
+    observaciones:
+      "",
   };
 }
 
@@ -2888,10 +3416,14 @@ function crearAudioInicial() {
         .toISOString()
         .slice(0, 10),
     archivo: null,
-    aspectosCalidad: [],
-    aspectosProductividad: [],
-    tipificaciones: [],
-    devolucion: "",
+    aspectosCalidad:
+      [],
+    aspectosProductividad:
+      [],
+    tipificaciones:
+      [],
+    devolucion:
+      "",
   };
 }
 
@@ -2902,37 +3434,47 @@ function crearPdaInicial() {
     desde: "",
     hasta: "",
     objetivo: "",
-    diagnostico: "",
-    metodologia: "",
-    seguimiento: "",
+    diagnostico:
+      "",
+    metodologia:
+      "",
+    seguimiento:
+      "",
   };
 }
 
 const styles = {
   page: {
-    minHeight: "100vh",
+    minHeight:
+      "100vh",
     background:
       "#f4f6f8",
-    padding: "30px",
+    padding:
+      "30px",
     fontFamily:
       "Arial, sans-serif",
-    color: "#20242a",
+    color:
+      "#20242a",
     boxSizing:
       "border-box",
   },
 
   container: {
-    maxWidth: "1200px",
-    margin: "auto",
+    maxWidth:
+      "1200px",
+    margin:
+      "auto",
   },
 
   loading: {
     minHeight:
       "calc(100vh - 60px)",
-    display: "flex",
+    display:
+      "flex",
     flexDirection:
       "column",
-    alignItems: "center",
+    alignItems:
+      "center",
     justifyContent:
       "center",
   },
@@ -2940,25 +3482,46 @@ const styles = {
   header: {
     background:
       "#ffffff",
-    borderRadius: "18px",
+    borderRadius:
+      "18px",
     padding:
       "22px 24px",
     marginBottom:
-      "20px",
+      "14px",
     boxShadow:
       "0 4px 18px rgba(0,0,0,0.06)",
-    display: "flex",
+    display:
+      "flex",
     justifyContent:
       "space-between",
     alignItems:
       "center",
-    gap: "20px",
-    flexWrap: "wrap",
+    gap:
+      "20px",
+    flexWrap:
+      "wrap",
+  },
+
+  adminInfo: {
+    background:
+      "#ffffff",
+    borderRadius:
+      "12px",
+    padding:
+      "12px 16px",
+    marginBottom:
+      "20px",
+    color:
+      "#555d66",
+    fontSize:
+      "14px",
   },
 
   title: {
-    margin: 0,
-    fontSize: "28px",
+    margin:
+      0,
+    fontSize:
+      "28px",
   },
 
   subtitle: {
@@ -2971,8 +3534,10 @@ const styles = {
   card: {
     background:
       "#ffffff",
-    borderRadius: "18px",
-    padding: "24px",
+    borderRadius:
+      "18px",
+    padding:
+      "24px",
     marginBottom:
       "20px",
     boxShadow:
@@ -2988,12 +3553,13 @@ const styles = {
       "14px 18px",
     marginBottom:
       "20px",
-    border:
-      "1px solid #e5e7eb",
+    fontWeight:
+      "600",
   },
 
   weekRow: {
-    display: "flex",
+    display:
+      "flex",
     justifyContent:
       "space-between",
     alignItems:
@@ -3003,17 +3569,19 @@ const styles = {
   },
 
   statsGrid: {
-    display: "grid",
+    display:
+      "grid",
     gridTemplateColumns:
-      "repeat(auto-fit,minmax(180px,1fr))",
-    gap: "16px",
+      "repeat(4, 1fr)",
+    gap:
+      "14px",
   },
 
   stat: {
     background:
-      "#f8fafc",
+      "#f7f8fa",
     border:
-      "1px solid #e5e7eb",
+      "1px solid #e6e9ed",
     borderRadius:
       "14px",
     padding:
@@ -3021,36 +3589,62 @@ const styles = {
   },
 
   sectionHeader: {
-    display: "flex",
+    display:
+      "flex",
     justifyContent:
       "space-between",
     alignItems:
       "center",
-    gap: "15px",
+    gap:
+      "15px",
     marginBottom:
       "20px",
-    flexWrap: "wrap",
+    flexWrap:
+      "wrap",
   },
 
   filters: {
-    display: "grid",
+    display:
+      "grid",
     gridTemplateColumns:
-      "repeat(auto-fit,minmax(220px,1fr))",
-    gap: "12px",
+      "2fr 1fr 1fr",
+    gap:
+      "12px",
     marginBottom:
       "20px",
   },
 
+  formGrid: {
+    display:
+      "grid",
+    gridTemplateColumns:
+      "repeat(2, 1fr)",
+    gap:
+      "16px",
+  },
+
+  infoGrid: {
+    display:
+      "grid",
+    gridTemplateColumns:
+      "repeat(4, 1fr)",
+    gap:
+      "14px",
+    marginTop:
+      "22px",
+  },
+
   input: {
-    width: "100%",
+    width:
+      "100%",
     boxSizing:
       "border-box",
     border:
-      "1px solid #d8dde5",
+      "1px solid #d9dde3",
     borderRadius:
       "10px",
     padding:
-      "11px 12px",
+      "12px 14px",
     fontSize:
       "14px",
     background:
@@ -3059,7 +3653,7 @@ const styles = {
 
   smallSelect: {
     border:
-      "1px solid #d8dde5",
+      "1px solid #d9dde3",
     borderRadius:
       "10px",
     padding:
@@ -3068,29 +3662,41 @@ const styles = {
       "#ffffff",
   },
 
+  label: {
+    display:
+      "block",
+    fontWeight:
+      "700",
+    fontSize:
+      "14px",
+    marginBottom:
+      "8px",
+  },
+
   primaryButton: {
-    border: "none",
+    border:
+      "none",
     borderRadius:
       "10px",
     padding:
       "11px 16px",
     background:
-      "#111827",
+      "#20242a",
     color:
       "#ffffff",
     cursor:
       "pointer",
     fontWeight:
-      "bold",
+      "700",
   },
 
   secondaryButton: {
     border:
-      "1px solid #d8dde5",
+      "1px solid #d9dde3",
     borderRadius:
       "10px",
     padding:
-      "10px 15px",
+      "11px 16px",
     background:
       "#ffffff",
     color:
@@ -3098,43 +3704,50 @@ const styles = {
     cursor:
       "pointer",
     fontWeight:
-      "bold",
+      "600",
   },
 
   linkButton: {
-    border: "none",
+    border:
+      "none",
     background:
       "transparent",
     color:
-      "#2563eb",
+      "#20242a",
     cursor:
       "pointer",
     fontWeight:
-      "bold",
+      "700",
+    padding:
+      0,
   },
 
   tableWrapper: {
-    width: "100%",
     overflowX:
       "auto",
   },
 
   table: {
-    width: "100%",
+    width:
+      "100%",
     borderCollapse:
       "collapse",
   },
 
   advisorGrid: {
-    display: "grid",
+    display:
+      "grid",
     gridTemplateColumns:
-      "repeat(auto-fit,minmax(250px,1fr))",
-    gap: "16px",
+      "repeat(3, 1fr)",
+    gap:
+      "16px",
+    marginTop:
+      "18px",
   },
 
   advisorCard: {
     border:
-      "1px solid #e5e7eb",
+      "1px solid #e2e5e9",
     borderRadius:
       "14px",
     padding:
@@ -3144,18 +3757,23 @@ const styles = {
   },
 
   tabs: {
-    display: "flex",
-    gap: "8px",
-    flexWrap: "wrap",
+    display:
+      "flex",
+    gap:
+      "8px",
+    flexWrap:
+      "wrap",
     marginTop:
-      "20px",
-    marginBottom:
-      "20px",
+      "25px",
+    paddingBottom:
+      "16px",
+    borderBottom:
+      "1px solid #e5e7eb",
   },
 
   tab: {
     border:
-      "1px solid #d8dde5",
+      "1px solid #dfe3e8",
     borderRadius:
       "9px",
     padding:
@@ -3168,106 +3786,70 @@ const styles = {
 
   tabActive: {
     border:
-      "1px solid #111827",
+      "1px solid #20242a",
     borderRadius:
       "9px",
     padding:
       "9px 12px",
     background:
-      "#111827",
+      "#20242a",
     color:
       "#ffffff",
     cursor:
       "pointer",
   },
 
-  formGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit,minmax(220px,1fr))",
-    gap: "16px",
-  },
-
-  formTitle: {
-    marginTop:
-      "28px",
+  multiContainer: {
     marginBottom:
-      "18px",
-  },
-
-  buttonRow: {
-    display: "flex",
-    gap: "10px",
-    flexWrap: "wrap",
-    marginTop:
       "24px",
   },
 
-  fileBox: {
-    marginBottom:
-      "20px",
-    padding:
-      "15px",
-    border:
-      "1px solid #e5e7eb",
-    borderRadius:
-      "10px",
-  },
-
-  multiBox: {
-    marginBottom:
-      "20px",
-  },
-
   multiGrid: {
-    display: "flex",
-    gap: "8px",
-    flexWrap: "wrap",
-    marginTop:
+    display:
+      "grid",
+    gridTemplateColumns:
+      "repeat(2, 1fr)",
+    gap:
       "8px",
   },
 
   multiOption: {
+    textAlign:
+      "left",
     border:
-      "1px solid #d8dde5",
+      "1px solid #dfe3e8",
+    background:
+      "#ffffff",
     borderRadius:
       "9px",
     padding:
-      "8px 11px",
-    background:
-      "#ffffff",
+      "10px",
     cursor:
       "pointer",
     fontSize:
       "13px",
   },
 
-  multiSelected: {
+  multiOptionActive: {
     border:
-      "1px solid #111827",
-    borderRadius:
-      "9px",
-    padding:
-      "8px 11px",
+      "1px solid #20242a",
     background:
-      "#111827",
-    color:
-      "#ffffff",
-    cursor:
-      "pointer",
-    fontSize:
-      "13px",
-  },
-
-  label: {
-    display:
-      "block",
+      "#eef0f2",
     fontWeight:
-      "bold",
+      "700",
+  },
+
+  placeholderBox: {
+    background:
+      "#f7f8fa",
+    border:
+      "1px solid #e5e7eb",
+    borderRadius:
+      "12px",
+    padding:
+      "16px",
     marginBottom:
-      "7px",
-    fontSize:
-      "14px",
+      "20px",
   },
 
   muted: {
@@ -3275,72 +3857,71 @@ const styles = {
       "#68707b",
   },
 
+  estadoNeutral: {
+    display:
+      "inline-block",
+    padding:
+      "6px 10px",
+    borderRadius:
+      "999px",
+    background:
+      "#eef0f2",
+    color:
+      "#555d66",
+    fontSize:
+      "12px",
+    fontWeight:
+      "700",
+  },
+
   estadoRojo: {
     display:
       "inline-block",
     padding:
-      "6px 9px",
+      "6px 10px",
     borderRadius:
-      "8px",
+      "999px",
     background:
-      "#fecaca",
+      "#fde8e8",
     color:
-      "#991b1b",
+      "#b42318",
     fontSize:
       "12px",
     fontWeight:
-      "bold",
+      "700",
   },
 
   estadoVerde: {
     display:
       "inline-block",
     padding:
-      "6px 9px",
+      "6px 10px",
     borderRadius:
-      "8px",
+      "999px",
     background:
-      "#bbf7d0",
+      "#dcfce7",
     color:
       "#166534",
     fontSize:
       "12px",
     fontWeight:
-      "bold",
+      "700",
   },
 
   estadoSuperado: {
     display:
       "inline-block",
     padding:
-      "6px 9px",
+      "6px 10px",
     borderRadius:
-      "8px",
+      "999px",
     background:
-      "#86efac",
+      "#bbf7d0",
     color:
       "#14532d",
     fontSize:
       "12px",
     fontWeight:
-      "bold",
-  },
-
-  estadoNeutral: {
-    display:
-      "inline-block",
-    padding:
-      "6px 9px",
-    borderRadius:
-      "8px",
-    background:
-      "#e5e7eb",
-    color:
-      "#374151",
-    fontSize:
-      "12px",
-    fontWeight:
-      "bold",
+      "700",
   },
 };
-```

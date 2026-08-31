@@ -3,7 +3,38 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
-const ADMIN_EMAIL = "ayelenvillega42@gmail.com";
+const PALETTE = {
+  navy: "#031926",
+  teal: "#468189",
+  mint: "#77ACA2",
+  soft: "#9DBEBB",
+  cream: "#F4E9CD",
+};
+
+const ASESORES = [
+  "Tello, Marianela",
+  "Contreras, Gilary",
+  "Malqui, Xiomara",
+  "Luna, Oriana",
+  "Gomez, Carla",
+  "Acosta, Pamela",
+  "Bahamonde, Camila",
+  "Vasquez, Agustin",
+  "Bustos, Jesica",
+  "Cabrera, Antonella",
+  "Bustamante, Ailin",
+  "Simonetta, Valentina",
+  "Olmedo, Thomas",
+  "Aguilera, Trinidad",
+  "Viniegra, Agustín",
+  "Ojeda, Luana",
+  "Reartes, Maia",
+  "Cordoba, Tania",
+  "Peralta, Belen",
+  "Mercado, Chiara",
+  "Diaz, Milagros",
+  "Rojek, Luna",
+];
 
 const CALIDAD_ASPECTOS = [
   "Información de otras compañías",
@@ -66,7 +97,7 @@ const PRODUCTIVIDAD_ACCIONES = [
   "REFUERZO DE APERTURA",
   "REPASO DE PROCESOS",
   "CAPACITACIÓN",
-  "ESCUCHA DE LLAMADA DE COMPAÑERO",
+  "ESCUCHA DE LLAMADAS",
 ];
 
 const TIPIFICACIONES = [
@@ -83,7 +114,7 @@ const TIPIFICACIONES = [
   "PROBLEMAS ECONÓMICOS",
   "LE PARECE CARO",
   "DARA DE BAJA MEDIO DE PAGO",
-  "NO ELEGIBLE / NO REÚNE REQUISITOS",
+  "NO ELEGIBLE / NO REÚNE REQUISTOS",
   "NO CONTESTA",
 ];
 
@@ -129,279 +160,91 @@ const FORTALEZAS = [
   "CORRECTA ARGUMENTACIÓN",
 ];
 
-const ASESORES = [
-  "Acosta, Pamela",
-  "Aguilera, Trinidad",
-  "Bahamonde, Camila",
-  "Bustamante, Ailin",
-  "Bustos, Jesica",
-  "Cabrera, Antonella",
-  "Contreras, Gilary",
-  "Cordoba, Tania",
-  "Diaz, Milagros",
-  "Gomez, Carla",
-  "Luna, Oriana",
-  "Malqui, Xiomara",
-  "Mercado, Chiara",
-  "Ojeda, Luana",
-  "Olmedo, Thomas",
-  "Peralta, Belen",
-  "Reartes, Maia",
-  "Rojek, Luna",
-  "Simonetta, Valentina",
-  "Tello, Marianela",
-  "Vasquez, Agustin",
-  "Viniegra, Agustín",
-];
+const ESTADOS = {
+  pendiente: "PENDIENTE",
+  devuelto: "DEVUELTO",
+  activo: "ACTIVO",
+  alcanzado: "ALCANZADO",
+  superado: "SUPERADO",
+  debajo: "POR DEBAJO DEL OBJETIVO",
+};
 
-const AREAS = [
-  "Calidad",
-  "Productividad",
-  "Tipificaciones",
-  "No Ventas",
-];
-
-const SEMANAS = [
-  "Semana 4 · Agosto",
-  "Semana 3 · Agosto",
-  "Semana 2 · Agosto",
-  "Semana 1 · Agosto",
-];
-
-const COMPROMISOS = [
-  "APLICA DEVOLUCIÓN",
-  "SEGUIMIENTO",
-  "NO APLICA",
-];
-
-const ESTADOS = [
-  "POR DEBAJO DEL OBJETIVO",
-  "ALCANZADO",
-  "SUPERADO",
-];
-
-function crearReporteInicial() {
-  return {
-    asesor: "",
-    nombreAsesor: "",
-    semana: "Semana 4 · Agosto",
-    producto: "BM",
-
-    nota: "",
-    objetivo: "",
-    evolucion: "",
-    desvio: "",
-    recomendacion: "",
-    auditoria: "",
-    observaciones: "",
-
-    aspectosCalidad: [],
-    accionesCalidad: [],
-
-    sph: "",
-    objetivoSph: "",
-    ventas: "",
-    objetivoVentas: "",
-    objetivoCampania: "",
-    descripcionCampania: "",
-
-    aspectosProductividad: [],
-    accionesProductividad: [],
-
-    estadoSph: "",
-    estadoVentas: "",
-    estadoCampania: "",
-
-    tipificacionesAuditadas: [],
-    tipificacionesDesvio: "",
-    tipificacionesObjetivo: "",
-    tipificacionesResultado: "",
-    tipificacionesCompromiso: "",
-    tipificacionesObservaciones: "",
-
-    noVentasCantidad: "",
-    noVentasCoaching: [],
-    noVentasRegistro: "",
-    noVentasCompromiso: "",
-    noVentasOM: [],
-    noVentasFortalezas: [],
-    noVentasObservaciones: "",
-  };
+function porcentaje(value) {
+  if (value === null || value === undefined || value === "") return "";
+  return String(value).includes("%") ? String(value) : `${value}%`;
 }
 
-function crearDevolucionInicial() {
-  return {
-    asesor: "",
-    area: "Calidad",
-    responsable: "",
-    fecha: new Date().toISOString().slice(0, 10),
-
-    notaCalidad: "",
-
-    aspectosCalidad: [],
-    accionesCalidad: [],
-
-    aspectosProductividad: [],
-    accionesProductividad: [],
-
-    tipificaciones: [],
-    om: [],
-    registroSistema: "",
-    fortalezas: [],
-    compromiso: "",
-
-    devolucion: "",
-    observaciones: "",
-  };
+function normalizarPorcentaje(value) {
+  if (value === null || value === undefined || value === "") return "";
+  return String(value).replace("%", "").trim();
 }
 
-function crearAudioInicial() {
-  return {
-    asesor: "",
-    area: "Calidad",
-    responsable: "",
-    fecha: new Date().toISOString().slice(0, 10),
-    archivo: null,
-
-    aspectosCalidad: [],
-    aspectosProductividad: [],
-    tipificaciones: [],
-
-    devolucion: "",
-  };
+function formatearFecha(fecha) {
+  if (!fecha) return "-";
+  try {
+    return new Date(fecha).toLocaleDateString("es-AR");
+  } catch {
+    return fecha;
+  }
 }
 
-function crearPdaInicial() {
-  return {
-    asesor: "",
-    aspecto: "",
-    desde: "",
-    hasta: "",
-    objetivo: "",
-    diagnostico: "",
-    metodologia: "",
-    seguimiento: "",
-    estado: "Activo",
-  };
-}
-
-function crearFelicitacionInicial() {
-  return {
-    asesor: "",
-    fecha: new Date().toISOString().slice(0, 10),
-    responsable: "",
-    motivo: "",
-    mensaje: "",
-    observaciones: "",
-  };
-}
-
-function Card({ title, action, children }) {
-  return (
-    <section style={styles.card}>
-      <div style={styles.cardHeader}>
-        <h2 style={styles.cardTitle}>{title}</h2>
-        {action}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function Field({
+function MultiSelect({
   label,
-  value,
+  options,
+  value = [],
   onChange,
-  type = "text",
-  options = [],
-  placeholder = "",
 }) {
+  const toggle = (option) => {
+    if (value.includes(option)) {
+      onChange(value.filter((item) => item !== option));
+    } else {
+      onChange([...value, option]);
+    }
+  };
+
   return (
     <div style={styles.field}>
       <label style={styles.label}>{label}</label>
 
-      {type === "textarea" ? (
-        <textarea
-          value={value || ""}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          style={styles.textarea}
-          rows={5}
-        />
-      ) : type === "select" ? (
-        <select
-          value={value || ""}
-          onChange={(e) => onChange(e.target.value)}
-          style={styles.select}
-        >
-          <option value="">Seleccionar...</option>
-
-          {options.map((option) => {
-            const item =
-              typeof option === "string"
-                ? {
-                    value: option,
-                    label: option,
-                  }
-                : option;
-
-            return (
-              <option
-                key={item.value}
-                value={item.value}
-              >
-                {item.label}
-              </option>
-            );
-          })}
-        </select>
-      ) : (
-        <input
-          type={type}
-          value={value || ""}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          style={styles.input}
-        />
-      )}
+      <div style={styles.multiSelect}>
+        {options.map((option) => (
+          <label key={option} style={styles.checkRow}>
+            <input
+              type="checkbox"
+              checked={value.includes(option)}
+              onChange={() => toggle(option)}
+            />
+            <span>{option}</span>
+          </label>
+        ))}
+      </div>
     </div>
   );
 }
 
-function TextInput({
+function PercentageInput({
   label,
   value,
   onChange,
-  placeholder = "",
-}) {
-  return (
-    <Field
-      label={label}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-    />
-  );
-}
-
-function TextArea({
-  label,
-  value,
-  onChange,
-  placeholder = "",
-  rows = 5,
+  placeholder = "0%",
 }) {
   return (
     <div style={styles.field}>
       <label style={styles.label}>{label}</label>
 
-      <textarea
-        value={value || ""}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        rows={rows}
-        style={styles.textarea}
-      />
+      <div style={styles.percentWrap}>
+        <input
+          type="number"
+          min="0"
+          max="100"
+          step="0.01"
+          value={normalizarPorcentaje(value)}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="0"
+          style={styles.percentInput}
+        />
+        <span style={styles.percentSymbol}>%</span>
+      </div>
     </div>
   );
 }
@@ -419,44 +262,55 @@ function NumberInput({
 
       <input
         type="number"
-        value={value ?? ""}
+        value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         style={{
           ...styles.input,
-          ...(small
-            ? styles.smallNumberInput
-            : {}),
+          ...(small ? styles.smallNumberInput : {}),
         }}
       />
     </div>
   );
 }
 
-function PercentageInput({
+function TextInput({
   label,
   value,
   onChange,
+  placeholder = "",
 }) {
   return (
     <div style={styles.field}>
       <label style={styles.label}>{label}</label>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={styles.input}
+      />
+    </div>
+  );
+}
 
-      <div style={styles.percentWrap}>
-        <input
-          type="number"
-          step="0.01"
-          value={value ?? ""}
-          onChange={(e) =>
-            onChange(e.target.value)
-          }
-          style={styles.percentInput}
-        />
-
-        <span style={styles.percentSymbol}>
-          %
-        </span>
-      </div>
+function TextArea({
+  label,
+  value,
+  onChange,
+  placeholder = "",
+  rows = 4,
+}) {
+  return (
+    <div style={styles.field}>
+      <label style={styles.label}>{label}</label>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        style={styles.textarea}
+      />
     </div>
   );
 }
@@ -465,146 +319,51 @@ function Select({
   label,
   value,
   onChange,
-  options = [],
+  options,
 }) {
   return (
     <div style={styles.field}>
       <label style={styles.label}>{label}</label>
 
       <select
-        value={value || ""}
-        onChange={(e) =>
-          onChange(e.target.value)
-        }
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         style={styles.select}
       >
-        <option value="">
-          Seleccionar...
-        </option>
+        <option value="">Seleccionar...</option>
 
-        {options.map((option) => {
-          const item =
-            typeof option === "string"
-              ? {
-                  value: option,
-                  label: option,
-                }
-              : option;
-
-          return (
-            <option
-              key={item.value}
-              value={item.value}
-            >
-              {item.label}
-            </option>
-          );
-        })}
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
       </select>
     </div>
   );
 }
 
-function MultiSelect({
-  label,
-  options = [],
-  value = [],
-  onChange,
-}) {
-  const selected = Array.isArray(value)
-    ? value
-    : [];
-
-  function toggleOption(option) {
-    if (selected.includes(option)) {
-      onChange(
-        selected.filter(
-          (item) => item !== option
-        )
-      );
-    } else {
-      onChange([...selected, option]);
-    }
-  }
-
+function Card({ title, children, action }) {
   return (
-    <div style={styles.field}>
-      {label && (
-        <label style={styles.label}>
-          {label}
-        </label>
-      )}
-
-      <div style={styles.multiSelect}>
-        {options.map((option) => (
-          <label
-            key={option}
-            style={styles.checkRow}
-          >
-            <input
-              type="checkbox"
-              checked={selected.includes(
-                option
-              )}
-              onChange={() =>
-                toggleOption(option)
-              }
-            />
-
-            <span>{option}</span>
-          </label>
-        ))}
+    <section style={styles.card}>
+      <div style={styles.cardHeader}>
+        <h2 style={styles.cardTitle}>{title}</h2>
+        {action}
       </div>
-    </div>
-  );
-}
 
-function FormSection({
-  title,
-  children,
-}) {
-  return (
-    <div style={styles.sectionSpacing}>
-      <h3 style={styles.subTitle}>
-        {title}
-      </h3>
-
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "15px",
-        }}
-      >
-        {children}
-      </div>
-    </div>
+      {children}
+    </section>
   );
 }
 
 function StatusBadge({ status }) {
-  const normalized = String(
-    status || ""
-  ).toUpperCase();
+  let background = PALETTE.soft;
 
-  let background = "#edf1f3";
-
-  if (
-    normalized.includes("SUPERADO")
-  ) {
-    background = "#b8e0c2";
-  } else if (
-    normalized.includes("ALCANZADO")
-  ) {
-    background = "#d9efdf";
-  } else if (
-    normalized.includes("DEBAJO")
-  ) {
-    background = "#f2c5c5";
-  } else if (
-    normalized.includes("SEGUIMIENTO")
-  ) {
-    background = "#f5e6b5";
+  if (status === ESTADOS.superado) {
+    background = PALETTE.teal;
+  } else if (status === ESTADOS.alcanzado) {
+    background = PALETTE.mint;
+  } else if (status === ESTADOS.debajo) {
+    background = "#d99a9a";
   }
 
   return (
@@ -614,357 +373,174 @@ function StatusBadge({ status }) {
         background,
       }}
     >
-      {status || "Sin estado"}
+      {status || "-"}
     </span>
   );
 }
 
-function formatearFecha(fecha) {
-  if (!fecha) return "-";
-
-  try {
-    return new Date(
-      fecha
-    ).toLocaleDateString(
-      "es-AR"
-    );
-  } catch {
-    return fecha;
-  }
-}
-
-function normalizarArray(valor) {
-  if (Array.isArray(valor)) {
-    return valor;
-  }
-
-  if (!valor) {
-    return [];
-  }
-
-  if (typeof valor === "string") {
-    try {
-      const parsed =
-        JSON.parse(valor);
-
-      return Array.isArray(parsed)
-        ? parsed
-        : [valor];
-    } catch {
-      return valor
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean);
-    }
-  }
-
-  return [];
-}
-
-function calcularEstado(
-  calidad,
-  productividad,
-  objetivoCalidad = 80,
-  objetivoProductividad = 0
-) {
-  const calidadNumero =
-    Number(calidad);
-
-  const productividadNumero =
-    Number(productividad);
-
-  const calidadOk =
-    Number.isFinite(
-      calidadNumero
-    ) &&
-    calidadNumero >=
-      Number(objetivoCalidad);
-
-  const productividadOk =
-    Number.isFinite(
-      productividadNumero
-    ) &&
-    productividadNumero >=
-      Number(objetivoProductividad);
-
-  if (
-    calidadOk &&
-    productividadOk &&
-    calidadNumero >
-      Number(objetivoCalidad) &&
-    productividadNumero >
-      Number(objetivoProductividad)
-  ) {
-    return "SUPERADO";
-  }
-
-  if (
-    calidadOk &&
-    productividadOk
-  ) {
-    return "ALCANZADO";
-  }
-
-  return "POR DEBAJO DEL OBJETIVO";
-}
-
 export default function AdminPage() {
-  const [activeTab, setActiveTab] =
-    useState("inicio");
+  const [activeTab, setActiveTab] = useState("inicio");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-  const [user, setUser] =
-    useState(null);
+  const [reportes, setReportes] = useState([]);
+  const [devoluciones, setDevoluciones] = useState([]);
+  const [audios, setAudios] = useState([]);
+  const [pdas, setPdas] = useState([]);
 
-  const [loading, setLoading] =
-    useState(false);
+  const [selectedAdvisor, setSelectedAdvisor] = useState("");
+  const [searchAdvisor, setSearchAdvisor] = useState("");
 
-  const [message, setMessage] =
-    useState("");
+  const [semana, setSemana] = useState("Semana 4 · Agosto");
+  const [campania, setCampania] = useState("BM");
 
-  const [error, setError] =
-    useState("");
+  const [reporte, setReporte] = useState({
+    asesor: "",
+    semana: "Semana 4 · Agosto",
+    campania: "BM",
 
-  const [asesores, setAsesores] =
-    useState(
-      ASESORES.map((nombre) => ({
-        nombre,
-        cuenta:
-          "Hipotecario Seguros",
-        campania: "BM",
-      }))
-    );
+    notaCalidad: "",
+    objetivoCalidad: "",
+    evolucionCalidad: "",
+    desviosCalidad: "",
+    aspectosTrabajadosCalidad: [],
+    accionesCalidad: [],
+    observacionesCalidad: "",
 
-  const [reportes, setReportes] =
-    useState([]);
+    sph: "",
+    objetivoSph: "",
+    ventas: "",
+    objetivoVentas: "",
+    objetivoCampania: "",
+    aspectosTrabajadosProductividad: [],
+    accionesProductividad: [],
+    observacionesProductividad: "",
 
-  const [devoluciones, setDevoluciones] =
-    useState([]);
+    tipificacionesAuditadas: [],
+    tipificacionesDesvio: "",
+    tipificacionesObjetivo: "",
+    tipificacionesResultado: "",
+    tipificacionesCompromiso: "",
+    tipificacionesObservaciones: "",
 
-  const [audios, setAudios] =
-    useState([]);
+    noVentasCantidad: "",
+    noVentasCoaching: [],
+    noVentasRegistro: "",
+    noVentasCompromiso: "",
+    noVentasOM: [],
+    noVentasFortalezas: [],
+    noVentasObservaciones: "",
+  });
 
-  const [pdas, setPdas] =
-    useState([]);
+  const [devolucion, setDevolucion] = useState({
+    asesor: "",
+    area: "Calidad",
+    responsable: "",
+    notaCalidad: "",
+    aspectosCalidad: [],
+    accionesCalidad: [],
+    aspectosProductividad: [],
+    accionesProductividad: [],
+    tipificacion: [],
+    om: [],
+    registroSistema: "",
+    fortalezas: [],
+    observaciones: "",
+  });
 
-  const [felicitaciones, setFelicitaciones] =
-    useState([]);
+  const [felicitacion, setFelicitacion] = useState({
+    asesor: "",
+    motivo: "",
+    fecha: "",
+  });
 
-  const [selectedAdvisor, setSelectedAdvisor] =
-    useState("");
+  const [audio, setAudio] = useState({
+    asesor: "",
+    area: "Calidad",
+    responsable: "",
+    fecha: "",
+    archivo: null,
+    aspectosCalidad: [],
+    aspectosProductividad: [],
+    tipificacion: [],
+    devolucion: "",
+  });
 
-  const [semana, setSemana] =
-    useState("");
-
-  const [campania, setCampania] =
-    useState("");
-
-  const [buscarAsesor, setBuscarAsesor] =
-    useState("");
-
-  const [reporte, setReporte] =
-    useState(
-      crearReporteInicial()
-    );
-
-  const [devolucion, setDevolucion] =
-    useState(
-      crearDevolucionInicial()
-    );
-
-  const [audio, setAudio] =
-    useState(
-      crearAudioInicial()
-    );
-
-  const [pda, setPda] =
-    useState(
-      crearPdaInicial()
-    );
-
-  const [
-    felicitacion,
-    setFelicitacion,
-  ] = useState(
-    crearFelicitacionInicial()
-  );
+  const [pda, setPda] = useState({
+    asesor: "",
+    aspecto: "",
+    fechaDesde: "",
+    fechaHasta: "",
+    objetivo: "",
+    observaciones: "",
+  });
 
   useEffect(() => {
     cargarDatos();
   }, []);
 
   async function cargarDatos() {
-    if (!supabase) {
-      setError(
-        "No se pudo conectar con Supabase. Verificá las variables de entorno."
-      );
-      return;
-    }
+    setLoading(true);
+    setError("");
 
     try {
-      setLoading(true);
-
       const [
         reportesResponse,
         devolucionesResponse,
         audiosResponse,
         pdasResponse,
-        felicitacionesResponse,
       ] = await Promise.all([
         supabase
           .from("reportes")
           .select("*")
-          .order(
-            "id",
-            { ascending: false }
-          ),
+          .order("created_at", { ascending: false }),
 
         supabase
           .from("devoluciones")
           .select("*")
-          .order(
-            "id",
-            { ascending: false }
-          ),
+          .order("created_at", { ascending: false }),
 
         supabase
           .from("audios")
           .select("*")
-          .order(
-            "id",
-            { ascending: false }
-          ),
+          .order("created_at", { ascending: false }),
 
         supabase
           .from("pdas")
           .select("*")
-          .order(
-            "id",
-            { ascending: false }
-          ),
-
-        supabase
-          .from("felicitaciones")
-          .select("*")
-          .order(
-            "id",
-            { ascending: false }
-          ),
+          .order("created_at", { ascending: false }),
       ]);
 
       if (reportesResponse.error) {
-        console.error(
-          reportesResponse.error
-        );
+        console.error(reportesResponse.error);
+      } else {
+        setReportes(reportesResponse.data || []);
       }
 
-      if (
-        devolucionesResponse.error
-      ) {
-        console.error(
-          devolucionesResponse.error
-        );
+      if (devolucionesResponse.error) {
+        console.error(devolucionesResponse.error);
+      } else {
+        setDevoluciones(devolucionesResponse.data || []);
       }
 
       if (audiosResponse.error) {
-        console.error(
-          audiosResponse.error
-        );
+        console.error(audiosResponse.error);
+      } else {
+        setAudios(audiosResponse.data || []);
       }
 
       if (pdasResponse.error) {
-        console.error(
-          pdasResponse.error
-        );
+        console.error(pdasResponse.error);
+      } else {
+        setPdas(pdasResponse.data || []);
       }
-
-      if (
-        felicitacionesResponse.error
-      ) {
-        console.error(
-          felicitacionesResponse.error
-        );
-      }
-
-      setReportes(
-        reportesResponse.data || []
-      );
-
-      setDevoluciones(
-        devolucionesResponse.data ||
-          []
-      );
-
-      setAudios(
-        audiosResponse.data || []
-      );
-
-      setPdas(
-        pdasResponse.data || []
-      );
-
-      setFelicitaciones(
-        felicitacionesResponse.data ||
-          []
-      );
     } catch (err) {
       console.error(err);
-
-      setError(
-        "No se pudieron cargar los datos."
-      );
+      setError("No se pudieron cargar los datos.");
     } finally {
       setLoading(false);
     }
-  }
-
-  function actualizarReporte(
-    campo,
-    valor
-  ) {
-    setReporte((prev) => ({
-      ...prev,
-      [campo]: valor,
-    }));
-  }
-
-  function actualizarDevolucion(
-    campo,
-    valor
-  ) {
-    setDevolucion((prev) => ({
-      ...prev,
-      [campo]: valor,
-    }));
-  }
-
-  function actualizarAudio(
-    campo,
-    valor
-  ) {
-    setAudio((prev) => ({
-      ...prev,
-      [campo]: valor,
-    }));
-  }
-
-  function actualizarPda(
-    campo,
-    valor
-  ) {
-    setPda((prev) => ({
-      ...prev,
-      [campo]: valor,
-    }));
-  }
-
-  function actualizarFelicitacion(
-    campo,
-    valor
-  ) {
-    setFelicitacion((prev) => ({
-      ...prev,
-      [campo]: valor,
-    }));
   }
 
   function limpiarMensajes() {
@@ -972,825 +548,820 @@ export default function AdminPage() {
     setError("");
   }
 
+  function seleccionarAsesor(asesor) {
+    setSelectedAdvisor(asesor);
+
+    setReporte((prev) => ({
+      ...prev,
+      asesor,
+    }));
+
+    setDevolucion((prev) => ({
+      ...prev,
+      asesor,
+    }));
+
+    setAudio((prev) => ({
+      ...prev,
+      asesor,
+    }));
+
+    setPda((prev) => ({
+      ...prev,
+      asesor,
+    }));
+  }
+
+  const asesoresFiltrados = useMemo(() => {
+    const texto = searchAdvisor.toLowerCase().trim();
+
+    if (!texto) return ASESORES;
+
+    return ASESORES.filter((asesor) =>
+      asesor.toLowerCase().includes(texto)
+    );
+  }, [searchAdvisor]);
+
+  const reportesFiltrados = useMemo(() => {
+    return reportes.filter((item) => {
+      const coincideSemana =
+        !semana || item.semana === semana;
+
+      const coincideCampania =
+        !campania || item.campania === campania;
+
+      return coincideSemana && coincideCampania;
+    });
+  }, [reportes, semana, campania]);
+
+  const devolucionesFiltradas = useMemo(() => {
+    if (!selectedAdvisor) return devoluciones;
+
+    return devoluciones.filter(
+      (item) => item.asesor === selectedAdvisor
+    );
+  }, [devoluciones, selectedAdvisor]);
+
+  const audiosFiltrados = useMemo(() => {
+    if (!selectedAdvisor) return audios;
+
+    return audios.filter(
+      (item) => item.asesor === selectedAdvisor
+    );
+  }, [audios, selectedAdvisor]);
+
+  const pdasFiltrados = useMemo(() => {
+    if (!selectedAdvisor) return pdas;
+
+    return pdas.filter(
+      (item) => item.asesor === selectedAdvisor
+    );
+  }, [pdas, selectedAdvisor]);
+
+  function actualizarReporte(campo, valor) {
+    setReporte((prev) => ({
+      ...prev,
+      [campo]: valor,
+    }));
+  }
+
+  function actualizarDevolucion(campo, valor) {
+    setDevolucion((prev) => ({
+      ...prev,
+      [campo]: valor,
+    }));
+  }
+
+  function actualizarAudio(campo, valor) {
+    setAudio((prev) => ({
+      ...prev,
+      [campo]: valor,
+    }));
+  }
+
+  function actualizarPda(campo, valor) {
+    setPda((prev) => ({
+      ...prev,
+      [campo]: valor,
+    }));
+  }
+
   async function guardarReporte(e) {
-    e?.preventDefault();
+    e.preventDefault();
 
     limpiarMensajes();
 
-    if (!supabase) {
-      setError(
-        "Supabase no está configurado."
-      );
+    if (!reporte.asesor) {
+      setError("Seleccioná un asesor.");
       return;
     }
 
-    if (!reporte.asesor) {
-      setError(
-        "Seleccioná un asesor."
-      );
-      return;
-    }
+    setLoading(true);
 
     try {
-      setLoading(true);
-
       const payload = {
         asesor: reporte.asesor,
         semana: reporte.semana,
-        producto:
-          reporte.producto ||
-          reporte.campania ||
-          null,
+        campania: reporte.campania,
 
-        nota:
-          reporte.nota !== ""
-            ? Number(reporte.nota)
-            : reporte.notaCalidad !== ""
-            ? Number(
-                reporte.notaCalidad
-              )
-            : null,
-
-        objetivo:
-          reporte.objetivo !== ""
-            ? reporte.objetivo
-            : reporte.objetivoCalidad,
-
-        evolucion:
-          reporte.evolucion ||
-          reporte.evolucionCalidad ||
-          null,
-
-        desvio:
-          reporte.desvio ||
-          reporte.desviosCalidad ||
-          null,
-
+        nota: reporte.notaCalidad || null,
+        objetivo: reporte.objetivoCalidad || null,
+        evolucion: reporte.evolucionCalidad || null,
+        desvio: reporte.desviosCalidad || null,
         recomendacion:
-          reporte.recomendacion ||
-          normalizarArray(
-            reporte
-              .aspectosTrabajadosCalidad
-          ).join(", "),
-
-        auditoria:
-          reporte.auditoria ||
-          normalizarArray(
-            reporte
-              .accionesCalidad
-          ).join(", "),
-
+          reporte.aspectosTrabajadosCalidad?.join(", ") || null,
         observaciones:
-          reporte.observaciones ||
-          reporte.observacionesCalidad ||
-          null,
+          reporte.observacionesCalidad || null,
 
-        sph:
-          reporte.sph !== ""
-            ? Number(reporte.sph)
-            : null,
+        producto: reporte.campania,
 
-        objetivo_sph:
-          reporte.objetivoSph !== ""
-            ? Number(
-                reporte.objetivoSph
-              )
-            : null,
-
-        ventas:
-          reporte.ventas !== ""
-            ? Number(reporte.ventas)
-            : null,
-
-        objetivo_ventas:
-          reporte.objetivoVentas !== ""
-            ? Number(
-                reporte.objetivoVentas
-              )
-            : null,
-
+        sph: reporte.sph || null,
+        objetivo_sph: reporte.objetivoSph || null,
+        ventas: reporte.ventas || null,
+        objetivo_ventas: reporte.objetivoVentas || null,
         objetivo_campania:
-          reporte.objetivoCampania ||
-          null,
+          reporte.objetivoCampania
+            ? Number(reporte.objetivoCampania)
+            : null,
 
         tipificaciones_auditadas:
-          normalizarArray(
-            reporte
-              .tipificacionesAuditadas
-          ).join(", "),
-
+          reporte.tipificacionesAuditadas?.join(", ") || null,
         tipificaciones_desvio:
-          reporte.tipificacionesDesvio ||
-          null,
-
+          porcentaje(reporte.tipificacionesDesvio) || null,
         tipificaciones_objetivo:
-          reporte.tipificacionesObjetivo ||
-          null,
-
+          porcentaje(reporte.tipificacionesObjetivo) || null,
         tipificaciones_resultado:
-          reporte.tipificacionesResultado ||
-          null,
+          porcentaje(reporte.tipificacionesResultado) || null,
+        tipificaciones_compromiso:
+          reporte.tipificacionesCompromiso || null,
+        tipificaciones_observaciones:
+          reporte.tipificacionesObservaciones || null,
 
-        no_ventas:
-          reporte.noVentasCantidad !== ""
-            ? Number(
-                reporte.noVentasCantidad
-              )
-            : null,
-
-        gestion:
-          reporte.tipificacionesCompromiso ||
-          reporte.noVentasCompromiso ||
-          null,
+        no_ventas: reporte.noVentasCantidad || null,
+        no_ventas_coaching:
+          reporte.noVentasCoaching?.join(", ") || null,
+        no_ventas_registro:
+          reporte.noVentasRegistro || null,
+        no_ventas_compromiso:
+          reporte.noVentasCompromiso || null,
+        no_ventas_om:
+          reporte.noVentasOM?.join(", ") || null,
+        no_ventas_fortalezas:
+          reporte.noVentasFortalezas?.join(", ") || null,
+        no_ventas_observaciones:
+          reporte.noVentasObservaciones || null,
       };
 
-      const { data, error } =
-        await supabase
-          .from("reportes")
-          .insert([payload])
-          .select()
-          .single();
+      /*
+       * acciones_calidad NO se envía porque la columna
+       * no existe en la tabla reportes de Supabase.
+       */
 
-      if (error) {
-        throw error;
+      const { data, error: saveError } = await supabase
+        .from("reportes")
+        .upsert(payload)
+        .select()
+        .single();
+
+      if (saveError) {
+        throw saveError;
       }
 
       setReportes((prev) => [
         data,
-        ...prev,
+        ...prev.filter((item) => item.id !== data.id),
       ]);
 
-      setMessage(
-        "Reporte guardado correctamente."
-      );
-
-      setReporte(
-        crearReporteInicial()
-      );
+      setMessage("✅ Reporte guardado correctamente.");
     } catch (err) {
       console.error(err);
-
       setError(
-        err?.message ||
-          "No se pudo guardar el reporte."
+        `❌ No se pudo guardar el reporte: ${
+          err?.message || "Error desconocido"
+        }`
       );
     } finally {
       setLoading(false);
     }
   }
 
-function renderSeguimiento() {
-    const pendientesPda = pdas.filter(
-      (item) =>
-        String(item.estado || "")
-          .toLowerCase() === "activo"
-    );
+  async function guardarDevolucion(e) {
+    e.preventDefault();
 
-    const pendientesDev = devoluciones.filter(
-      (item) =>
-        String(item.estado || "")
-          .toLowerCase()
-          .includes("pendiente")
-    );
+    limpiarMensajes();
 
-    const pendientesAudio = audios.filter(
-      (item) =>
-        String(item.estado || "")
-          .toLowerCase()
-          .includes("pendiente")
-    );
+    if (!devolucion.asesor) {
+      setError("Seleccioná un asesor.");
+      return;
+    }
 
-    return (
-      <div style={styles.page}>
-        <Card title="Seguimiento">
-          <div style={styles.statsGrid}>
-            <div style={styles.statCard}>
-              <span style={styles.statNumber}>
-                {pendientesPda.length}
-              </span>
-              <span style={styles.statLabel}>
-                PDA activos
-              </span>
-            </div>
+    setLoading(true);
 
-            <div style={styles.statCard}>
-              <span style={styles.statNumber}>
-                {pendientesDev.length}
-              </span>
-              <span style={styles.statLabel}>
-                Devoluciones pendientes
-              </span>
-            </div>
+    try {
+      const payload = {
+        asesor: devolucion.asesor,
+        area: devolucion.area,
+        responsable: devolucion.responsable || null,
+        nota_calidad: devolucion.notaCalidad || null,
+        aspectos_calidad:
+          devolucion.aspectosCalidad?.join(", ") || null,
+        acciones_calidad:
+          devolucion.accionesCalidad?.join(", ") || null,
+        aspectos_productividad:
+          devolucion.aspectosProductividad?.join(", ") || null,
+        acciones_productividad:
+          devolucion.accionesProductividad?.join(", ") || null,
+        tipificacion:
+          devolucion.tipificacion?.join(", ") || null,
+        om: devolucion.om?.join(", ") || null,
+        registro_sistema:
+          devolucion.registroSistema || null,
+        fortalezas:
+          devolucion.fortalezas?.join(", ") || null,
+        observaciones:
+          devolucion.observaciones || null,
+      };
 
-            <div style={styles.statCard}>
-              <span style={styles.statNumber}>
-                {pendientesAudio.length}
-              </span>
-              <span style={styles.statLabel}>
-                Audios pendientes
-              </span>
-            </div>
-          </div>
+      const { data, error: saveError } = await supabase
+        .from("devoluciones")
+        .insert(payload)
+        .select()
+        .single();
 
-          <div style={styles.sectionSpacing}>
-            <h3 style={styles.subTitle}>
-              PDA
-            </h3>
+      if (saveError) {
+        throw saveError;
+      }
 
-            {pendientesPda.length === 0 ? (
-              <div style={styles.emptyState}>
-                No hay PDA activos.
-              </div>
-            ) : (
-              <div style={styles.resultList}>
-                {pendientesPda.map((item) => (
-                  <div
-                    key={item.id}
-                    style={styles.resultCard}
-                  >
-                    <div style={styles.resultTop}>
-                      <strong>
-                        {item.asesor || "-"}
-                      </strong>
+      setDevoluciones((prev) => [data, ...prev]);
 
-                      <StatusBadge
-                        status={
-                          item.estado ||
-                          "Activo"
-                        }
-                      />
-                    </div>
-
-                    <div
-                      style={styles.resultGrid}
-                    >
-                      <div
-                        style={
-                          styles.resultGridItem
-                        }
-                      >
-                        <span>
-                          Aspecto
-                        </span>
-                        <strong>
-                          {item.aspecto ||
-                            "-"}
-                        </strong>
-                      </div>
-
-                      <div
-                        style={
-                          styles.resultGridItem
-                        }
-                      >
-                        <span>
-                          Desde
-                        </span>
-                        <strong>
-                          {formatearFecha(
-                            item.fecha_desde
-                          )}
-                        </strong>
-                      </div>
-
-                      <div
-                        style={
-                          styles.resultGridItem
-                        }
-                      >
-                        <span>
-                          Hasta
-                        </span>
-                        <strong>
-                          {formatearFecha(
-                            item.fecha_hasta
-                          )}
-                        </strong>
-                      </div>
-
-                      <div
-                        style={
-                          styles.resultGridItem
-                        }
-                      >
-                        <span>
-                          Objetivo
-                        </span>
-                        <strong>
-                          {item.objetivo ||
-                            "-"}
-                        </strong>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div style={styles.sectionSpacing}>
-            <h3 style={styles.subTitle}>
-              DEVOLUCIONES
-            </h3>
-
-            {pendientesDev.length === 0 ? (
-              <div style={styles.emptyState}>
-                No hay devoluciones pendientes.
-              </div>
-            ) : (
-              <div style={styles.resultList}>
-                {pendientesDev.map((item) => (
-                  <div
-                    key={item.id}
-                    style={styles.resultCard}
-                  >
-                    <div style={styles.resultTop}>
-                      <strong>
-                        {item.asesor || "-"}
-                      </strong>
-
-                      <StatusBadge
-                        status={
-                          item.estado ||
-                          "Pendiente"
-                        }
-                      />
-                    </div>
-
-                    <p style={styles.resultText}>
-                      Área:{" "}
-                      {item.area || "-"}
-                    </p>
-
-                    <p style={styles.resultText}>
-                      Responsable:{" "}
-                      {item.responsable ||
-                        "-"}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div style={styles.sectionSpacing}>
-            <h3 style={styles.subTitle}>
-              AUDIOS
-            </h3>
-
-            {pendientesAudio.length === 0 ? (
-              <div style={styles.emptyState}>
-                No hay audios pendientes.
-              </div>
-            ) : (
-              <div style={styles.resultList}>
-                {pendientesAudio.map((item) => (
-                  <div
-                    key={item.id}
-                    style={styles.resultCard}
-                  >
-                    <div style={styles.resultTop}>
-                      <strong>
-                        {item.asesor || "-"}
-                      </strong>
-
-                      <StatusBadge
-                        status={
-                          item.estado ||
-                          "Pendiente"
-                        }
-                      />
-                    </div>
-
-                    <p style={styles.resultText}>
-                      Área:{" "}
-                      {item.area || "-"}
-                    </p>
-
-                    <p style={styles.resultText}>
-                      Fecha:{" "}
-                      {formatearFecha(
-                        item.fecha
-                      )}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </Card>
-      </div>
-    );
+      setMessage("✅ Devolución guardada correctamente.");
+    } catch (err) {
+      console.error(err);
+      setError(
+        `❌ No se pudo guardar la devolución: ${
+          err?.message || "Error desconocido"
+        }`
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function renderImpresionMasiva() {
-    const [seleccionados, setSeleccionados] =
-      useState([]);
+  async function guardarFelicitacion(e) {
+    e.preventDefault();
 
-    const reportesDisponibles =
-      reportes.filter((item) => {
-        const coincideSemana =
-          !semana ||
-          String(item.semana || "")
-            .toLowerCase()
-            .includes(
-              semana.toLowerCase()
-            );
+    limpiarMensajes();
 
-        const coincideCampania =
-          !campania ||
-          String(
-            item.campania ||
-              item.producto ||
-              ""
-          ).toUpperCase() ===
-            campania.toUpperCase();
+    if (!felicitacion.asesor) {
+      setError("Seleccioná un asesor.");
+      return;
+    }
 
-        return (
-          coincideSemana &&
-          coincideCampania
-        );
+    if (!felicitacion.motivo) {
+      setError("Ingresá el motivo de la felicitación.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const payload = {
+        asesor: felicitacion.asesor,
+        motivo: felicitacion.motivo,
+        fecha: felicitacion.fecha || null,
+      };
+
+      const { error: saveError } = await supabase
+        .from("felicitaciones")
+        .insert(payload);
+
+      if (saveError) {
+        throw saveError;
+      }
+
+      setMessage("✅ Felicitación guardada correctamente.");
+
+      setFelicitacion({
+        asesor: felicitacion.asesor,
+        motivo: "",
+        fecha: "",
       });
-
-    function toggleReporte(id) {
-      setSeleccionados((prev) =>
-        prev.includes(id)
-          ? prev.filter(
-              (item) => item !== id
-            )
-          : [...prev, id]
+    } catch (err) {
+      console.error(err);
+      setError(
+        `❌ No se pudo guardar la felicitación: ${
+          err?.message || "Error desconocido"
+        }`
       );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function guardarAudio(e) {
+    e.preventDefault();
+
+    limpiarMensajes();
+
+    if (!audio.asesor) {
+      setError("Seleccioná un asesor.");
+      return;
     }
 
-    function seleccionarTodos() {
-      setSeleccionados(
-        reportesDisponibles.map(
-          (item) => item.id
-        )
-      );
+    if (!audio.archivo) {
+      setError("Seleccioná un archivo de audio.");
+      return;
     }
 
-    function quitarTodos() {
-      setSeleccionados([]);
-    }
+    setLoading(true);
 
-    function imprimirSeleccionados() {
-      const items =
-        reportesDisponibles.filter(
-          (item) =>
-            seleccionados.includes(
-              item.id
-            )
-        );
+    try {
+      const extension =
+        audio.archivo.name.split(".").pop() || "mp3";
 
-      if (items.length === 0) {
-        setError(
-          "Seleccioná al menos un reporte."
-        );
-        return;
+      const fileName = `${Date.now()}-${audio.asesor
+        .replace(/\s+/g, "-")
+        .replace(/,/g, "")}.${extension}`;
+
+      const filePath = `audios/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("audios")
+        .upload(filePath, audio.archivo);
+
+      if (uploadError) {
+        throw uploadError;
       }
 
-      const ventana =
-        window.open(
-          "",
-          "_blank",
-          "width=1000,height=800"
-        );
+      const { data: publicData } = supabase.storage
+        .from("audios")
+        .getPublicUrl(filePath);
 
-      if (!ventana) {
-        setError(
-          "El navegador bloqueó la ventana de impresión."
-        );
-        return;
+      const payload = {
+        asesor: audio.asesor,
+        area: audio.area,
+        responsable: audio.responsable || null,
+        fecha: audio.fecha || null,
+        archivo: publicData?.publicUrl || null,
+        aspectos_calidad:
+          audio.aspectosCalidad?.join(", ") || null,
+        aspectos_productividad:
+          audio.aspectosProductividad?.join(", ") || null,
+        tipificacion:
+          audio.tipificacion?.join(", ") || null,
+        devolucion: audio.devolucion || null,
+      };
+
+      const { data, error: saveError } = await supabase
+        .from("audios")
+        .insert(payload)
+        .select()
+        .single();
+
+      if (saveError) {
+        throw saveError;
       }
 
-      const paginas = items
-        .map(
-          (item) => `
-            <section class="page">
-              <div class="header">
-                <div class="kicker">
-                  PORTAL INTEGRAL DEL ASESOR
-                </div>
+      setAudios((prev) => [data, ...prev]);
 
-                <h1>
-                  ${item.asesor || "-"}
-                </h1>
+      setMessage("✅ Audio cargado correctamente.");
 
-                <div>
-                  ${item.semana || "-"}
-                </div>
-              </div>
-
-              <div class="grid">
-                <div class="box">
-                  <span>CAMPAÑA</span>
-                  <strong>
-                    ${
-                      item.campania ||
-                      item.producto ||
-                      "-"
-                    }
-                  </strong>
-                </div>
-
-                <div class="box">
-                  <span>NOTA</span>
-                  <strong>
-                    ${item.nota || "-"}
-                  </strong>
-                </div>
-
-                <div class="box">
-                  <span>OBJETIVO</span>
-                  <strong>
-                    ${
-                      item.objetivo ||
-                      "-"
-                    }
-                  </strong>
-                </div>
-
-                <div class="box">
-                  <span>SPH</span>
-                  <strong>
-                    ${item.sph || "-"}
-                  </strong>
-                </div>
-
-                <div class="box">
-                  <span>VENTAS</span>
-                  <strong>
-                    ${item.ventas || "-"}
-                  </strong>
-                </div>
-
-                <div class="box">
-                  <span>DESVÍO</span>
-                  <strong>
-                    ${item.desvio || "-"}
-                  </strong>
-                </div>
-              </div>
-
-              <div class="section">
-                <h2>
-                  Aspectos trabajados
-                </h2>
-
-                <div class="text">
-                  ${
-                    item.recomendacion ||
-                    "-"
-                  }
-                </div>
-              </div>
-
-              <div class="section">
-                <h2>
-                  Observaciones
-                </h2>
-
-                <div class="text">
-                  ${
-                    item.observaciones ||
-                    "-"
-                  }
-                </div>
-              </div>
-            </section>
-          `
-        )
-        .join("");
-
-      ventana.document.write(`
-        <!DOCTYPE html>
-        <html lang="es">
-          <head>
-            <meta charset="UTF-8" />
-
-            <title>
-              Reportes seleccionados
-            </title>
-
-            <style>
-              body {
-                font-family:
-                  Arial,
-                  Helvetica,
-                  sans-serif;
-                color: #17333b;
-                margin: 0;
-              }
-
-              .page {
-                min-height: 250mm;
-                box-sizing: border-box;
-                padding: 20mm;
-                page-break-after: always;
-              }
-
-              .page:last-child {
-                page-break-after: auto;
-              }
-
-              .header {
-                border-bottom:
-                  3px solid #1d7771;
-                padding-bottom: 18px;
-                margin-bottom: 25px;
-              }
-
-              .kicker {
-                color: #1d7771;
-                font-size: 11px;
-                font-weight: bold;
-                letter-spacing: 1px;
-                margin-bottom: 7px;
-              }
-
-              h1 {
-                margin: 0;
-                font-size: 28px;
-              }
-
-              h2 {
-                margin-top: 28px;
-                font-size: 18px;
-              }
-
-              .grid {
-                display: grid;
-                grid-template-columns:
-                  repeat(3, 1fr);
-                gap: 12px;
-              }
-
-              .box {
-                border:
-                  1px solid #d9e0e2;
-                border-radius: 9px;
-                padding: 14px;
-              }
-
-              .box span {
-                display: block;
-                font-size: 10px;
-                color: #68787d;
-                margin-bottom: 5px;
-              }
-
-              .box strong {
-                font-size: 16px;
-              }
-
-              .section {
-                border-top:
-                  1px solid #d9e0e2;
-                margin-top: 25px;
-                padding-top: 18px;
-              }
-
-              .text {
-                line-height: 1.6;
-                font-size: 13px;
-                white-space: pre-wrap;
-              }
-            </style>
-          </head>
-
-          <body>
-            ${paginas}
-
-            <script>
-              window.onload = function () {
-                window.print();
-              };
-            </script>
-          </body>
-        </html>
-      `);
-
-      ventana.document.close();
+      setAudio({
+        asesor: audio.asesor,
+        area: "Calidad",
+        responsable: "",
+        fecha: "",
+        archivo: null,
+        aspectosCalidad: [],
+        aspectosProductividad: [],
+        tipificacion: [],
+        devolucion: "",
+      });
+    } catch (err) {
+      console.error(err);
+      setError(
+        `❌ No se pudo cargar el audio: ${
+          err?.message || "Error desconocido"
+        }`
+      );
+    } finally {
+      setLoading(false);
     }
+  }
+
+  async function guardarPda(e) {
+    e.preventDefault();
+
+    limpiarMensajes();
+
+    if (!pda.asesor) {
+      setError("Seleccioná un asesor.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const payload = {
+        asesor: pda.asesor,
+        aspecto: pda.aspecto || null,
+        fecha_desde: pda.fechaDesde || null,
+        fecha_hasta: pda.fechaHasta || null,
+        objetivo: pda.objetivo || null,
+        observaciones: pda.observaciones || null,
+      };
+
+      const { data, error: saveError } = await supabase
+        .from("pdas")
+        .insert(payload)
+        .select()
+        .single();
+
+      if (saveError) {
+        throw saveError;
+      }
+
+      setPdas((prev) => [data, ...prev]);
+
+      setMessage("✅ PDA guardado correctamente.");
+
+      setPda({
+        asesor: pda.asesor,
+        aspecto: "",
+        fechaDesde: "",
+        fechaHasta: "",
+        objetivo: "",
+        observaciones: "",
+      });
+    } catch (err) {
+      console.error(err);
+      setError(
+        `❌ No se pudo guardar el PDA: ${
+          err?.message || "Error desconocido"
+        }`
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function imprimirReporte(reporteSeleccionado) {
+    const ventana = window.open(
+      "",
+      "_blank",
+      "width=1000,height=800"
+    );
+
+    if (!ventana) {
+      setError("El navegador bloqueó la ventana de impresión.");
+      return;
+    }
+
+    ventana.document.write(`
+      <!DOCTYPE html>
+      <html lang="es">
+        <head>
+          <meta charset="UTF-8" />
+          <title>Reporte de Calidad</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 40px;
+              color: #031926;
+            }
+            h1 {
+              color: #031926;
+              margin-bottom: 5px;
+            }
+            h2 {
+              color: #468189;
+              margin-top: 30px;
+              border-bottom: 2px solid #9DBEBB;
+              padding-bottom: 6px;
+            }
+            .dato {
+              margin: 8px 0;
+            }
+            .label {
+              font-weight: bold;
+            }
+            .box {
+              background: #F4E9CD;
+              padding: 15px;
+              border-radius: 10px;
+              margin: 10px 0;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>PORTAL DE CALIDAD</h1>
+
+          <div class="dato">
+            <span class="label">Asesor:</span>
+            ${reporteSeleccionado.asesor || "-"}
+          </div>
+
+          <div class="dato">
+            <span class="label">Semana:</span>
+            ${reporteSeleccionado.semana || "-"}
+          </div>
+
+          <div class="dato">
+            <span class="label">Campaña:</span>
+            ${reporteSeleccionado.campania || "-"}
+          </div>
+
+          <h2>Calidad</h2>
+
+          <div class="box">
+            <div class="dato">
+              <span class="label">Nota:</span>
+              ${reporteSeleccionado.nota || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Objetivo:</span>
+              ${reporteSeleccionado.objetivo || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Evolución:</span>
+              ${reporteSeleccionado.evolucion || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Desvío:</span>
+              ${reporteSeleccionado.desvio || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Aspectos trabajados:</span>
+              ${reporteSeleccionado.recomendacion || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Observaciones:</span>
+              ${reporteSeleccionado.observaciones || "-"}
+            </div>
+          </div>
+
+          <h2>Productividad</h2>
+
+          <div class="box">
+            <div class="dato">
+              <span class="label">SPH:</span>
+              ${reporteSeleccionado.sph || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Objetivo SPH:</span>
+              ${reporteSeleccionado.objetivo_sph || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Ventas:</span>
+              ${reporteSeleccionado.ventas || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Objetivo ventas:</span>
+              ${reporteSeleccionado.objetivo_ventas || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Objetivo campaña:</span>
+              ${reporteSeleccionado.objetivo_campania || "-"}
+            </div>
+          </div>
+
+          <h2>Tipificaciones</h2>
+
+          <div class="box">
+            <div class="dato">
+              <span class="label">Auditadas:</span>
+              ${reporteSeleccionado.tipificaciones_auditadas || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Desvío:</span>
+              ${reporteSeleccionado.tipificaciones_desvio || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Objetivo:</span>
+              ${reporteSeleccionado.tipificaciones_objetivo || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Resultado:</span>
+              ${reporteSeleccionado.tipificaciones_resultado || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Compromiso:</span>
+              ${reporteSeleccionado.tipificaciones_compromiso || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Observaciones:</span>
+              ${reporteSeleccionado.tipificaciones_observaciones || "-"}
+            </div>
+          </div>
+
+          <h2>No Ventas</h2>
+
+          <div class="box">
+            <div class="dato">
+              <span class="label">Cantidad:</span>
+              ${reporteSeleccionado.no_ventas || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Coaching:</span>
+              ${reporteSeleccionado.no_ventas_coaching || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Registro:</span>
+              ${reporteSeleccionado.no_ventas_registro || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Compromiso:</span>
+              ${reporteSeleccionado.no_ventas_compromiso || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">OM:</span>
+              ${reporteSeleccionado.no_ventas_om || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Fortalezas:</span>
+              ${reporteSeleccionado.no_ventas_fortalezas || "-"}
+            </div>
+
+            <div class="dato">
+              <span class="label">Observaciones:</span>
+              ${reporteSeleccionado.no_ventas_observaciones || "-"}
+            </div>
+          </div>
+
+          <script>
+            window.onload = function () {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+
+    ventana.document.close();
+  }
+
+  function renderInicio() {
+    const totalReportes = reportes.length;
+    const totalDevoluciones = devoluciones.length;
+    const totalAudios = audios.length;
+    const totalPdas = pdas.length;
 
     return (
       <div style={styles.page}>
-        <Card title="Impresión masiva">
-          <div style={styles.formGrid}>
-            <TextInput
-              label="Semana"
-              value={semana}
-              onChange={setSemana}
-              placeholder="Semana 4 • Agosto"
-            />
+        <div style={styles.hero}>
+          <div>
+            <div style={styles.eyebrow}>
+              PORTAL INTEGRAL DEL ASESOR
+            </div>
 
-            <Select
-              label="Cuenta"
-              value={campania}
-              onChange={setCampania}
-              options={[
-                "BM",
-                "AP",
-              ]}
-            />
+            <h1 style={styles.heroTitle}>
+              Panel de Administración
+            </h1>
+
+            <p style={styles.heroText}>
+              Gestión centralizada de calidad, productividad,
+              devoluciones, audios, PDA y seguimiento de asesores.
+            </p>
           </div>
 
-          <div style={styles.formActions}>
+          <div style={styles.heroBadge}>
+            ADMINISTRADOR
+          </div>
+        </div>
+
+        <div style={styles.statsGrid}>
+          <div style={styles.statCard}>
+            <span style={styles.statNumber}>
+              {ASESORES.length}
+            </span>
+            <span style={styles.statLabel}>
+              Asesores
+            </span>
+          </div>
+
+          <div style={styles.statCard}>
+            <span style={styles.statNumber}>
+              {totalReportes}
+            </span>
+            <span style={styles.statLabel}>
+              Reportes
+            </span>
+          </div>
+
+          <div style={styles.statCard}>
+            <span style={styles.statNumber}>
+              {totalDevoluciones}
+            </span>
+            <span style={styles.statLabel}>
+              Devoluciones
+            </span>
+          </div>
+
+          <div style={styles.statCard}>
+            <span style={styles.statNumber}>
+              {totalAudios}
+            </span>
+            <span style={styles.statLabel}>
+              Audios
+            </span>
+          </div>
+
+          <div style={styles.statCard}>
+            <span style={styles.statNumber}>
+              {totalPdas}
+            </span>
+            <span style={styles.statLabel}>
+              PDA
+            </span>
+          </div>
+        </div>
+
+        <Card title="Accesos rápidos">
+          <div style={styles.quickGrid}>
             <button
               type="button"
-              onClick={
-                seleccionarTodos
-              }
-              style={styles.secondaryButton}
+              style={styles.quickButton}
+              onClick={() => setActiveTab("asesores")}
             >
-              Seleccionar todos
+              <strong>Asesores</strong>
+              <span>
+                Buscar y consultar la información integral
+                de cada asesor.
+              </span>
             </button>
 
             <button
               type="button"
-              onClick={quitarTodos}
-              style={{
-                ...styles.secondaryButton,
-                marginLeft: "8px",
-              }}
+              style={styles.quickButton}
+              onClick={() => setActiveTab("calidad")}
             >
-              Quitar selección
+              <strong>Calidad</strong>
+              <span>
+                Cargar notas, evolución y aspectos de calidad.
+              </span>
             </button>
-          </div>
 
-          <div style={styles.sectionSpacing}>
-            {reportesDisponibles.length ===
-            0 ? (
-              <div style={styles.emptyState}>
-                No hay reportes para los
-                filtros seleccionados.
-              </div>
-            ) : (
-              <div style={styles.resultList}>
-                {reportesDisponibles.map(
-                  (item) => (
-                    <label
-                      key={item.id}
-                      style={{
-                        ...styles.resultCard,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={seleccionados.includes(
-                          item.id
-                        )}
-                        onChange={() =>
-                          toggleReporte(
-                            item.id
-                          )
-                        }
-                      />
-
-                      <div>
-                        <strong>
-                          {item.asesor ||
-                            "-"}
-                        </strong>
-
-                        <div
-                          style={
-                            styles.resultText
-                          }
-                        >
-                          {item.semana ||
-                            "-"}{" "}
-                          •{" "}
-                          {item.campania ||
-                            item.producto ||
-                            "-"}
-                        </div>
-                      </div>
-                    </label>
-                  )
-                )}
-              </div>
-            )}
-          </div>
-
-          <div style={styles.formActions}>
             <button
               type="button"
-              onClick={
-                imprimirSeleccionados
-              }
-              disabled={
-                seleccionados.length ===
-                0
-              }
-              style={styles.primaryButton}
+              style={styles.quickButton}
+              onClick={() => setActiveTab("productividad")}
             >
-              Imprimir seleccionados
+              <strong>Productividad</strong>
+              <span>
+                Gestionar objetivos y resultados.
+              </span>
+            </button>
+
+            <button
+              type="button"
+              style={styles.quickButton}
+              onClick={() => setActiveTab("devoluciones")}
+            >
+              <strong>Devoluciones</strong>
+              <span>
+                Registrar devoluciones realizadas.
+              </span>
+            </button>
+
+            <button
+              type="button"
+              style={styles.quickButton}
+              onClick={() => setActiveTab("audios")}
+            >
+              <strong>Audios</strong>
+              <span>
+                Cargar y consultar escuchas.
+              </span>
+            </button>
+
+            <button
+              type="button"
+              style={styles.quickButton}
+              onClick={() => setActiveTab("pdas")}
+            >
+              <strong>PDA</strong>
+              <span>
+                Registrar planes de acción.
+              </span>
             </button>
           </div>
         </Card>
@@ -1798,259 +1369,795 @@ function renderSeguimiento() {
     );
   }
 
-function renderReportes() {
+  function renderAsesores() {
+    const reporteAsesor = reportes.filter(
+      (item) => item.asesor === selectedAdvisor
+    );
+
+    const devolucionesAsesor = devoluciones.filter(
+      (item) => item.asesor === selectedAdvisor
+    );
+
+    const audiosAsesor = audios.filter(
+      (item) => item.asesor === selectedAdvisor
+    );
+
+    const pdasAsesor = pdas.filter(
+      (item) => item.asesor === selectedAdvisor
+    );
+
     return (
       <div style={styles.page}>
-        <Card title="Reportes de calidad">
+        <Card title="Asesores">
+          <div style={styles.twoColumns}>
+            <div>
+              <TextInput
+                label="Buscar asesor"
+                value={searchAdvisor}
+                onChange={setSearchAdvisor}
+                placeholder="Escribí el nombre..."
+              />
+
+              <div style={styles.advisorList}>
+                {asesoresFiltrados.map((asesor) => (
+                  <button
+                    type="button"
+                    key={asesor}
+                    onClick={() => seleccionarAsesor(asesor)}
+                    style={{
+                      ...styles.advisorButton,
+                      ...(selectedAdvisor === asesor
+                        ? styles.advisorButtonActive
+                        : {}),
+                    }}
+                  >
+                    {asesor}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              {!selectedAdvisor ? (
+                <div style={styles.emptyState}>
+                  Seleccioná un asesor para ver toda su
+                  información.
+                </div>
+              ) : (
+                <>
+                  <div style={styles.profileHeader}>
+                    <div>
+                      <div style={styles.profileKicker}>
+                        ASESOR
+                      </div>
+
+                      <h2 style={styles.profileName}>
+                        {selectedAdvisor}
+                      </h2>
+                    </div>
+                  </div>
+
+                  <div style={styles.miniStats}>
+                    <div style={styles.miniStat}>
+                      <strong>
+                        {reporteAsesor.length}
+                      </strong>
+                      <span>Reportes</span>
+                    </div>
+
+                    <div style={styles.miniStat}>
+                      <strong>
+                        {devolucionesAsesor.length}
+                      </strong>
+                      <span>Devoluciones</span>
+                    </div>
+
+                    <div style={styles.miniStat}>
+                      <strong>
+                        {audiosAsesor.length}
+                      </strong>
+                      <span>Audios</span>
+                    </div>
+
+                    <div style={styles.miniStat}>
+                      <strong>
+                        {pdasAsesor.length}
+                      </strong>
+                      <span>PDA</span>
+                    </div>
+                  </div>
+
+                  <div style={styles.sectionSpacing}>
+                    <h3 style={styles.subTitle}>
+                      Último reporte de calidad
+                    </h3>
+
+                    {reporteAsesor.length === 0 ? (
+                      <div style={styles.emptyState}>
+                        No hay reportes cargados.
+                      </div>
+                    ) : (
+                      <div style={styles.resultList}>
+                        {reporteAsesor
+                          .slice(0, 3)
+                          .map((item) => (
+                            <div
+                              key={item.id}
+                              style={styles.resultCard}
+                            >
+                              <div style={styles.resultTop}>
+                                <strong>
+                                  {item.semana || "-"}
+                                </strong>
+
+                                <StatusBadge
+                                  status={
+                                    item.estado_calidad ||
+                                    ""
+                                  }
+                                />
+                              </div>
+
+                              <div style={styles.resultGrid}>
+                                <div>
+                                  <span>Nota</span>
+                                  <strong>
+                                    {item.nota || "-"}
+                                  </strong>
+                                </div>
+
+                                <div>
+                                  <span>Desvío</span>
+                                  <strong>
+                                    {item.desvio || "-"}
+                                  </strong>
+                                </div>
+
+                                <div>
+                                  <span>Evolución</span>
+                                  <strong>
+                                    {item.evolucion || "-"}
+                                  </strong>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={styles.sectionSpacing}>
+                    <h3 style={styles.subTitle}>
+                      Tipificaciones y No Ventas
+                    </h3>
+
+                    {reporteAsesor.length === 0 ? (
+                      <div style={styles.emptyState}>
+                        No hay información cargada.
+                      </div>
+                    ) : (
+                      <div style={styles.resultList}>
+                        {reporteAsesor
+                          .slice(0, 3)
+                          .map((item) => (
+                            <div
+                              key={`tip-${item.id}`}
+                              style={styles.resultCard}
+                            >
+                              <div style={styles.resultTop}>
+                                <strong>
+                                  {item.semana || "-"}
+                                </strong>
+                              </div>
+
+                              <div style={styles.resultGrid}>
+                                <div>
+                                  <span>
+                                    Tipificaciones auditadas
+                                  </span>
+                                  <strong>
+                                    {item.tipificaciones_auditadas ||
+                                      "-"}
+                                  </strong>
+                                </div>
+
+                                <div>
+                                  <span>
+                                    Desvío
+                                  </span>
+                                  <strong>
+                                    {item.tipificaciones_desvio ||
+                                      "-"}
+                                  </strong>
+                                </div>
+
+                                <div>
+                                  <span>
+                                    Resultado
+                                  </span>
+                                  <strong>
+                                    {item.tipificaciones_resultado ||
+                                      "-"}
+                                  </strong>
+                                </div>
+
+                                <div>
+                                  <span>
+                                    No Ventas
+                                  </span>
+                                  <strong>
+                                    {item.no_ventas || "-"}
+                                  </strong>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={styles.sectionSpacing}>
+                    <h3 style={styles.subTitle}>
+                      Devoluciones
+                    </h3>
+
+                    {devolucionesAsesor.length === 0 ? (
+                      <div style={styles.emptyState}>
+                        No hay devoluciones cargadas.
+                      </div>
+                    ) : (
+                      <div style={styles.resultList}>
+                        {devolucionesAsesor
+                          .slice(0, 5)
+                          .map((item) => (
+                            <div
+                              key={item.id}
+                              style={styles.resultCard}
+                            >
+                              <div style={styles.resultTop}>
+                                <strong>
+                                  {formatearFecha(
+                                    item.created_at
+                                  )}
+                                </strong>
+
+                                <span>
+                                  {item.area || "-"}
+                                </span>
+                              </div>
+
+                              <p style={styles.resultText}>
+                                {item.observaciones ||
+                                  "Sin observaciones."}
+                              </p>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={styles.sectionSpacing}>
+                    <h3 style={styles.subTitle}>
+                      PDA
+                    </h3>
+
+                    {pdasAsesor.length === 0 ? (
+                      <div style={styles.emptyState}>
+                        No hay PDA cargados.
+                      </div>
+                    ) : (
+                      <div style={styles.resultList}>
+                        {pdasAsesor
+                          .slice(0, 5)
+                          .map((item) => (
+                            <div
+                              key={item.id}
+                              style={styles.resultCard}
+                            >
+                              <div style={styles.resultTop}>
+                                <strong>
+                                  {item.aspecto || "-"}
+                                </strong>
+
+                                <span>
+                                  {formatearFecha(
+                                    item.created_at
+                                  )}
+                                </span>
+                              </div>
+
+                              <p style={styles.resultText}>
+                                {item.objetivo ||
+                                  item.observaciones ||
+                                  "Sin información."}
+                              </p>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={styles.sectionSpacing}>
+                    <h3 style={styles.subTitle}>
+                      Audios
+                    </h3>
+
+                    {audiosAsesor.length === 0 ? (
+                      <div style={styles.emptyState}>
+                        No hay audios cargados.
+                      </div>
+                    ) : (
+                      <div style={styles.resultList}>
+                        {audiosAsesor
+                          .slice(0, 5)
+                          .map((item) => (
+                            <div
+                              key={item.id}
+                              style={styles.resultCard}
+                            >
+                              <div style={styles.resultTop}>
+                                <strong>
+                                  {formatearFecha(
+                                    item.created_at
+                                  )}
+                                </strong>
+
+                                <span>
+                                  {item.area || "-"}
+                                </span>
+                              </div>
+
+                              {item.archivo ? (
+                                <audio
+                                  controls
+                                  src={item.archivo}
+                                  style={styles.audioPlayer}
+                                />
+                              ) : (
+                                <p style={styles.resultText}>
+                                  Sin archivo.
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  function renderCalidad() {
+    return (
+      <div style={styles.page}>
+        <Card title="Carga de Calidad">
+          <form onSubmit={guardarReporte}>
+            <div style={styles.formGrid}>
+              <Select
+                label="Asesor"
+                value={reporte.asesor}
+                onChange={(value) =>
+                  actualizarReporte("asesor", value)
+                }
+                options={ASESORES}
+              />
+
+              <TextInput
+                label="Semana"
+                value={reporte.semana}
+                onChange={(value) =>
+                  actualizarReporte("semana", value)
+                }
+              />
+
+              <Select
+                label="Campaña"
+                value={reporte.campania}
+                onChange={(value) =>
+                  actualizarReporte("campania", value)
+                }
+                options={["AP", "BM"]}
+              />
+
+              <NumberInput
+                label="Nota"
+                value={reporte.notaCalidad}
+                onChange={(value) =>
+                  actualizarReporte("notaCalidad", value)
+                }
+                placeholder="Ej. 85"
+              />
+
+              <PercentageInput
+                label="Objetivo"
+                value={reporte.objetivoCalidad}
+                onChange={(value) =>
+                  actualizarReporte("objetivoCalidad", value)
+                }
+              />
+
+              <PercentageInput
+                label="Evolución"
+                value={reporte.evolucionCalidad}
+                onChange={(value) =>
+                  actualizarReporte("evolucionCalidad", value)
+                }
+              />
+
+              <PercentageInput
+                label="Desvío"
+                value={reporte.desviosCalidad}
+                onChange={(value) =>
+                  actualizarReporte("desviosCalidad", value)
+                }
+              />
+            </div>
+
+            <div style={styles.sectionSpacing}>
+              <MultiSelect
+                label="Aspectos trabajados"
+                options={CALIDAD_ASPECTOS}
+                value={reporte.aspectosTrabajadosCalidad}
+                onChange={(value) =>
+                  actualizarReporte(
+                    "aspectosTrabajadosCalidad",
+                    value
+                  )
+                }
+              />
+
+              <MultiSelect
+                label="Acciones realizadas"
+                options={CALIDAD_ACCIONES}
+                value={reporte.accionesCalidad}
+                onChange={(value) =>
+                  actualizarReporte(
+                    "accionesCalidad",
+                    value
+                  )
+                }
+              />
+
+              <TextArea
+                label="Observaciones"
+                value={reporte.observacionesCalidad}
+                onChange={(value) =>
+                  actualizarReporte(
+                    "observacionesCalidad",
+                    value
+                  )
+                }
+              />
+            </div>
+
+            <div style={styles.formActions}>
+              <button
+                type="submit"
+                disabled={loading}
+                style={styles.primaryButton}
+              >
+                {loading
+                  ? "Guardando..."
+                  : "Guardar reporte"}
+              </button>
+            </div>
+          </form>
+        </Card>
+      </div>
+    );
+  }
+
+  function renderProductividad() {
+    return (
+      <div style={styles.page}>
+        <Card title="Productividad">
           <div style={styles.formGrid}>
-            <TextInput
-              label="Buscar asesor"
-              value={buscarAsesor}
-              onChange={setBuscarAsesor}
-              placeholder="Nombre del asesor"
+            <Select
+              label="Asesor"
+              value={reporte.asesor}
+              onChange={(value) =>
+                actualizarReporte("asesor", value)
+              }
+              options={ASESORES}
             />
 
             <TextInput
               label="Semana"
-              value={semana}
-              onChange={setSemana}
-              placeholder="Semana 4 • Agosto"
+              value={reporte.semana}
+              onChange={(value) =>
+                actualizarReporte("semana", value)
+              }
             />
 
-            <Select
-              label="Campaña"
-              value={campania}
-              onChange={setCampania}
-              options={[
-                "BM",
-                "AP",
-              ]}
+            <NumberInput
+              label="SPH"
+              value={reporte.sph}
+              onChange={(value) =>
+                actualizarReporte("sph", value)
+              }
+            />
+
+            <NumberInput
+              label="Objetivo SPH"
+              value={reporte.objetivoSph}
+              onChange={(value) =>
+                actualizarReporte("objetivoSph", value)
+              }
+            />
+
+            <NumberInput
+              label="Ventas"
+              value={reporte.ventas}
+              onChange={(value) =>
+                actualizarReporte("ventas", value)
+              }
+            />
+
+            <NumberInput
+              label="Objetivo ventas"
+              value={reporte.objetivoVentas}
+              onChange={(value) =>
+                actualizarReporte("objetivoVentas", value)
+              }
+            />
+
+            <NumberInput
+              label="Objetivo de campaña"
+              value={reporte.objetivoCampania}
+              onChange={(value) =>
+                actualizarReporte(
+                  "objetivoCampania",
+                  value
+                )
+              }
+              placeholder="0000"
+              small
             />
           </div>
 
           <div style={styles.sectionSpacing}>
-            {reportesFiltrados.length === 0 ? (
-              <div style={styles.emptyState}>
-                No hay reportes para los filtros
-                seleccionados.
-              </div>
-            ) : (
-              <div style={styles.resultList}>
-                {reportesFiltrados.map(
-                  (item) => (
-                    <div
-                      key={item.id}
-                      style={styles.resultCard}
-                    >
-                      <div
-                        style={
-                          styles.resultTop
-                        }
-                      >
-                        <div>
-                          <span
-                            style={
-                              styles.profileKicker
-                            }
-                          >
-                            REPORTE DE CALIDAD
-                          </span>
+            <MultiSelect
+              label="Aspectos trabajados"
+              options={PRODUCTIVIDAD_ASPECTOS}
+              value={
+                reporte.aspectosTrabajadosProductividad
+              }
+              onChange={(value) =>
+                actualizarReporte(
+                  "aspectosTrabajadosProductividad",
+                  value
+                )
+              }
+            />
 
-                          <strong
-                            style={{
-                              display:
-                                "block",
-                              fontSize:
-                                "18px",
-                              marginTop:
-                                "4px",
-                            }}
-                          >
-                            {item.asesor ||
-                              "-"}
-                          </strong>
-                        </div>
+            <MultiSelect
+              label="Acciones realizadas"
+              options={PRODUCTIVIDAD_ACCIONES}
+              value={reporte.accionesProductividad}
+              onChange={(value) =>
+                actualizarReporte(
+                  "accionesProductividad",
+                  value
+                )
+              }
+            />
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            imprimirReporte(
-                              item
-                            )
-                          }
-                          style={
-                            styles.secondaryButton
-                          }
-                        >
-                          Imprimir
-                        </button>
-                      </div>
+            <TextArea
+              label="Observaciones"
+              value={reporte.observacionesProductividad}
+              onChange={(value) =>
+                actualizarReporte(
+                  "observacionesProductividad",
+                  value
+                )
+              }
+            />
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
-                      <div
-                        style={
-                          styles.resultGrid
-                        }
-                      >
-                        <div
-                          style={
-                            styles.resultGridItem
-                          }
-                        >
-                          <span>
-                            Semana
-                          </span>
+  function renderTipificaciones() {
+    return (
+      <div style={styles.page}>
+        <Card title="Tipificaciones">
+          <div style={styles.formGrid}>
+            <Select
+              label="Asesor"
+              value={reporte.asesor}
+              onChange={(value) =>
+                actualizarReporte("asesor", value)
+              }
+              options={ASESORES}
+            />
 
-                          <strong>
-                            {item.semana ||
-                              "-"}
-                          </strong>
-                        </div>
+            <TextInput
+              label="Semana"
+              value={reporte.semana}
+              onChange={(value) =>
+                actualizarReporte("semana", value)
+              }
+            />
+          </div>
 
-                        <div
-                          style={
-                            styles.resultGridItem
-                          }
-                        >
-                          <span>
-                            Campaña
-                          </span>
+          <div style={styles.sectionSpacing}>
+            <MultiSelect
+              label="Tipificaciones auditadas"
+              options={TIPIFICACIONES}
+              value={reporte.tipificacionesAuditadas}
+              onChange={(value) =>
+                actualizarReporte(
+                  "tipificacionesAuditadas",
+                  value
+                )
+              }
+            />
+          </div>
 
-                          <strong>
-                            {item.campania ||
-                              item.producto ||
-                              "-"}
-                          </strong>
-                        </div>
+          <div style={styles.formGrid}>
+            <PercentageInput
+              label="Desvío"
+              value={reporte.tipificacionesDesvio}
+              onChange={(value) =>
+                actualizarReporte(
+                  "tipificacionesDesvio",
+                  value
+                )
+              }
+            />
 
-                        <div
-                          style={
-                            styles.resultGridItem
-                          }
-                        >
-                          <span>
-                            Nota
-                          </span>
+            <PercentageInput
+              label="Objetivo"
+              value={reporte.tipificacionesObjetivo}
+              onChange={(value) =>
+                actualizarReporte(
+                  "tipificacionesObjetivo",
+                  value
+                )
+              }
+            />
 
-                          <strong>
-                            {item.nota ??
-                              "-"}
-                          </strong>
-                        </div>
+            <PercentageInput
+              label="Resultado"
+              value={reporte.tipificacionesResultado}
+              onChange={(value) =>
+                actualizarReporte(
+                  "tipificacionesResultado",
+                  value
+                )
+              }
+            />
+          </div>
 
-                        <div
-                          style={
-                            styles.resultGridItem
-                          }
-                        >
-                          <span>
-                            Objetivo
-                          </span>
+          <div style={styles.sectionSpacing}>
+            <TextArea
+              label="Compromiso"
+              value={reporte.tipificacionesCompromiso}
+              onChange={(value) =>
+                actualizarReporte(
+                  "tipificacionesCompromiso",
+                  value
+                )
+              }
+            />
 
-                          <strong>
-                            {item.objetivo ||
-                              "-"}
-                          </strong>
-                        </div>
+            <TextArea
+              label="Observaciones"
+              value={reporte.tipificacionesObservaciones}
+              onChange={(value) =>
+                actualizarReporte(
+                  "tipificacionesObservaciones",
+                  value
+                )
+              }
+            />
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
-                        <div
-                          style={
-                            styles.resultGridItem
-                          }
-                        >
-                          <span>
-                            SPH
-                          </span>
+  function renderNoVentas() {
+    return (
+      <div style={styles.page}>
+        <Card title="No Ventas">
+          <div style={styles.formGrid}>
+            <Select
+              label="Asesor"
+              value={reporte.asesor}
+              onChange={(value) =>
+                actualizarReporte("asesor", value)
+              }
+              options={ASESORES}
+            />
 
-                          <strong>
-                            {item.sph ??
-                              "-"}
-                          </strong>
-                        </div>
+            <NumberInput
+              label="Cantidad de no ventas"
+              value={reporte.noVentasCantidad}
+              onChange={(value) =>
+                actualizarReporte(
+                  "noVentasCantidad",
+                  value
+                )
+              }
+            />
+          </div>
 
-                        <div
-                          style={
-                            styles.resultGridItem
-                          }
-                        >
-                          <span>
-                            Ventas
-                          </span>
+          <div style={styles.sectionSpacing}>
+            <MultiSelect
+              label="Coaching"
+              options={PRODUCTIVIDAD_ACCIONES}
+              value={reporte.noVentasCoaching}
+              onChange={(value) =>
+                actualizarReporte(
+                  "noVentasCoaching",
+                  value
+                )
+              }
+            />
 
-                          <strong>
-                            {item.ventas ??
-                              "-"}
-                          </strong>
-                        </div>
-                      </div>
+            <TextArea
+              label="Registro"
+              value={reporte.noVentasRegistro}
+              onChange={(value) =>
+                actualizarReporte(
+                  "noVentasRegistro",
+                  value
+                )
+              }
+            />
 
-                      {item.desvio && (
-                        <div
-                          style={
-                            styles.infoBox
-                          }
-                        >
-                          <strong>
-                            Desvío
-                          </strong>
+            <TextArea
+              label="Compromiso"
+              value={reporte.noVentasCompromiso}
+              onChange={(value) =>
+                actualizarReporte(
+                  "noVentasCompromiso",
+                  value
+                )
+              }
+            />
 
-                          <div
-                            style={
-                              styles.resultText
-                            }
-                          >
-                            {item.desvio}
-                          </div>
-                        </div>
-                      )}
+            <MultiSelect
+              label="OM"
+              options={OM}
+              value={reporte.noVentasOM}
+              onChange={(value) =>
+                actualizarReporte(
+                  "noVentasOM",
+                  value
+                )
+              }
+            />
 
-                      {item.recomendacion && (
-                        <div
-                          style={
-                            styles.infoBox
-                          }
-                        >
-                          <strong>
-                            Recomendación
-                          </strong>
+            <MultiSelect
+              label="Fortalezas"
+              options={FORTALEZAS}
+              value={reporte.noVentasFortalezas}
+              onChange={(value) =>
+                actualizarReporte(
+                  "noVentasFortalezas",
+                  value
+                )
+              }
+            />
 
-                          <div
-                            style={
-                              styles.resultText
-                            }
-                          >
-                            {
-                              item.recomendacion
-                            }
-                          </div>
-                        </div>
-                      )}
-
-                      {item.observaciones && (
-                        <div
-                          style={
-                            styles.infoBox
-                          }
-                        >
-                          <strong>
-                            Observaciones
-                          </strong>
-
-                          <div
-                            style={
-                              styles.resultText
-                            }
-                          >
-                            {
-                              item.observaciones
-                            }
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )
-                )}
-              </div>
-            )}
+            <TextArea
+              label="Observaciones"
+              value={reporte.noVentasObservaciones}
+              onChange={(value) =>
+                actualizarReporte(
+                  "noVentasObservaciones",
+                  value
+                )
+              }
+            />
           </div>
         </Card>
       </div>
@@ -2060,16 +2167,12 @@ function renderReportes() {
   function renderDevoluciones() {
     return (
       <div style={styles.page}>
-        <Card title="Nueva devolución">
-          <form
-            onSubmit={guardarDevolucion}
-          >
+        <Card title="Devoluciones">
+          <form onSubmit={guardarDevolucion}>
             <div style={styles.formGrid}>
               <Select
                 label="Asesor"
-                value={
-                  devolucion.asesor
-                }
+                value={devolucion.asesor}
                 onChange={(value) =>
                   actualizarDevolucion(
                     "asesor",
@@ -2081,9 +2184,7 @@ function renderReportes() {
 
               <Select
                 label="Área"
-                value={
-                  devolucion.area
-                }
+                value={devolucion.area}
                 onChange={(value) =>
                   actualizarDevolucion(
                     "area",
@@ -2095,33 +2196,23 @@ function renderReportes() {
                   "Productividad",
                   "Tipificaciones",
                   "No Ventas",
-                  "Integral",
                 ]}
               />
 
-              <Select
-                label="Estado"
-                value={
-                  devolucion.estado
-                }
+              <TextInput
+                label="Responsable"
+                value={devolucion.responsable}
                 onChange={(value) =>
                   actualizarDevolucion(
-                    "estado",
+                    "responsable",
                     value
                   )
                 }
-                options={[
-                  "Pendiente",
-                  "Realizada",
-                  "En seguimiento",
-                ]}
               />
 
               <NumberInput
-                label="Nota de calidad"
-                value={
-                  devolucion.notaCalidad
-                }
+                label="Nota calidad"
+                value={devolucion.notaCalidad}
                 onChange={(value) =>
                   actualizarDevolucion(
                     "notaCalidad",
@@ -2131,19 +2222,11 @@ function renderReportes() {
               />
             </div>
 
-            <div
-              style={
-                styles.sectionSpacing
-              }
-            >
+            <div style={styles.sectionSpacing}>
               <MultiSelect
                 label="Aspectos de calidad"
-                options={
-                  CALIDAD_ASPECTOS
-                }
-                value={
-                  devolucion.aspectosCalidad
-                }
+                options={CALIDAD_ASPECTOS}
+                value={devolucion.aspectosCalidad}
                 onChange={(value) =>
                   actualizarDevolucion(
                     "aspectosCalidad",
@@ -2154,12 +2237,8 @@ function renderReportes() {
 
               <MultiSelect
                 label="Acciones de calidad"
-                options={
-                  CALIDAD_ACCIONES
-                }
-                value={
-                  devolucion.accionesCalidad
-                }
+                options={CALIDAD_ACCIONES}
+                value={devolucion.accionesCalidad}
                 onChange={(value) =>
                   actualizarDevolucion(
                     "accionesCalidad",
@@ -2170,9 +2249,7 @@ function renderReportes() {
 
               <MultiSelect
                 label="Aspectos de productividad"
-                options={
-                  PRODUCTIVIDAD_ASPECTOS
-                }
+                options={PRODUCTIVIDAD_ASPECTOS}
                 value={
                   devolucion.aspectosProductividad
                 }
@@ -2186,9 +2263,7 @@ function renderReportes() {
 
               <MultiSelect
                 label="Acciones de productividad"
-                options={
-                  PRODUCTIVIDAD_ACCIONES
-                }
+                options={PRODUCTIVIDAD_ACCIONES}
                 value={
                   devolucion.accionesProductividad
                 }
@@ -2202,12 +2277,8 @@ function renderReportes() {
 
               <MultiSelect
                 label="Tipificación"
-                options={
-                  TIPIFICACIONES
-                }
-                value={
-                  devolucion.tipificacion
-                }
+                options={TIPIFICACIONES}
+                value={devolucion.tipificacion}
                 onChange={(value) =>
                   actualizarDevolucion(
                     "tipificacion",
@@ -2219,9 +2290,7 @@ function renderReportes() {
               <MultiSelect
                 label="OM"
                 options={OM}
-                value={
-                  devolucion.om
-                }
+                value={devolucion.om}
                 onChange={(value) =>
                   actualizarDevolucion(
                     "om",
@@ -2230,30 +2299,21 @@ function renderReportes() {
                 }
               />
 
-              <Select
+              <TextArea
                 label="Registro en sistema"
-                value={
-                  devolucion.registroSistema
-                }
+                value={devolucion.registroSistema}
                 onChange={(value) =>
                   actualizarDevolucion(
                     "registroSistema",
                     value
                   )
                 }
-                options={[
-                  "Correcto",
-                  "Incorrecto",
-                  "No corresponde",
-                ]}
               />
 
               <MultiSelect
                 label="Fortalezas"
                 options={FORTALEZAS}
-                value={
-                  devolucion.fortalezas
-                }
+                value={devolucion.fortalezas}
                 onChange={(value) =>
                   actualizarDevolucion(
                     "fortalezas",
@@ -2264,9 +2324,7 @@ function renderReportes() {
 
               <TextArea
                 label="Observaciones"
-                value={
-                  devolucion.observaciones
-                }
+                value={devolucion.observaciones}
                 onChange={(value) =>
                   actualizarDevolucion(
                     "observaciones",
@@ -2276,9 +2334,7 @@ function renderReportes() {
               />
             </div>
 
-            <div
-              style={styles.formActions}
-            >
+            <div style={styles.formActions}>
               <button
                 type="submit"
                 disabled={loading}
@@ -2291,513 +2347,6 @@ function renderReportes() {
             </div>
           </form>
         </Card>
-
-        <Card title="Historial de devoluciones">
-          {devoluciones.length === 0 ? (
-            <div style={styles.emptyState}>
-              Todavía no hay devoluciones
-              cargadas.
-            </div>
-          ) : (
-            <div style={styles.resultList}>
-              {devoluciones.map(
-                (item) => (
-                  <div
-                    key={item.id}
-                    style={
-                      styles.resultCard
-                    }
-                  >
-                    <div
-                      style={
-                        styles.resultTop
-                      }
-                    >
-                      <strong>
-                        {item.asesor ||
-                          "-"}
-                      </strong>
-
-                      <StatusBadge
-                        status={
-                          item.estado ||
-                          "Pendiente"
-                        }
-                      />
-                    </div>
-
-                    <div
-                      style={
-                        styles.resultText
-                      }
-                    >
-                      {item.area ||
-                        "Integral"}
-                    </div>
-
-                    {item.observaciones && (
-                      <div
-                        style={{
-                          ...styles.infoBox,
-                          marginTop:
-                            "12px",
-                        }}
-                      >
-                        {
-                          item.observaciones
-                        }
-                      </div>
-                    )}
-                  </div>
-                )
-              )}
-            </div>
-          )}
-        </Card>
-      </div>
-    );
-  }
-
-            function renderTipificaciones() {
-    return (
-      <div style={styles.page}>
-        <Card title="Tipificaciones auditadas">
-          <form
-            onSubmit={guardarTipificacion}
-          >
-            <div style={styles.formGrid}>
-              <Select
-                label="Asesor"
-                value={
-                  tipificacion.asesor
-                }
-                onChange={(value) =>
-                  actualizarTipificacion(
-                    "asesor",
-                    value
-                  )
-                }
-                options={ASESORES}
-              />
-
-              <TextInput
-                label="Semana"
-                value={
-                  tipificacion.semana
-                }
-                onChange={(value) =>
-                  actualizarTipificacion(
-                    "semana",
-                    value
-                  )
-                }
-                placeholder="Semana 4 • Agosto"
-              />
-
-              <Select
-                label="Campaña"
-                value={
-                  tipificacion.campania
-                }
-                onChange={(value) =>
-                  actualizarTipificacion(
-                    "campania",
-                    value
-                  )
-                }
-                options={[
-                  "BM",
-                  "AP",
-                ]}
-              />
-            </div>
-
-            <div
-              style={
-                styles.sectionSpacing
-              }
-            >
-              <MultiSelect
-                label="Tipificaciones auditadas"
-                options={
-                  TIPIFICACIONES
-                }
-                value={
-                  tipificacion.tipificacionesAuditadas
-                }
-                onChange={(value) =>
-                  actualizarTipificacion(
-                    "tipificacionesAuditadas",
-                    value
-                  )
-                }
-              />
-
-              <MultiSelect
-                label="Desvíos encontrados"
-                options={
-                  TIPIFICACIONES_DESVIOS
-                }
-                value={
-                  tipificacion.desvios
-                }
-                onChange={(value) =>
-                  actualizarTipificacion(
-                    "desvios",
-                    value
-                  )
-                }
-              />
-
-              <TextArea
-                label="Observaciones"
-                value={
-                  tipificacion.observaciones
-                }
-                onChange={(value) =>
-                  actualizarTipificacion(
-                    "observaciones",
-                    value
-                  )
-                }
-              />
-            </div>
-
-            <div
-              style={styles.formActions}
-            >
-              <button
-                type="submit"
-                disabled={loading}
-                style={styles.primaryButton}
-              >
-                {loading
-                  ? "Guardando..."
-                  : "Guardar tipificación"}
-              </button>
-            </div>
-          </form>
-        </Card>
-
-        <Card title="Tipificaciones cargadas">
-          {tipificaciones.length ===
-          0 ? (
-            <div style={styles.emptyState}>
-              Todavía no hay tipificaciones
-              cargadas.
-            </div>
-          ) : (
-            <div style={styles.resultList}>
-              {tipificaciones.map(
-                (item) => (
-                  <div
-                    key={item.id}
-                    style={
-                      styles.resultCard
-                    }
-                  >
-                    <div
-                      style={
-                        styles.resultTop
-                      }
-                    >
-                      <div>
-                        <strong>
-                          {item.asesor ||
-                            "-"}
-                        </strong>
-
-                        <div
-                          style={
-                            styles.resultText
-                          }
-                        >
-                          {item.semana ||
-                            "-"}{" "}
-                          •{" "}
-                          {item.campania ||
-                            "-"}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div
-                      style={{
-                        ...styles.infoBox,
-                        marginTop:
-                          "12px",
-                      }}
-                    >
-                      <strong>
-                        Auditadas
-                      </strong>
-
-                      <div
-                        style={
-                          styles.resultText
-                        }
-                      >
-                        {
-                          item.tipificaciones_auditadas
-                        }
-                      </div>
-                    </div>
-
-                    {item.desvios && (
-                      <div
-                        style={{
-                          ...styles.infoBox,
-                          marginTop:
-                            "12px",
-                        }}
-                      >
-                        <strong>
-                          Desvíos
-                        </strong>
-
-                        <div
-                          style={
-                            styles.resultText
-                          }
-                        >
-                          {item.desvios}
-                        </div>
-                      </div>
-                    )}
-
-                    {item.observaciones && (
-                      <div
-                        style={{
-                          ...styles.infoBox,
-                          marginTop:
-                            "12px",
-                        }}
-                      >
-                        <strong>
-                          Observaciones
-                        </strong>
-
-                        <div
-                          style={
-                            styles.resultText
-                          }
-                        >
-                          {
-                            item.observaciones
-                          }
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              )}
-            </div>
-          )}
-        </Card>
-      </div>
-    );
-  }
-
-  function renderNoVentas() {
-    return (
-      <div style={styles.page}>
-        <Card title="No Ventas">
-          <form
-            onSubmit={guardarNoVenta}
-          >
-            <div style={styles.formGrid}>
-              <Select
-                label="Asesor"
-                value={noVenta.asesor}
-                onChange={(value) =>
-                  actualizarNoVenta(
-                    "asesor",
-                    value
-                  )
-                }
-                options={ASESORES}
-              />
-
-              <TextInput
-                label="Semana"
-                value={noVenta.semana}
-                onChange={(value) =>
-                  actualizarNoVenta(
-                    "semana",
-                    value
-                  )
-                }
-              />
-
-              <Select
-                label="Campaña"
-                value={noVenta.campania}
-                onChange={(value) =>
-                  actualizarNoVenta(
-                    "campania",
-                    value
-                  )
-                }
-                options={[
-                  "BM",
-                  "AP",
-                ]}
-              />
-
-              <Select
-                label="Motivo"
-                value={noVenta.motivo}
-                onChange={(value) =>
-                  actualizarNoVenta(
-                    "motivo",
-                    value
-                  )
-                }
-                options={
-                  MOTIVOS_NO_VENTA
-                }
-              />
-            </div>
-
-            <div
-              style={
-                styles.sectionSpacing
-              }
-            >
-              <MultiSelect
-                label="Motivos adicionales"
-                options={
-                  MOTIVOS_NO_VENTA
-                }
-                value={
-                  noVenta.motivosAdicionales
-                }
-                onChange={(value) =>
-                  actualizarNoVenta(
-                    "motivosAdicionales",
-                    value
-                  )
-                }
-              />
-
-              <TextArea
-                label="Observaciones"
-                value={
-                  noVenta.observaciones
-                }
-                onChange={(value) =>
-                  actualizarNoVenta(
-                    "observaciones",
-                    value
-                  )
-                }
-              />
-            </div>
-
-            <div
-              style={styles.formActions}
-            >
-              <button
-                type="submit"
-                disabled={loading}
-                style={styles.primaryButton}
-              >
-                {loading
-                  ? "Guardando..."
-                  : "Guardar No Venta"}
-              </button>
-            </div>
-          </form>
-        </Card>
-
-        <Card title="No Ventas cargadas">
-          {noVentas.length === 0 ? (
-            <div style={styles.emptyState}>
-              Todavía no hay registros.
-            </div>
-          ) : (
-            <div style={styles.resultList}>
-              {noVentas.map((item) => (
-                <div
-                  key={item.id}
-                  style={
-                    styles.resultCard
-                  }
-                >
-                  <div
-                    style={
-                      styles.resultTop
-                    }
-                  >
-                    <strong>
-                      {item.asesor ||
-                        "-"}
-                    </strong>
-
-                    <span
-                      style={
-                        styles.smallMuted
-                      }
-                    >
-                      {item.semana ||
-                        "-"}
-                    </span>
-                  </div>
-
-                  <div
-                    style={
-                      styles.resultGrid
-                    }
-                  >
-                    <div
-                      style={
-                        styles.resultGridItem
-                      }
-                    >
-                      <span>
-                        Campaña
-                      </span>
-
-                      <strong>
-                        {item.campania ||
-                          "-"}
-                      </strong>
-                    </div>
-
-                    <div
-                      style={
-                        styles.resultGridItem
-                      }
-                    >
-                      <span>
-                        Motivo
-                      </span>
-
-                      <strong>
-                        {item.motivo ||
-                          "-"}
-                      </strong>
-                    </div>
-                  </div>
-
-                  {item.observaciones && (
-                    <div
-                      style={{
-                        ...styles.infoBox,
-                        marginTop:
-                          "12px",
-                      }}
-                    >
-                      {
-                        item.observaciones
-                      }
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
       </div>
     );
   }
@@ -2806,64 +2355,49 @@ function renderReportes() {
     return (
       <div style={styles.page}>
         <Card title="Felicitaciones">
-          <form
-            onSubmit={
-              guardarFelicitacion
-            }
-          >
+          <form onSubmit={guardarFelicitacion}>
             <div style={styles.formGrid}>
               <Select
                 label="Asesor"
-                value={
-                  felicitacion.asesor
-                }
+                value={felicitacion.asesor}
                 onChange={(value) =>
-                  actualizarFelicitacion(
-                    "asesor",
-                    value
-                  )
+                  setFelicitacion((prev) => ({
+                    ...prev,
+                    asesor: value,
+                  }))
                 }
                 options={ASESORES}
               />
 
               <TextInput
                 label="Fecha"
-                type="date"
-                value={
-                  felicitacion.fecha
-                }
+                value={felicitacion.fecha}
                 onChange={(value) =>
-                  actualizarFelicitacion(
-                    "fecha",
-                    value
-                  )
+                  setFelicitacion((prev) => ({
+                    ...prev,
+                    fecha: value,
+                  }))
                 }
+                placeholder="DD/MM/AAAA"
               />
             </div>
 
-            <div
-              style={
-                styles.sectionSpacing
-              }
-            >
+            <div style={styles.sectionSpacing}>
               <TextArea
-                label="Motivo"
-                value={
-                  felicitacion.motivo
-                }
+                label="Motivo de la felicitación"
+                value={felicitacion.motivo}
                 onChange={(value) =>
-                  actualizarFelicitacion(
-                    "motivo",
-                    value
-                  )
+                  setFelicitacion((prev) => ({
+                    ...prev,
+                    motivo: value,
+                  }))
                 }
-                placeholder="¿Por qué destacamos al asesor?"
+                rows={5}
+                placeholder="Escribí el motivo..."
               />
             </div>
 
-            <div
-              style={styles.formActions}
-            >
+            <div style={styles.formActions}>
               <button
                 type="submit"
                 disabled={loading}
@@ -2876,552 +2410,369 @@ function renderReportes() {
             </div>
           </form>
         </Card>
-
-        <Card title="Felicitaciones cargadas">
-          {felicitaciones.length ===
-          0 ? (
-            <div style={styles.emptyState}>
-              Todavía no hay felicitaciones.
-            </div>
-          ) : (
-            <div style={styles.resultList}>
-              {felicitaciones.map(
-                (item) => (
-                  <div
-                    key={item.id}
-                    style={
-                      styles.resultCard
-                    }
-                  >
-                    <div
-                      style={
-                        styles.resultTop
-                      }
-                    >
-                      <strong>
-                        {item.asesor ||
-                          "-"}
-                      </strong>
-
-                      <span
-                        style={
-                          styles.smallMuted
-                        }
-                      >
-                        {formatearFecha(
-                          item.fecha
-                        )}
-                      </span>
-                    </div>
-
-                    <div
-                      style={{
-                        ...styles.infoBox,
-                        marginTop:
-                          "12px",
-                      }}
-                    >
-                      {item.motivo ||
-                        "-"}
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
-          )}
-        </Card>
       </div>
     );
   }
 
-function renderDashboard() {
-    const totalReportes =
-      reportes.length;
-
-    const totalAudios =
-      audios.length;
-
-    const totalPdas =
-      pdas.length;
-
-    const totalFelicitaciones =
-      felicitaciones.length;
-
-    const promedioNotas =
-      reportes.length > 0
-        ? (
-            reportes.reduce(
-              (total, item) =>
-                total +
-                Number(
-                  item.nota || 0
-                ),
-              0
-            ) / reportes.length
-          ).toFixed(2)
-        : "0.00";
-
+  function renderAudios() {
     return (
       <div style={styles.page}>
-        <div style={styles.dashboardHeader}>
-          <div>
-            <span
-              style={
-                styles.profileKicker
-              }
-            >
-              PORTAL INTEGRAL DEL ASESOR
-            </span>
+        <Card title="Audios">
+          <form onSubmit={guardarAudio}>
+            <div style={styles.formGrid}>
+              <Select
+                label="Asesor"
+                value={audio.asesor}
+                onChange={(value) =>
+                  actualizarAudio("asesor", value)
+                }
+                options={ASESORES}
+              />
 
-            <h1
-              style={
-                styles.dashboardTitle
-              }
-            >
-              Panel de administración
-            </h1>
+              <Select
+                label="Área"
+                value={audio.area}
+                onChange={(value) =>
+                  actualizarAudio("area", value)
+                }
+                options={[
+                  "Calidad",
+                  "Productividad",
+                  "Tipificaciones",
+                  "No Ventas",
+                ]}
+              />
 
-            <p
-              style={
-                styles.dashboardSubtitle
-              }
-            >
-              Gestión integral de calidad,
-              productividad y seguimiento
-              de asesores.
-            </p>
-          </div>
+              <TextInput
+                label="Responsable"
+                value={audio.responsable}
+                onChange={(value) =>
+                  actualizarAudio(
+                    "responsable",
+                    value
+                  )
+                }
+              />
 
-          <div
-            style={
-              styles.dashboardDate
-            }
-          >
-            {new Date().toLocaleDateString(
-              "es-AR",
-              {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              }
-            )}
-          </div>
-        </div>
-
-        <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
-            <span
-              style={
-                styles.statNumber
-              }
-            >
-              {totalReportes}
-            </span>
-
-            <span
-              style={
-                styles.statLabel
-              }
-            >
-              Reportes
-            </span>
-          </div>
-
-          <div style={styles.statCard}>
-            <span
-              style={
-                styles.statNumber
-              }
-            >
-              {promedioNotas}
-            </span>
-
-            <span
-              style={
-                styles.statLabel
-              }
-            >
-              Promedio de nota
-            </span>
-          </div>
-
-          <div style={styles.statCard}>
-            <span
-              style={
-                styles.statNumber
-              }
-            >
-              {totalAudios}
-            </span>
-
-            <span
-              style={
-                styles.statLabel
-              }
-            >
-              Audios
-            </span>
-          </div>
-
-          <div style={styles.statCard}>
-            <span
-              style={
-                styles.statNumber
-              }
-            >
-              {totalPdas}
-            </span>
-
-            <span
-              style={
-                styles.statLabel
-              }
-            >
-              Planes de acción
-            </span>
-          </div>
-
-          <div style={styles.statCard}>
-            <span
-              style={
-                styles.statNumber
-              }
-            >
-              {totalFelicitaciones}
-            </span>
-
-            <span
-              style={
-                styles.statLabel
-              }
-            >
-              Felicitaciones
-            </span>
-          </div>
-        </div>
-
-        <Card title="Accesos rápidos">
-          <div style={styles.quickGrid}>
-            <button
-              type="button"
-              onClick={() =>
-                setActiveSection(
-                  "reportes"
-                )
-              }
-              style={styles.quickCard}
-            >
-              <strong>
-                Reportes
-              </strong>
-
-              <span>
-                Consultar y gestionar
-                reportes de calidad.
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                setActiveSection(
-                  "devoluciones"
-                )
-              }
-              style={styles.quickCard}
-            >
-              <strong>
-                Devoluciones
-              </strong>
-
-              <span>
-                Registrar y consultar
-                devoluciones.
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                setActiveSection(
-                  "audios"
-                )
-              }
-              style={styles.quickCard}
-            >
-              <strong>
-                Audios
-              </strong>
-
-              <span>
-                Cargar audios y asociar
-                devoluciones.
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                setActiveSection(
-                  "pdas"
-                )
-              }
-              style={styles.quickCard}
-            >
-              <strong>
-                Plan de Acción
-              </strong>
-
-              <span>
-                Crear y realizar seguimiento
-                de PDA.
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                setActiveSection(
-                  "tipificaciones"
-                )
-              }
-              style={styles.quickCard}
-            >
-              <strong>
-                Tipificaciones
-              </strong>
-
-              <span>
-                Auditar tipificaciones y
-                registrar desvíos.
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                setActiveSection(
-                  "no-ventas"
-                )
-              }
-              style={styles.quickCard}
-            >
-              <strong>
-                No Ventas
-              </strong>
-
-              <span>
-                Registrar motivos y
-                observaciones.
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                setActiveSection(
-                  "felicitaciones"
-                )
-              }
-              style={styles.quickCard}
-            >
-              <strong>
-                Felicitaciones
-              </strong>
-
-              <span>
-                Reconocer buenas prácticas
-                de los asesores.
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                setActiveSection(
-                  "seguimiento"
-                )
-              }
-              style={styles.quickCard}
-            >
-              <strong>
-                Seguimiento
-              </strong>
-
-              <span>
-                Ver pendientes y acciones
-                activas.
-              </span>
-            </button>
-          </div>
-        </Card>
-
-        <Card title="Últimos reportes">
-          {reportes.length === 0 ? (
-            <div style={styles.emptyState}>
-              Todavía no hay reportes
-              cargados.
+              <TextInput
+                label="Fecha"
+                value={audio.fecha}
+                onChange={(value) =>
+                  actualizarAudio("fecha", value)
+                }
+              />
             </div>
-          ) : (
-            <div style={styles.resultList}>
-              {reportes
-                .slice(0, 5)
-                .map((item) => (
-                  <div
-                    key={item.id}
-                    style={
-                      styles.resultCard
-                    }
-                  >
-                    <div
-                      style={
-                        styles.resultTop
-                      }
-                    >
-                      <div>
-                        <strong>
-                          {item.asesor ||
-                            "-"}
-                        </strong>
 
-                        <div
-                          style={
-                            styles.resultText
-                          }
-                        >
-                          {item.semana ||
-                            "-"}{" "}
-                          •{" "}
-                          {item.campania ||
-                            item.producto ||
-                            "-"}
-                        </div>
-                      </div>
+            <div style={styles.sectionSpacing}>
+              <div style={styles.field}>
+                <label style={styles.label}>
+                  Archivo de audio
+                </label>
 
-                      <strong>
-                        {item.nota ??
-                          "-"}
-                      </strong>
-                    </div>
-                  </div>
-                ))}
+                <input
+                  type="file"
+                  accept="audio/*"
+                  onChange={(e) =>
+                    actualizarAudio(
+                      "archivo",
+                      e.target.files?.[0] || null
+                    )
+                  }
+                  style={styles.input}
+                />
+              </div>
+
+              <MultiSelect
+                label="Aspectos de calidad"
+                options={CALIDAD_ASPECTOS}
+                value={audio.aspectosCalidad}
+                onChange={(value) =>
+                  actualizarAudio(
+                    "aspectosCalidad",
+                    value
+                  )
+                }
+              />
+
+              <MultiSelect
+                label="Aspectos de productividad"
+                options={PRODUCTIVIDAD_ASPECTOS}
+                value={audio.aspectosProductividad}
+                onChange={(value) =>
+                  actualizarAudio(
+                    "aspectosProductividad",
+                    value
+                  )
+                }
+              />
+
+              <MultiSelect
+                label="Tipificación"
+                options={TIPIFICACIONES}
+                value={audio.tipificacion}
+                onChange={(value) =>
+                  actualizarAudio(
+                    "tipificacion",
+                    value
+                  )
+                }
+              />
+
+              <TextArea
+                label="Devolución"
+                value={audio.devolucion}
+                onChange={(value) =>
+                  actualizarAudio(
+                    "devolucion",
+                    value
+                  )
+                }
+              />
             </div>
-          )}
+
+            <div style={styles.formActions}>
+              <button
+                type="submit"
+                disabled={loading}
+                style={styles.primaryButton}
+              >
+                {loading
+                  ? "Cargando..."
+                  : "Cargar audio"}
+              </button>
+            </div>
+          </form>
         </Card>
       </div>
     );
   }
 
-function renderContenido() {
-    switch (activeSection) {
-      case "dashboard":
-        return renderDashboard();
+  function renderPdas() {
+    return (
+      <div style={styles.page}>
+        <Card title="PDA">
+          <form onSubmit={guardarPda}>
+            <div style={styles.formGrid}>
+              <Select
+                label="Asesor"
+                value={pda.asesor}
+                onChange={(value) =>
+                  actualizarPda("asesor", value)
+                }
+                options={ASESORES}
+              />
 
-      case "reportes":
-        return renderReportes();
+              <TextInput
+                label="Aspecto"
+                value={pda.aspecto}
+                onChange={(value) =>
+                  actualizarPda("aspecto", value)
+                }
+              />
 
-      case "devoluciones":
-        return renderDevoluciones();
+              <TextInput
+                label="Fecha desde"
+                value={pda.fechaDesde}
+                onChange={(value) =>
+                  actualizarPda("fechaDesde", value)
+                }
+              />
 
-      case "audios":
-        return renderAudios();
+              <TextInput
+                label="Fecha hasta"
+                value={pda.fechaHasta}
+                onChange={(value) =>
+                  actualizarPda("fechaHasta", value)
+                }
+              />
+            </div>
 
-      case "pdas":
-        return renderPdas();
+            <div style={styles.sectionSpacing}>
+              <TextArea
+                label="Objetivo"
+                value={pda.objetivo}
+                onChange={(value) =>
+                  actualizarPda("objetivo", value)
+                }
+              />
 
-      case "tipificaciones":
-        return renderTipificaciones();
+              <TextArea
+                label="Observaciones"
+                value={pda.observaciones}
+                onChange={(value) =>
+                  actualizarPda(
+                    "observaciones",
+                    value
+                  )
+                }
+              />
+            </div>
 
-      case "no-ventas":
-        return renderNoVentas();
-
-      case "felicitaciones":
-        return renderFelicitaciones();
-
-      case "seguimiento":
-        return renderSeguimiento();
-
-      case "impresion":
-        return renderImpresionMasiva();
-
-      default:
-        return renderDashboard();
-    }
+            <div style={styles.formActions}>
+              <button
+                type="submit"
+                disabled={loading}
+                style={styles.primaryButton}
+              >
+                {loading
+                  ? "Guardando..."
+                  : "Guardar PDA"}
+              </button>
+            </div>
+          </form>
+        </Card>
+      </div>
+    );
   }
 
-  if (!usuarioActual) {
+  function renderReportes() {
     return (
-      <div style={styles.loginPage}>
-        <div style={styles.loginCard}>
-          <div style={styles.loginLogo}>
-            PC
-          </div>
+      <div style={styles.page}>
+        <Card
+          title="Reportes"
+          action={
+            <div style={styles.filters}>
+              <TextInput
+                label=""
+                value={semana}
+                onChange={setSemana}
+                placeholder="Semana"
+              />
 
-          <span
-            style={styles.profileKicker}
-          >
-            PORTAL INTEGRAL DEL ASESOR
-          </span>
+              <select
+                value={campania}
+                onChange={(e) =>
+                  setCampania(e.target.value)
+                }
+                style={styles.filterSelect}
+              >
+                <option value="">Todas</option>
+                <option value="AP">AP</option>
+                <option value="BM">BM</option>
+              </select>
+            </div>
+          }
+        >
+          {reportesFiltrados.length === 0 ? (
+            <div style={styles.emptyState}>
+              No hay reportes cargados para los filtros
+              seleccionados.
+            </div>
+          ) : (
+            <div style={styles.reportList}>
+              {reportesFiltrados.map((item) => (
+                <div
+                  key={item.id}
+                  style={styles.reportCard}
+                >
+                  <div style={styles.reportHeader}>
+                    <div>
+                      <div style={styles.reportKicker}>
+                        {item.semana || "-"}
+                      </div>
 
-          <h1 style={styles.loginTitle}>
-            Administración
-          </h1>
+                      <h3 style={styles.reportName}>
+                        {item.asesor || "-"}
+                      </h3>
+                    </div>
 
-          <p
-            style={
-              styles.loginSubtitle
-            }
-          >
-            Ingresá para gestionar la
-            información del portal.
-          </p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        imprimirReporte(item)
+                      }
+                      style={styles.secondaryButton}
+                    >
+                      Imprimir
+                    </button>
+                  </div>
 
-          {error && (
-            <div style={styles.errorBox}>
-              {error}
+                  <div style={styles.reportGrid}>
+                    <div>
+                      <span>Campaña</span>
+                      <strong>
+                        {item.campania || "-"}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Nota</span>
+                      <strong>
+                        {item.nota || "-"}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Objetivo</span>
+                      <strong>
+                        {item.objetivo || "-"}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Desvío</span>
+                      <strong>
+                        {item.desvio || "-"}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>SPH</span>
+                      <strong>
+                        {item.sph || "-"}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Ventas</span>
+                      <strong>
+                        {item.ventas || "-"}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Objetivo campaña</span>
+                      <strong>
+                        {item.objetivo_campania ||
+                          "-"}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Tipificaciones</span>
+                      <strong>
+                        {item.tipificaciones_resultado ||
+                          "-"}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div style={styles.reportDetails}>
+                    <div>
+                      <strong>
+                        Aspectos trabajados
+                      </strong>
+
+                      <p>
+                        {item.recomendacion || "-"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <strong>
+                        Observaciones
+                      </strong>
+
+                      <p>
+                        {item.observaciones || "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
-
-          <form
-            onSubmit={handleLogin}
-            style={styles.loginForm}
-          >
-            <TextInput
-              label="Usuario"
-              value={loginData.usuario}
-              onChange={(value) =>
-                setLoginData((prev) => ({
-                  ...prev,
-                  usuario: value,
-                }))
-              }
-              placeholder="Ingresá tu usuario"
-            />
-
-            <TextInput
-              label="Contraseña"
-              type="password"
-              value={loginData.password}
-              onChange={(value) =>
-                setLoginData((prev) => ({
-                  ...prev,
-                  password: value,
-                }))
-              }
-              placeholder="Ingresá tu contraseña"
-            />
-
-            <button
-              type="submit"
-              disabled={loading}
-              style={styles.primaryButton}
-            >
-              {loading
-                ? "Ingresando..."
-                : "Ingresar"}
-            </button>
-          </form>
-        </div>
+        </Card>
       </div>
     );
   }
@@ -3429,17 +2780,17 @@ function renderContenido() {
   return (
     <div style={styles.app}>
       <aside style={styles.sidebar}>
-        <div style={styles.brand}>
-          <div style={styles.brandLogo}>
+        <div style={styles.logo}>
+          <div style={styles.logoMark}>
             PC
           </div>
 
           <div>
-            <strong>
-              Portal Integral
+            <strong style={styles.logoTitle}>
+              Portal de Calidad
             </strong>
 
-            <span>
+            <span style={styles.logoSubtitle}>
               Administración
             </span>
           </div>
@@ -3448,105 +2799,66 @@ function renderContenido() {
         <nav style={styles.nav}>
           <button
             type="button"
-            onClick={() =>
-              setActiveSection(
-                "dashboard"
-              )
-            }
+            onClick={() => setActiveTab("inicio")}
             style={{
               ...styles.navButton,
-              ...(activeSection ===
-              "dashboard"
+              ...(activeTab === "inicio"
                 ? styles.navButtonActive
                 : {}),
             }}
           >
-            Dashboard
+            Inicio
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("asesores")}
+            style={{
+              ...styles.navButton,
+              ...(activeTab === "asesores"
+                ? styles.navButtonActive
+                : {}),
+            }}
+          >
+            Asesores
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("calidad")}
+            style={{
+              ...styles.navButton,
+              ...(activeTab === "calidad"
+                ? styles.navButtonActive
+                : {}),
+            }}
+          >
+            Calidad
           </button>
 
           <button
             type="button"
             onClick={() =>
-              setActiveSection(
-                "reportes"
-              )
+              setActiveTab("productividad")
             }
             style={{
               ...styles.navButton,
-              ...(activeSection ===
-              "reportes"
+              ...(activeTab === "productividad"
                 ? styles.navButtonActive
                 : {}),
             }}
           >
-            Reportes
+            Productividad
           </button>
 
           <button
             type="button"
             onClick={() =>
-              setActiveSection(
-                "devoluciones"
-              )
+              setActiveTab("tipificaciones")
             }
             style={{
               ...styles.navButton,
-              ...(activeSection ===
-              "devoluciones"
-                ? styles.navButtonActive
-                : {}),
-            }}
-          >
-            Devoluciones
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              setActiveSection(
-                "audios"
-              )
-            }
-            style={{
-              ...styles.navButton,
-              ...(activeSection ===
-              "audios"
-                ? styles.navButtonActive
-                : {}),
-            }}
-          >
-            Audios
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              setActiveSection(
-                "pdas"
-              )
-            }
-            style={{
-              ...styles.navButton,
-              ...(activeSection ===
-              "pdas"
-                ? styles.navButtonActive
-                : {}),
-            }}
-          >
-            Plan de Acción
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              setActiveSection(
-                "tipificaciones"
-              )
-            }
-            style={{
-              ...styles.navButton,
-              ...(activeSection ===
-              "tipificaciones"
+              ...(activeTab === "tipificaciones"
                 ? styles.navButtonActive
                 : {}),
             }}
@@ -3556,15 +2868,10 @@ function renderContenido() {
 
           <button
             type="button"
-            onClick={() =>
-              setActiveSection(
-                "no-ventas"
-              )
-            }
+            onClick={() => setActiveTab("noVentas")}
             style={{
               ...styles.navButton,
-              ...(activeSection ===
-              "no-ventas"
+              ...(activeTab === "noVentas"
                 ? styles.navButtonActive
                 : {}),
             }}
@@ -3575,14 +2882,26 @@ function renderContenido() {
           <button
             type="button"
             onClick={() =>
-              setActiveSection(
-                "felicitaciones"
-              )
+              setActiveTab("devoluciones")
             }
             style={{
               ...styles.navButton,
-              ...(activeSection ===
-              "felicitaciones"
+              ...(activeTab === "devoluciones"
+                ? styles.navButtonActive
+                : {}),
+            }}
+          >
+            Devoluciones
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setActiveTab("felicitaciones")
+            }
+            style={{
+              ...styles.navButton,
+              ...(activeTab === "felicitaciones"
                 ? styles.navButtonActive
                 : {}),
             }}
@@ -3592,97 +2911,100 @@ function renderContenido() {
 
           <button
             type="button"
-            onClick={() =>
-              setActiveSection(
-                "seguimiento"
-              )
-            }
+            onClick={() => setActiveTab("audios")}
             style={{
               ...styles.navButton,
-              ...(activeSection ===
-              "seguimiento"
+              ...(activeTab === "audios"
                 ? styles.navButtonActive
                 : {}),
             }}
           >
-            Seguimiento
+            Audios
           </button>
 
           <button
             type="button"
-            onClick={() =>
-              setActiveSection(
-                "impresion"
-              )
-            }
+            onClick={() => setActiveTab("pdas")}
             style={{
               ...styles.navButton,
-              ...(activeSection ===
-              "impresion"
+              ...(activeTab === "pdas"
                 ? styles.navButtonActive
                 : {}),
             }}
           >
-            Impresión masiva
+            PDA
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("reportes")}
+            style={{
+              ...styles.navButton,
+              ...(activeTab === "reportes"
+                ? styles.navButtonActive
+                : {}),
+            }}
+          >
+            Reportes
           </button>
         </nav>
 
-        <div style={styles.sidebarFooter}>
-          <div
-            style={
-              styles.userMiniCard
-            }
-          >
-            <div
-              style={
-                styles.userAvatar
-              }
-            >
-              {String(
-                usuarioActual.nombre ||
-                  "A"
-              )
-                .charAt(0)
-                .toUpperCase()}
-            </div>
-
-            <div>
-              <strong>
-                {
-                  usuarioActual.nombre
-                }
-              </strong>
-
-              <span>
-                Administrador
-              </span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={cerrarSesion}
-            style={styles.logoutButton}
-          >
-            Cerrar sesión
-          </button>
+        <div style={styles.sidebarBottom}>
+          <div style={styles.statusDot} />
+          <span>
+            Sistema conectado
+          </span>
         </div>
       </aside>
 
       <main style={styles.main}>
+        <header style={styles.topbar}>
+          <div>
+            <span style={styles.topbarKicker}>
+              ADMINISTRACIÓN
+            </span>
+
+            <h1 style={styles.topbarTitle}>
+              Portal Integral del Asesor
+            </h1>
+          </div>
+
+          {selectedAdvisor && (
+            <div style={styles.selectedAdvisor}>
+              <span>Asesor seleccionado</span>
+              <strong>{selectedAdvisor}</strong>
+            </div>
+          )}
+        </header>
+
         {message && (
-          <div style={styles.successBox}>
+          <div style={styles.successMessage}>
             {message}
           </div>
         )}
 
         {error && (
-          <div style={styles.errorBox}>
+          <div style={styles.errorMessage}>
             {error}
           </div>
         )}
 
-        {renderContenido()}
+        {activeTab === "inicio" && renderInicio()}
+        {activeTab === "asesores" && renderAsesores()}
+        {activeTab === "calidad" && renderCalidad()}
+        {activeTab === "productividad" &&
+          renderProductividad()}
+        {activeTab === "tipificaciones" &&
+          renderTipificaciones()}
+        {activeTab === "noVentas" &&
+          renderNoVentas()}
+        {activeTab === "devoluciones" &&
+          renderDevoluciones()}
+        {activeTab === "felicitaciones" &&
+          renderFelicitaciones()}
+        {activeTab === "audios" && renderAudios()}
+        {activeTab === "pdas" && renderPdas()}
+        {activeTab === "reportes" && renderReportes()}
       </main>
     </div>
   );
@@ -3692,8 +3014,8 @@ const styles = {
   app: {
     minHeight: "100vh",
     display: "flex",
-    background: "#f5f7f8",
-    color: "#17333b",
+    background: "#f4f6f8",
+    color: PALETTE.navy,
     fontFamily:
       "Arial, Helvetica, sans-serif",
   },
@@ -3701,229 +3023,395 @@ const styles = {
   sidebar: {
     width: "250px",
     minHeight: "100vh",
-    background: "#ffffff",
-    borderRight:
-      "1px solid #e0e6e8",
+    background: PALETTE.navy,
+    color: "#ffffff",
+    padding: "24px 16px",
+    boxSizing: "border-box",
     display: "flex",
     flexDirection: "column",
-    position: "fixed",
-    left: 0,
+    position: "sticky",
     top: 0,
-    bottom: 0,
-    zIndex: 10,
+    alignSelf: "flex-start",
   },
 
-  brand: {
+  logo: {
     display: "flex",
     alignItems: "center",
     gap: "12px",
-    padding: "24px 20px",
-    borderBottom:
-      "1px solid #edf0f1",
+    padding: "4px 8px 28px",
   },
 
-  brandLogo: {
+  logoMark: {
     width: "42px",
     height: "42px",
     borderRadius: "12px",
-    background: "#1d7771",
-    color: "#ffffff",
+    background: PALETTE.teal,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontWeight: "800",
-    fontSize: "15px",
+    fontWeight: 800,
+    fontSize: "13px",
   },
 
-  brand: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    padding: "24px 20px",
-    borderBottom:
-      "1px solid #edf0f1",
+  logoTitle: {
+    display: "block",
+    fontSize: "14px",
+    lineHeight: 1.2,
+  },
+
+  logoSubtitle: {
+    display: "block",
+    marginTop: "3px",
+    fontSize: "11px",
+    opacity: 0.65,
   },
 
   nav: {
-    padding: "16px 12px",
     display: "flex",
     flexDirection: "column",
-    gap: "4px",
-    overflowY: "auto",
-    flex: 1,
+    gap: "6px",
   },
 
   navButton: {
-    width: "100%",
     border: "none",
     background: "transparent",
-    textAlign: "left",
-    padding: "11px 14px",
+    color: "#ffffff",
+    padding: "11px 12px",
     borderRadius: "9px",
-    color: "#52656b",
+    textAlign: "left",
     cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: "600",
+    fontSize: "13px",
+    opacity: 0.82,
+    transition: "0.2s",
   },
 
   navButtonActive: {
-    background: "#e8f4f2",
-    color: "#1d7771",
+    background: PALETTE.teal,
+    opacity: 1,
+    fontWeight: 700,
   },
 
-  sidebarFooter: {
-    padding: "14px",
-    borderTop:
-      "1px solid #edf0f1",
-  },
-
-  userMiniCard: {
+  sidebarBottom: {
+    marginTop: "auto",
     display: "flex",
     alignItems: "center",
-    gap: "10px",
-    padding: "10px",
-    marginBottom: "10px",
+    gap: "8px",
+    fontSize: "11px",
+    opacity: 0.7,
+    padding: "14px 8px 4px",
   },
 
-  userAvatar: {
-    width: "36px",
-    height: "36px",
+  statusDot: {
+    width: "8px",
+    height: "8px",
     borderRadius: "50%",
-    background: "#dceceb",
-    color: "#1d7771",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "800",
-  },
-
-  logoutButton: {
-    width: "100%",
-    padding: "10px",
-    border:
-      "1px solid #d9e0e2",
-    borderRadius: "8px",
-    background: "#ffffff",
-    color: "#52656b",
-    cursor: "pointer",
+    background: PALETTE.mint,
   },
 
   main: {
-    marginLeft: "250px",
-    width: "calc(100% - 250px)",
-    minHeight: "100vh",
-    padding: "30px",
+    flex: 1,
+    minWidth: 0,
+  },
+
+  topbar: {
+    minHeight: "88px",
+    background: "#ffffff",
+    borderBottom: `1px solid ${PALETTE.soft}`,
+    padding: "20px 32px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
     boxSizing: "border-box",
   },
 
-  page: {
-    maxWidth: "1250px",
-    margin: "0 auto",
-  },
-
-  dashboardHeader: {
-    display: "flex",
-    justifyContent:
-      "space-between",
-    alignItems: "flex-start",
-    gap: "20px",
-    marginBottom: "25px",
-  },
-
-  dashboardTitle: {
-    margin: "7px 0 5px",
-    fontSize: "30px",
-    lineHeight: 1.15,
-  },
-
-  dashboardSubtitle: {
-    margin: 0,
-    color: "#68787d",
-    fontSize: "14px",
-  },
-
-  dashboardDate: {
-    color: "#68787d",
-    fontSize: "13px",
-    paddingTop: "8px",
-  },
-
-  profileKicker: {
+  topbarKicker: {
+    display: "block",
     fontSize: "10px",
-    fontWeight: "800",
-    letterSpacing: "1px",
-    color: "#1d7771",
+    fontWeight: 800,
+    letterSpacing: "1.5px",
+    color: PALETTE.teal,
+  },
+
+  topbarTitle: {
+    margin: "5px 0 0",
+    fontSize: "23px",
+    lineHeight: 1.2,
+    color: PALETTE.navy,
+  },
+
+  selectedAdvisor: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    gap: "4px",
+    fontSize: "11px",
+    color: "#66757a",
+  },
+
+  page: {
+    padding: "28px 32px 40px",
+    maxWidth: "1500px",
+    margin: "0 auto",
+    boxSizing: "border-box",
+  },
+
+  hero: {
+    background: PALETTE.navy,
+    color: "#ffffff",
+    borderRadius: "18px",
+    padding: "30px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "24px",
+    marginBottom: "22px",
+  },
+
+  eyebrow: {
+    fontSize: "10px",
+    fontWeight: 800,
+    letterSpacing: "1.5px",
+    color: PALETTE.mint,
+    marginBottom: "8px",
+  },
+
+  heroTitle: {
+    margin: 0,
+    fontSize: "30px",
+  },
+
+  heroText: {
+    margin: "9px 0 0",
+    maxWidth: "700px",
+    fontSize: "13px",
+    lineHeight: 1.6,
+    opacity: 0.78,
+  },
+
+  heroBadge: {
+    background: PALETTE.teal,
+    borderRadius: "999px",
+    padding: "9px 14px",
+    fontSize: "10px",
+    fontWeight: 800,
+    whiteSpace: "nowrap",
   },
 
   statsGrid: {
     display: "grid",
     gridTemplateColumns:
-      "repeat(auto-fit, minmax(170px, 1fr))",
+      "repeat(auto-fit, minmax(160px, 1fr))",
     gap: "14px",
     marginBottom: "22px",
   },
 
   statCard: {
     background: "#ffffff",
-    border:
-      "1px solid #e0e6e8",
-    borderRadius: "12px",
+    border: `1px solid ${PALETTE.soft}`,
+    borderRadius: "14px",
     padding: "20px",
     display: "flex",
     flexDirection: "column",
-    gap: "5px",
+    gap: "6px",
   },
 
   statNumber: {
     fontSize: "27px",
-    fontWeight: "800",
-    color: "#17333b",
+    fontWeight: 800,
+    color: PALETTE.navy,
   },
 
   statLabel: {
-    fontSize: "12px",
-    color: "#68787d",
+    fontSize: "11px",
+    color: "#65757a",
+  },
+
+  card: {
+    background: "#ffffff",
+    border: `1px solid ${PALETTE.soft}`,
+    borderRadius: "16px",
+    padding: "22px",
+    marginBottom: "20px",
+    boxSizing: "border-box",
+  },
+
+  cardHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "16px",
+    marginBottom: "20px",
+  },
+
+  cardTitle: {
+    margin: 0,
+    fontSize: "19px",
+    color: PALETTE.navy,
   },
 
   quickGrid: {
     display: "grid",
     gridTemplateColumns:
-      "repeat(auto-fit, minmax(210px, 1fr))",
+      "repeat(auto-fit, minmax(220px, 1fr))",
     gap: "12px",
   },
 
-  quickCard: {
-    border:
-      "1px solid #e0e6e8",
+  quickButton: {
+    border: `1px solid ${PALETTE.soft}`,
     background: "#ffffff",
-    borderRadius: "10px",
+    borderRadius: "12px",
     padding: "16px",
-    textAlign: "left",
     cursor: "pointer",
+    textAlign: "left",
     display: "flex",
     flexDirection: "column",
-    gap: "6px",
-    color: "#17333b",
+    gap: "7px",
+  },
+
+  twoColumns: {
+    display: "grid",
+    gridTemplateColumns:
+      "minmax(240px, 300px) minmax(0, 1fr)",
+    gap: "24px",
+    alignItems: "start",
+  },
+
+  advisorList: {
+    marginTop: "12px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "5px",
+    maxHeight: "650px",
+    overflowY: "auto",
+  },
+
+  advisorButton: {
+    border: `1px solid ${PALETTE.soft}`,
+    background: "#ffffff",
+    color: PALETTE.navy,
+    borderRadius: "8px",
+    padding: "9px 10px",
+    cursor: "pointer",
+    textAlign: "left",
+    fontSize: "12px",
+  },
+
+  advisorButtonActive: {
+    background: PALETTE.cream,
+    borderColor: PALETTE.teal,
+    fontWeight: 700,
+  },
+
+  emptyState: {
+    border: `1px dashed ${PALETTE.soft}`,
+    borderRadius: "12px",
+    padding: "24px",
+    color: "#6d7c80",
+    fontSize: "13px",
+    textAlign: "center",
+  },
+
+  profileHeader: {
+    background: PALETTE.cream,
+    borderRadius: "14px",
+    padding: "20px",
+    marginBottom: "14px",
+  },
+
+  profileKicker: {
+    fontSize: "9px",
+    fontWeight: 800,
+    letterSpacing: "1.3px",
+    color: PALETTE.teal,
+  },
+
+  profileName: {
+    margin: "6px 0 0",
+    fontSize: "24px",
+  },
+
+  miniStats: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(4, minmax(0, 1fr))",
+    gap: "8px",
+  },
+
+  miniStat: {
+    border: `1px solid ${PALETTE.soft}`,
+    borderRadius: "10px",
+    padding: "12px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
   },
 
   sectionSpacing: {
-    marginTop: "20px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
+    marginTop: "22px",
   },
 
   subTitle: {
-    fontSize: "15px",
+    margin: "0 0 12px",
+    fontSize: "14px",
+    color: PALETTE.teal,
+  },
+
+  resultList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  },
+
+  resultCard: {
+    border: `1px solid ${PALETTE.soft}`,
+    borderRadius: "11px",
+    padding: "14px",
+  },
+
+  resultTop: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "10px",
+  },
+
+  resultGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(130px, 1fr))",
+    gap: "10px",
+  },
+
+  resultGridItem: {
+    display: "flex",
+    flexDirection: "column",
+  },
+
+  resultText: {
     margin: 0,
-    color: "#17333b",
+    fontSize: "12px",
+    color: "#56676b",
+    lineHeight: 1.5,
+  },
+
+  badge: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "999px",
+    padding: "5px 9px",
+    fontSize: "9px",
+    fontWeight: 800,
+    color: PALETTE.navy,
   },
 
   formGrid: {
     display: "grid",
     gridTemplateColumns:
       "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: "16px",
+    gap: "15px",
+    alignItems: "start",
   },
 
   field: {
@@ -3933,482 +3421,217 @@ const styles = {
   },
 
   label: {
-    fontSize: "12px",
-    fontWeight: "700",
-    color: "#52656b",
+    fontSize: "11px",
+    fontWeight: 700,
+    color: PALETTE.navy,
   },
 
   input: {
     width: "100%",
     boxSizing: "border-box",
-    padding: "11px 12px",
-    border:
-      "1px solid #d5dfe1",
-    borderRadius: "8px",
-    background: "#ffffff",
-    color: "#17333b",
-    fontSize: "14px",
+    border: `1px solid ${PALETTE.soft}`,
+    borderRadius: "9px",
+    padding: "10px 11px",
+    fontSize: "12px",
     outline: "none",
+    background: "#ffffff",
+    color: PALETTE.navy,
+  },
+
+  smallNumberInput: {
+    maxWidth: "120px",
   },
 
   textarea: {
     width: "100%",
-    minHeight: "110px",
     boxSizing: "border-box",
-    padding: "11px 12px",
-    border:
-      "1px solid #d5dfe1",
-    borderRadius: "8px",
-    background: "#ffffff",
-    color: "#17333b",
-    fontSize: "14px",
+    border: `1px solid ${PALETTE.soft}`,
+    borderRadius: "9px",
+    padding: "10px 11px",
+    fontSize: "12px",
+    outline: "none",
     resize: "vertical",
+    background: "#ffffff",
+    color: PALETTE.navy,
     fontFamily:
       "Arial, Helvetica, sans-serif",
-    outline: "none",
   },
 
-  fileInput: {
+  select: {
+    width: "100%",
+    boxSizing: "border-box",
+    border: `1px solid ${PALETTE.soft}`,
+    borderRadius: "9px",
+    padding: "10px 11px",
+    fontSize: "12px",
+    outline: "none",
+    background: "#ffffff",
+    color: PALETTE.navy,
+  },
+
+  percentWrap: {
+    display: "flex",
+    alignItems: "center",
+    border: `1px solid ${PALETTE.soft}`,
+    borderRadius: "9px",
+    background: "#ffffff",
+    overflow: "hidden",
+  },
+
+  percentInput: {
+    flex: 1,
+    minWidth: 0,
+    border: "none",
+    outline: "none",
+    padding: "10px 11px",
+    fontSize: "12px",
+    color: PALETTE.navy,
+  },
+
+  percentSymbol: {
+    padding: "0 11px",
+    fontWeight: 800,
+    color: PALETTE.teal,
+    fontSize: "12px",
+  },
+
+  multiSelect: {
+    border: `1px solid ${PALETTE.soft}`,
+    borderRadius: "10px",
     padding: "10px",
-    border:
-      "1px dashed #c8d4d7",
-    borderRadius: "8px",
-    background: "#fafcfc",
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(230px, 1fr))",
+    gap: "7px",
+    background: "#ffffff",
+  },
+
+  checkRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "7px",
+    fontSize: "11px",
+    color: PALETTE.navy,
+    cursor: "pointer",
+    lineHeight: 1.35,
   },
 
   formActions: {
     display: "flex",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: "8px",
-    marginTop: "20px",
+    justifyContent: "flex-end",
+    marginTop: "22px",
   },
 
   primaryButton: {
     border: "none",
-    background: "#1d7771",
+    background: PALETTE.teal,
     color: "#ffffff",
+    borderRadius: "9px",
     padding: "11px 18px",
-    borderRadius: "8px",
+    fontSize: "12px",
+    fontWeight: 800,
     cursor: "pointer",
-    fontWeight: "700",
-    fontSize: "14px",
   },
 
   secondaryButton: {
-    border:
-      "1px solid #cfdadd",
+    border: `1px solid ${PALETTE.teal}`,
     background: "#ffffff",
-    color: "#365057",
-    padding: "10px 15px",
+    color: PALETTE.teal,
     borderRadius: "8px",
+    padding: "8px 12px",
+    fontSize: "11px",
+    fontWeight: 800,
     cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "13px",
   },
 
-  resultList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
+  successMessage: {
+    margin: "18px 32px 0",
+    background: "#e7f3ef",
+    border: `1px solid ${PALETTE.mint}`,
+    color: PALETTE.navy,
+    borderRadius: "10px",
+    padding: "12px 14px",
+    fontSize: "12px",
+    fontWeight: 700,
   },
 
-  resultCard: {
-    background: "#ffffff",
-    border:
-      "1px solid #e0e6e8",
-    borderRadius: "11px",
-    padding: "16px",
+  errorMessage: {
+    margin: "18px 32px 0",
+    background: "#f9e8e8",
+    border: "1px solid #d99a9a",
+    color: "#7b2525",
+    borderRadius: "10px",
+    padding: "12px 14px",
+    fontSize: "12px",
+    fontWeight: 700,
   },
 
-  resultTop: {
+  audioPlayer: {
+    width: "100%",
+    marginTop: "5px",
+  },
+
+  filters: {
     display: "flex",
     alignItems: "center",
-    justifyContent:
-      "space-between",
-    gap: "15px",
+    gap: "8px",
   },
 
-  resultGrid: {
+  filterSelect: {
+    border: `1px solid ${PALETTE.soft}`,
+    borderRadius: "8px",
+    padding: "8px 10px",
+    fontSize: "11px",
+    background: "#ffffff",
+    color: PALETTE.navy,
+  },
+
+  reportList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "14px",
+  },
+
+  reportCard: {
+    border: `1px solid ${PALETTE.soft}`,
+    borderRadius: "13px",
+    padding: "17px",
+  },
+
+  reportHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "15px",
+    marginBottom: "16px",
+  },
+
+  reportKicker: {
+    fontSize: "10px",
+    fontWeight: 800,
+    color: PALETTE.teal,
+    marginBottom: "3px",
+  },
+
+  reportName: {
+    margin: 0,
+    fontSize: "17px",
+  },
+
+  reportGrid: {
     display: "grid",
     gridTemplateColumns:
-      "repeat(auto-fit, minmax(150px, 1fr))",
+      "repeat(auto-fit, minmax(130px, 1fr))",
+    gap: "9px",
+  },
+
+  reportDetails: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(250px, 1fr))",
     gap: "12px",
-    marginTop: "15px",
-  },
-
-  resultGridItem: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-  },
-
-  resultGridItemSpan: {
-    fontSize: "10px",
-    color: "#76878b",
-    textTransform: "uppercase",
-    letterSpacing: "0.4px",
-  },
-
-  resultText: {
-    marginTop: "4px",
-    color: "#52656b",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
-  infoBox: {
-    marginTop: "12px",
-    padding: "12px",
-    background: "#f7fafa",
-    borderRadius: "8px",
-    border:
-      "1px solid #e6eded",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
-  smallMuted: {
-    color: "#76878b",
-    fontSize: "12px",
-  },
-
-  emptyState: {
-    padding: "25px",
-    textAlign: "center",
-    border:
-      "1px dashed #ccd7da",
-    borderRadius: "10px",
-    color: "#76878b",
-    background: "#fafcfc",
-    fontSize: "13px",
-  },
-
-  successBox: {
-    background: "#eaf7f0",
-    color: "#17653d",
-    border:
-      "1px solid #bfe4cf",
-    padding: "12px 15px",
-    borderRadius: "8px",
-    marginBottom: "15px",
-    fontSize: "13px",
-    fontWeight: "600",
-  },
-
-  errorBox: {
-    background: "#fff1f1",
-    color: "#a52b2b",
-    border:
-      "1px solid #efc7c7",
-    padding: "12px 15px",
-    borderRadius: "8px",
-    marginBottom: "15px",
-    fontSize: "13px",
-    fontWeight: "600",
-  },
-
-  loginPage: {
-    minHeight: "100vh",
-    background: "#f5f7f8",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "25px",
-    boxSizing: "border-box",
-  },
-
-  loginCard: {
-    width: "100%",
-    maxWidth: "430px",
-    background: "#ffffff",
-    border:
-      "1px solid #e0e6e8",
-    borderRadius: "16px",
-    padding: "35px",
-    boxSizing: "border-box",
-    boxShadow:
-      "0 15px 40px rgba(23, 51, 59, 0.08)",
-  },
-
-  loginLogo: {
-    width: "50px",
-    height: "50px",
-    borderRadius: "14px",
-    background: "#1d7771",
-    color: "#ffffff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "800",
-    marginBottom: "20px",
-  },
-
-  loginTitle: {
-    margin: "8px 0",
-    fontSize: "28px",
-  },
-
-  loginSubtitle: {
-    color: "#68787d",
-    fontSize: "14px",
-    lineHeight: 1.5,
-    marginBottom: "25px",
-  },
-
-  loginForm: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
+    marginTop: "14px",
+    paddingTop: "14px",
+    borderTop: `1px solid ${PALETTE.soft}`,
   },
 };
-
-function Card({ title, children }) {
-  return (
-    <section
-      style={{
-        background: "#ffffff",
-        border:
-          "1px solid #e0e6e8",
-        borderRadius: "13px",
-        padding: "22px",
-        marginBottom: "20px",
-      }}
-    >
-      {title && (
-        <h2
-          style={{
-            margin:
-              "0 0 18px",
-            fontSize: "18px",
-            color: "#17333b",
-          }}
-        >
-          {title}
-        </h2>
-      )}
-
-      {children}
-    </section>
-  );
-}
-
-function StatusBadge({ status }) {
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        padding:
-          "5px 9px",
-        borderRadius: "999px",
-        background: "#e8f4f2",
-        color: "#1d7771",
-        fontSize: "11px",
-        fontWeight: "700",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {status || "Pendiente"}
-    </span>
-  );
-}
-
-function TextInput({
-  label,
-  value,
-  onChange,
-  type = "text",
-  placeholder = "",
-}) {
-  return (
-    <div style={styles.field}>
-      {label && (
-        <label style={styles.label}>
-          {label}
-        </label>
-      )}
-
-      <input
-        type={type}
-        value={value ?? ""}
-        onChange={(e) =>
-          onChange(e.target.value)
-        }
-        placeholder={placeholder}
-        style={styles.input}
-      />
-    </div>
-  );
-}
-
-function NumberInput({
-  label,
-  value,
-  onChange,
-}) {
-  return (
-    <TextInput
-      label={label}
-      type="number"
-      value={value}
-      onChange={onChange}
-    />
-  );
-}
-
-function TextArea({
-  label,
-  value,
-  onChange,
-  placeholder = "",
-}) {
-  return (
-    <div style={styles.field}>
-      {label && (
-        <label style={styles.label}>
-          {label}
-        </label>
-      )}
-
-      <textarea
-        value={value ?? ""}
-        onChange={(e) =>
-          onChange(e.target.value)
-        }
-        placeholder={placeholder}
-        style={styles.textarea}
-      />
-    </div>
-  );
-}
-
-function Select({
-  label,
-  value,
-  onChange,
-  options = [],
-}) {
-  return (
-    <div style={styles.field}>
-      {label && (
-        <label style={styles.label}>
-          {label}
-        </label>
-      )}
-
-      <select
-        value={value ?? ""}
-        onChange={(e) =>
-          onChange(e.target.value)
-        }
-        style={styles.input}
-      >
-        <option value="">
-          Seleccionar...
-        </option>
-
-        {options.map((option) => (
-          <option
-            key={String(option)}
-            value={option}
-          >
-            {option}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-function MultiSelect({
-  label,
-  options = [],
-  value = [],
-  onChange,
-}) {
-  const selected =
-    Array.isArray(value)
-      ? value
-      : [];
-
-  function toggleOption(option) {
-    if (selected.includes(option)) {
-      onChange(
-        selected.filter(
-          (item) =>
-            item !== option
-        )
-      );
-    } else {
-      onChange([
-        ...selected,
-        option,
-      ]);
-    }
-  }
-
-  return (
-    <div style={styles.field}>
-      {label && (
-        <label style={styles.label}>
-          {label}
-        </label>
-      )}
-
-      <div
-        style={{
-          border:
-            "1px solid #d5dfe1",
-          borderRadius: "8px",
-          padding: "10px",
-          background: "#ffffff",
-          display: "flex",
-          flexDirection: "column",
-          gap: "7px",
-          maxHeight: "220px",
-          overflowY: "auto",
-        }}
-      >
-        {options.length === 0 ? (
-          <span
-            style={
-              styles.smallMuted
-            }
-          >
-            No hay opciones cargadas.
-          </span>
-        ) : (
-          options.map((option) => (
-            <label
-              key={String(option)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontSize: "13px",
-                cursor: "pointer",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={selected.includes(
-                  option
-                )}
-                onChange={() =>
-                  toggleOption(
-                    option
-                  )
-                }
-              />
-
-              <span>
-                {option}
-              </span>
-            </label>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}

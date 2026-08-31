@@ -3634,8 +3634,7 @@ const styles = {
     paddingTop: "14px",
     borderTop: `1px solid ${PALETTE.soft}`,
   },
-};
-      <FormSection title="DEVOLUCIÓN">
+};      <FormSection title="DEVOLUCIÓN">
         <Field
           label="Devolución"
           value={datos.devolucion}

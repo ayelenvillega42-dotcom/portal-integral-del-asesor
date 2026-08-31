@@ -160,6 +160,14 @@ const FORTALEZAS = [
   "CORRECTA ARGUMENTACIÓN",
 ];
 
+const COMPROMISO_OPCIONES = [
+  "APLICA DEVOLUCION",
+  "SEGUIMIENTO",
+  "NO APLICA",
+];
+
+const REGISTRO_OPCIONES = ["CORRECTO", "INCORRECTO"];
+
 const ESTADOS = {
   pendiente: "PENDIENTE",
   devuelto: "DEVUELTO",
@@ -388,6 +396,7 @@ export default function AdminPage() {
   const [devoluciones, setDevoluciones] = useState([]);
   const [audios, setAudios] = useState([]);
   const [pdas, setPdas] = useState([]);
+  const [felicitacionesList, setFelicitacionesList] = useState([]);
 
   const [selectedAdvisor, setSelectedAdvisor] = useState("");
   const [searchAdvisor, setSearchAdvisor] = useState("");
@@ -474,6 +483,22 @@ export default function AdminPage() {
     fechaHasta: "",
     objetivo: "",
     observaciones: "",
+
+    diagnostico: "",
+
+    metodologiaCalidad: "",
+    metodologiaProductividad: "",
+    metodologiaTipificaciones: "",
+
+    desarrollo: "",
+
+    resultadoAspecto1: "",
+    resultadoObjetivo1: "",
+    resultadoLogrado1: "",
+    resultadoAspecto2: "",
+    resultadoObjetivo2: "",
+    resultadoLogrado2: "",
+    cumplimientoLogrado: "",
   });
 
   useEffect(() => {
@@ -490,6 +515,7 @@ export default function AdminPage() {
         devolucionesResponse,
         audiosResponse,
         pdasResponse,
+        felicitacionesResponse,
       ] = await Promise.all([
         supabase
           .from("reportes")
@@ -508,6 +534,11 @@ export default function AdminPage() {
 
         supabase
           .from("pdas")
+          .select("*")
+          .order("created_at", { ascending: false }),
+
+        supabase
+          .from("felicitaciones")
           .select("*")
           .order("created_at", { ascending: false }),
       ]);
@@ -534,6 +565,14 @@ export default function AdminPage() {
         console.error(pdasResponse.error);
       } else {
         setPdas(pdasResponse.data || []);
+      }
+
+      if (felicitacionesResponse.error) {
+        console.error(felicitacionesResponse.error);
+      } else {
+        setFelicitacionesList(
+          felicitacionesResponse.data || []
+        );
       }
     } catch (err) {
       console.error(err);
@@ -831,13 +870,17 @@ export default function AdminPage() {
         fecha: felicitacion.fecha || null,
       };
 
-      const { error: saveError } = await supabase
+      const { data, error: saveError } = await supabase
         .from("felicitaciones")
-        .insert(payload);
+        .insert(payload)
+        .select()
+        .single();
 
       if (saveError) {
         throw saveError;
       }
+
+      setFelicitacionesList((prev) => [data, ...prev]);
 
       setMessage("✅ Felicitación guardada correctamente.");
 
@@ -969,6 +1012,24 @@ export default function AdminPage() {
         fecha_hasta: pda.fechaHasta || null,
         objetivo: pda.objetivo || null,
         observaciones: pda.observaciones || null,
+
+        diagnostico: pda.diagnostico || null,
+
+        metodologia_calidad: pda.metodologiaCalidad || null,
+        metodologia_productividad:
+          pda.metodologiaProductividad || null,
+        metodologia_tipificaciones:
+          pda.metodologiaTipificaciones || null,
+
+        desarrollo: pda.desarrollo || null,
+
+        resultado_aspecto_1: pda.resultadoAspecto1 || null,
+        resultado_objetivo_1: pda.resultadoObjetivo1 || null,
+        resultado_logrado_1: pda.resultadoLogrado1 || null,
+        resultado_aspecto_2: pda.resultadoAspecto2 || null,
+        resultado_objetivo_2: pda.resultadoObjetivo2 || null,
+        resultado_logrado_2: pda.resultadoLogrado2 || null,
+        cumplimiento_logrado: pda.cumplimientoLogrado || null,
       };
 
       const { data, error: saveError } = await supabase
@@ -992,6 +1053,18 @@ export default function AdminPage() {
         fechaHasta: "",
         objetivo: "",
         observaciones: "",
+        diagnostico: "",
+        metodologiaCalidad: "",
+        metodologiaProductividad: "",
+        metodologiaTipificaciones: "",
+        desarrollo: "",
+        resultadoAspecto1: "",
+        resultadoObjetivo1: "",
+        resultadoLogrado1: "",
+        resultadoAspecto2: "",
+        resultadoObjetivo2: "",
+        resultadoLogrado2: "",
+        cumplimientoLogrado: "",
       });
     } catch (err) {
       console.error(err);
@@ -1005,7 +1078,11 @@ export default function AdminPage() {
     }
   }
 
-  function imprimirReporte(reporteSeleccionado) {
+  function imprimirReporte(
+    reporteSeleccionado,
+    pdaAsesor = [],
+    felicitacionesAsesor = []
+  ) {
     const ventana = window.open(
       "",
       "_blank",
@@ -1204,6 +1281,75 @@ export default function AdminPage() {
             <div class="dato">
               <span class="label">Observaciones:</span>
               ${reporteSeleccionado.no_ventas_observaciones || "-"}
+            </div>
+          </div>
+
+          <h2>Planes de Acción activos</h2>
+
+          <div class="box">
+            ${
+              pdaAsesor.length === 0
+                ? "Sin PDA activos."
+                : pdaAsesor
+                    .map(
+                      (p) => `
+                <div class="dato">
+                  <span class="label">${p.aspecto || "-"}:</span>
+                  ${formatearFecha(p.fecha_desde)} al ${formatearFecha(
+                        p.fecha_hasta
+                      )} — Objetivo: ${p.objetivo || "-"}
+                </div>
+              `
+                    )
+                    .join("")
+            }
+          </div>
+
+          <h2>Felicitaciones</h2>
+
+          <div class="box">
+            ${
+              felicitacionesAsesor.length === 0
+                ? "Sin felicitaciones registradas."
+                : felicitacionesAsesor
+                    .map(
+                      (f) => `
+                <div class="dato">
+                  <span class="label">${
+                    f.fecha || formatearFecha(f.created_at)
+                  }:</span>
+                  ${f.motivo || "-"}
+                </div>
+              `
+                    )
+                    .join("")
+            }
+          </div>
+
+          <h2>Respuesta del asesor</h2>
+
+          <div class="box">
+            <div class="dato">
+              <span class="label">Estado:</span>
+              ${
+                reporteSeleccionado.asesor_estado === "conforme"
+                  ? "CONFORME"
+                  : reporteSeleccionado.asesor_estado === "disconforme"
+                  ? "DISCONFORME"
+                  : "Pendiente de respuesta"
+              }
+            </div>
+
+            <div class="dato">
+              <span class="label">Fecha de respuesta:</span>
+              ${formatearFecha(
+                reporteSeleccionado.asesor_fecha_respuesta
+              )}
+            </div>
+
+            <div class="dato">
+              <span class="label">Comentario del asesor:</span>
+              ${reporteSeleccionado.asesor_comentario || "-"}
             </div>
           </div>
 
@@ -1789,12 +1935,13 @@ export default function AdminPage() {
                 }
               />
 
-              <PercentageInput
+              <TextInput
                 label="Desvío"
                 value={reporte.desviosCalidad}
                 onChange={(value) =>
                   actualizarReporte("desviosCalidad", value)
                 }
+                placeholder="Ej. Validación de datos"
               />
             </div>
 
@@ -1856,6 +2003,7 @@ export default function AdminPage() {
     return (
       <div style={styles.page}>
         <Card title="Productividad">
+          <form onSubmit={guardarReporte}>
           <div style={styles.formGrid}>
             <Select
               label="Asesor"
@@ -1958,6 +2106,17 @@ export default function AdminPage() {
               }
             />
           </div>
+
+          <div style={styles.formActions}>
+            <button
+              type="submit"
+              disabled={loading}
+              style={styles.primaryButton}
+            >
+              {loading ? "Guardando..." : "Guardar reporte"}
+            </button>
+          </div>
+          </form>
         </Card>
       </div>
     );
@@ -1967,6 +2126,7 @@ export default function AdminPage() {
     return (
       <div style={styles.page}>
         <Card title="Tipificaciones">
+          <form onSubmit={guardarReporte}>
           <div style={styles.formGrid}>
             <Select
               label="Asesor"
@@ -2036,7 +2196,7 @@ export default function AdminPage() {
           </div>
 
           <div style={styles.sectionSpacing}>
-            <TextArea
+            <Select
               label="Compromiso"
               value={reporte.tipificacionesCompromiso}
               onChange={(value) =>
@@ -2045,6 +2205,7 @@ export default function AdminPage() {
                   value
                 )
               }
+              options={COMPROMISO_OPCIONES}
             />
 
             <TextArea
@@ -2058,6 +2219,17 @@ export default function AdminPage() {
               }
             />
           </div>
+
+          <div style={styles.formActions}>
+            <button
+              type="submit"
+              disabled={loading}
+              style={styles.primaryButton}
+            >
+              {loading ? "Guardando..." : "Guardar reporte"}
+            </button>
+          </div>
+          </form>
         </Card>
       </div>
     );
@@ -2067,6 +2239,7 @@ export default function AdminPage() {
     return (
       <div style={styles.page}>
         <Card title="No Ventas">
+          <form onSubmit={guardarReporte}>
           <div style={styles.formGrid}>
             <Select
               label="Asesor"
@@ -2102,8 +2275,8 @@ export default function AdminPage() {
               }
             />
 
-            <TextArea
-              label="Registro"
+            <Select
+              label="Registro en sistema"
               value={reporte.noVentasRegistro}
               onChange={(value) =>
                 actualizarReporte(
@@ -2111,9 +2284,10 @@ export default function AdminPage() {
                   value
                 )
               }
+              options={REGISTRO_OPCIONES}
             />
 
-            <TextArea
+            <Select
               label="Compromiso"
               value={reporte.noVentasCompromiso}
               onChange={(value) =>
@@ -2122,6 +2296,7 @@ export default function AdminPage() {
                   value
                 )
               }
+              options={COMPROMISO_OPCIONES}
             />
 
             <MultiSelect
@@ -2159,6 +2334,17 @@ export default function AdminPage() {
               }
             />
           </div>
+
+          <div style={styles.formActions}>
+            <button
+              type="submit"
+              disabled={loading}
+              style={styles.primaryButton}
+            >
+              {loading ? "Guardando..." : "Guardar reporte"}
+            </button>
+          </div>
+          </form>
         </Card>
       </div>
     );
@@ -2299,7 +2485,7 @@ export default function AdminPage() {
                 }
               />
 
-              <TextArea
+              <Select
                 label="Registro en sistema"
                 value={devolucion.registroSistema}
                 onChange={(value) =>
@@ -2308,6 +2494,7 @@ export default function AdminPage() {
                     value
                   )
                 }
+                options={REGISTRO_OPCIONES}
               />
 
               <MultiSelect
@@ -2608,6 +2795,202 @@ export default function AdminPage() {
               />
             </div>
 
+            <div style={styles.sectionSpacing}>
+              <h3 style={styles.subTitle}>Diagnóstico</h3>
+              <TextArea
+                label=""
+                value={pda.diagnostico}
+                onChange={(value) =>
+                  actualizarPda("diagnostico", value)
+                }
+                rows={4}
+                placeholder="Describí el diagnóstico que origina el PDA..."
+              />
+            </div>
+
+            <div style={styles.sectionSpacing}>
+              <h3 style={styles.subTitle}>Metodología</h3>
+              <div style={styles.formGrid}>
+                <TextArea
+                  label="Calidad"
+                  value={pda.metodologiaCalidad}
+                  onChange={(value) =>
+                    actualizarPda(
+                      "metodologiaCalidad",
+                      value
+                    )
+                  }
+                />
+
+                <TextArea
+                  label="Productividad"
+                  value={pda.metodologiaProductividad}
+                  onChange={(value) =>
+                    actualizarPda(
+                      "metodologiaProductividad",
+                      value
+                    )
+                  }
+                />
+
+                <TextArea
+                  label="Tipificaciones"
+                  value={pda.metodologiaTipificaciones}
+                  onChange={(value) =>
+                    actualizarPda(
+                      "metodologiaTipificaciones",
+                      value
+                    )
+                  }
+                />
+              </div>
+            </div>
+
+            <div style={styles.sectionSpacing}>
+              <h3 style={styles.subTitle}>Desarrollo PDA</h3>
+              <TextArea
+                label=""
+                value={pda.desarrollo}
+                onChange={(value) =>
+                  actualizarPda("desarrollo", value)
+                }
+                rows={5}
+                placeholder="Detalle del desarrollo del plan de acción..."
+              />
+            </div>
+
+            <div style={styles.sectionSpacing}>
+              <h3 style={styles.subTitle}>
+                Resultado obtenido
+              </h3>
+
+              <div style={styles.resultadoTableWrap}>
+                <table style={styles.resultadoTable}>
+                  <thead>
+                    <tr>
+                      <th style={styles.resultadoTh}>
+                        Aspectos a trabajar en PDA
+                      </th>
+                      <th style={styles.resultadoTh}>
+                        Objetivo
+                      </th>
+                      <th style={styles.resultadoTh}>
+                        Logrado
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={styles.resultadoTd}>
+                        <input
+                          type="text"
+                          value={pda.resultadoAspecto1}
+                          onChange={(e) =>
+                            actualizarPda(
+                              "resultadoAspecto1",
+                              e.target.value
+                            )
+                          }
+                          style={styles.input}
+                        />
+                      </td>
+                      <td style={styles.resultadoTd}>
+                        <input
+                          type="text"
+                          value={pda.resultadoObjetivo1}
+                          onChange={(e) =>
+                            actualizarPda(
+                              "resultadoObjetivo1",
+                              e.target.value
+                            )
+                          }
+                          style={styles.input}
+                        />
+                      </td>
+                      <td style={styles.resultadoTd}>
+                        <input
+                          type="text"
+                          value={pda.resultadoLogrado1}
+                          onChange={(e) =>
+                            actualizarPda(
+                              "resultadoLogrado1",
+                              e.target.value
+                            )
+                          }
+                          style={styles.input}
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={styles.resultadoTd}>
+                        <input
+                          type="text"
+                          value={pda.resultadoAspecto2}
+                          onChange={(e) =>
+                            actualizarPda(
+                              "resultadoAspecto2",
+                              e.target.value
+                            )
+                          }
+                          style={styles.input}
+                        />
+                      </td>
+                      <td style={styles.resultadoTd}>
+                        <input
+                          type="text"
+                          value={pda.resultadoObjetivo2}
+                          onChange={(e) =>
+                            actualizarPda(
+                              "resultadoObjetivo2",
+                              e.target.value
+                            )
+                          }
+                          style={styles.input}
+                        />
+                      </td>
+                      <td style={styles.resultadoTd}>
+                        <input
+                          type="text"
+                          value={pda.resultadoLogrado2}
+                          onChange={(e) =>
+                            actualizarPda(
+                              "resultadoLogrado2",
+                              e.target.value
+                            )
+                          }
+                          style={styles.input}
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        style={{
+                          ...styles.resultadoTd,
+                          fontWeight: 800,
+                        }}
+                      >
+                        Cumplimiento del Plan
+                      </td>
+                      <td style={styles.resultadoTd} />
+                      <td style={styles.resultadoTd}>
+                        <input
+                          type="text"
+                          value={pda.cumplimientoLogrado}
+                          onChange={(e) =>
+                            actualizarPda(
+                              "cumplimientoLogrado",
+                              e.target.value
+                            )
+                          }
+                          style={styles.input}
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             <div style={styles.formActions}>
               <button
                 type="submit"
@@ -2660,116 +3043,282 @@ export default function AdminPage() {
             </div>
           ) : (
             <div style={styles.reportList}>
-              {reportesFiltrados.map((item) => (
-                <div
-                  key={item.id}
-                  style={styles.reportCard}
-                >
-                  <div style={styles.reportHeader}>
-                    <div>
-                      <div style={styles.reportKicker}>
-                        {item.semana || "-"}
+              {reportesFiltrados.map((item) => {
+                const pdaAsesor = pdas.filter(
+                  (p) =>
+                    p.asesor === item.asesor &&
+                    (p.estado || "Activo") === "Activo"
+                );
+
+                const felicitacionesAsesor =
+                  felicitacionesList.filter(
+                    (f) => f.asesor === item.asesor
+                  );
+
+                return (
+                  <div
+                    key={item.id}
+                    style={styles.reportCard}
+                  >
+                    <div style={styles.reportHeader}>
+                      <div>
+                        <div style={styles.reportKicker}>
+                          {item.semana || "-"}
+                        </div>
+
+                        <h3 style={styles.reportName}>
+                          {item.asesor || "-"}
+                        </h3>
                       </div>
 
-                      <h3 style={styles.reportName}>
-                        {item.asesor || "-"}
-                      </h3>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          imprimirReporte(
+                            item,
+                            pdaAsesor,
+                            felicitacionesAsesor
+                          )
+                        }
+                        style={styles.secondaryButton}
+                      >
+                        Imprimir
+                      </button>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        imprimirReporte(item)
-                      }
-                      style={styles.secondaryButton}
-                    >
-                      Imprimir
-                    </button>
+                    <div style={styles.sectionSpacing}>
+                      <h4 style={styles.subTitle}>
+                        Calidad
+                      </h4>
+                      <div style={styles.reportGrid}>
+                        <div>
+                          <span>Nota</span>
+                          <strong>
+                            {item.nota || "-"}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Objetivo</span>
+                          <strong>
+                            {item.objetivo || "-"}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Desvío</span>
+                          <strong>
+                            {item.desvio || "-"}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Evolución</span>
+                          <strong>
+                            {item.evolucion || "-"}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={styles.sectionSpacing}>
+                      <h4 style={styles.subTitle}>
+                        Productividad
+                      </h4>
+                      <div style={styles.reportGrid}>
+                        <div>
+                          <span>Campaña</span>
+                          <strong>
+                            {item.campania || "-"}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>SPH</span>
+                          <strong>
+                            {item.sph || "-"}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Ventas</span>
+                          <strong>
+                            {item.ventas || "-"}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Objetivo campaña</span>
+                          <strong>
+                            {item.objetivo_campania ||
+                              "-"}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={styles.sectionSpacing}>
+                      <h4 style={styles.subTitle}>
+                        Tipificaciones
+                      </h4>
+                      <div style={styles.reportGrid}>
+                        <div>
+                          <span>Desvío</span>
+                          <strong>
+                            {item.tipificaciones_desvio ||
+                              "-"}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Objetivo</span>
+                          <strong>
+                            {item.tipificaciones_objetivo ||
+                              "-"}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Resultado</span>
+                          <strong>
+                            {item.tipificaciones_resultado ||
+                              "-"}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={styles.sectionSpacing}>
+                      <h4 style={styles.subTitle}>
+                        No Ventas
+                      </h4>
+                      <div style={styles.reportGrid}>
+                        <div>
+                          <span>Cantidad</span>
+                          <strong>
+                            {item.no_ventas || "-"}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Registro</span>
+                          <strong>
+                            {item.no_ventas_registro ||
+                              "-"}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Compromiso</span>
+                          <strong>
+                            {item.no_ventas_compromiso ||
+                              "-"}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={styles.sectionSpacing}>
+                      <h4 style={styles.subTitle}>
+                        PDA activos
+                      </h4>
+                      {pdaAsesor.length === 0 ? (
+                        <p style={styles.resultText}>
+                          No tiene PDA activos.
+                        </p>
+                      ) : (
+                        <ul style={{ margin: 0, paddingLeft: 18 }}>
+                          {pdaAsesor.map((p) => (
+                            <li
+                              key={p.id}
+                              style={styles.resultText}
+                            >
+                              {p.aspecto || "-"} (
+                              {formatearFecha(p.fecha_desde)}
+                              {" al "}
+                              {formatearFecha(p.fecha_hasta)})
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div style={styles.sectionSpacing}>
+                      <h4 style={styles.subTitle}>
+                        Felicitaciones
+                      </h4>
+                      {felicitacionesAsesor.length === 0 ? (
+                        <p style={styles.resultText}>
+                          Sin felicitaciones registradas.
+                        </p>
+                      ) : (
+                        <ul style={{ margin: 0, paddingLeft: 18 }}>
+                          {felicitacionesAsesor.map((f) => (
+                            <li
+                              key={f.id}
+                              style={styles.resultText}
+                            >
+                              {f.motivo || "-"} (
+                              {f.fecha ||
+                                formatearFecha(
+                                  f.created_at
+                                )}
+                              )
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div style={styles.sectionSpacing}>
+                      <h4 style={styles.subTitle}>
+                        Respuesta del asesor
+                      </h4>
+
+                      {!item.asesor_estado ? (
+                        <div style={styles.emptyState}>
+                          El asesor todavía no respondió
+                          este reporte.
+                        </div>
+                      ) : (
+                        <div style={styles.resultCard}>
+                          <div style={styles.resultTop}>
+                            <StatusBadge
+                              status={
+                                item.asesor_estado ===
+                                "conforme"
+                                  ? "CONFORME"
+                                  : "DISCONFORME"
+                              }
+                            />
+                            <span>
+                              {formatearFecha(
+                                item.asesor_fecha_respuesta
+                              )}
+                            </span>
+                          </div>
+                          <p style={styles.resultText}>
+                            {item.asesor_comentario ||
+                              "Sin comentarios."}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={styles.reportDetails}>
+                      <div>
+                        <strong>
+                          Aspectos trabajados
+                        </strong>
+
+                        <p>
+                          {item.recomendacion || "-"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <strong>
+                          Observaciones
+                        </strong>
+
+                        <p>
+                          {item.observaciones || "-"}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-
-                  <div style={styles.reportGrid}>
-                    <div>
-                      <span>Campaña</span>
-                      <strong>
-                        {item.campania || "-"}
-                      </strong>
-                    </div>
-
-                    <div>
-                      <span>Nota</span>
-                      <strong>
-                        {item.nota || "-"}
-                      </strong>
-                    </div>
-
-                    <div>
-                      <span>Objetivo</span>
-                      <strong>
-                        {item.objetivo || "-"}
-                      </strong>
-                    </div>
-
-                    <div>
-                      <span>Desvío</span>
-                      <strong>
-                        {item.desvio || "-"}
-                      </strong>
-                    </div>
-
-                    <div>
-                      <span>SPH</span>
-                      <strong>
-                        {item.sph || "-"}
-                      </strong>
-                    </div>
-
-                    <div>
-                      <span>Ventas</span>
-                      <strong>
-                        {item.ventas || "-"}
-                      </strong>
-                    </div>
-
-                    <div>
-                      <span>Objetivo campaña</span>
-                      <strong>
-                        {item.objetivo_campania ||
-                          "-"}
-                      </strong>
-                    </div>
-
-                    <div>
-                      <span>Tipificaciones</span>
-                      <strong>
-                        {item.tipificaciones_resultado ||
-                          "-"}
-                      </strong>
-                    </div>
-                  </div>
-
-                  <div style={styles.reportDetails}>
-                    <div>
-                      <strong>
-                        Aspectos trabajados
-                      </strong>
-
-                      <p>
-                        {item.recomendacion || "-"}
-                      </p>
-                    </div>
-
-                    <div>
-                      <strong>
-                        Observaciones
-                      </strong>
-
-                      <p>
-                        {item.observaciones || "-"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </Card>
@@ -3623,6 +4172,33 @@ const styles = {
     gridTemplateColumns:
       "repeat(auto-fit, minmax(130px, 1fr))",
     gap: "9px",
+  },
+
+  resultadoTableWrap: {
+    border: `1px solid ${PALETTE.soft}`,
+    borderRadius: "10px",
+    overflow: "hidden",
+  },
+
+  resultadoTable: {
+    width: "100%",
+    borderCollapse: "collapse",
+  },
+
+  resultadoTh: {
+    background: PALETTE.cream,
+    color: PALETTE.navy,
+    fontSize: "11px",
+    fontWeight: 800,
+    textAlign: "left",
+    padding: "10px 12px",
+    borderBottom: `1px solid ${PALETTE.soft}`,
+  },
+
+  resultadoTd: {
+    padding: "8px",
+    borderBottom: `1px solid ${PALETTE.soft}`,
+    verticalAlign: "middle",
   },
 
   reportDetails: {

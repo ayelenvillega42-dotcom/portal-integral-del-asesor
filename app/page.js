@@ -19,6 +19,17 @@ export default function Page() {
   const [reportes, setReportes] = useState([]);
   const [cargandoReportes, setCargandoReportes] = useState(false);
 
+  const [pdas, setPdas] = useState([]);
+  const [felicitaciones, setFelicitaciones] = useState([]);
+
+  const [feedbackList, setFeedbackList] = useState([]);
+  const [respondiendo, setRespondiendo] = useState(false);
+  const [estadoSeleccionado, setEstadoSeleccionado] = useState("");
+  const [motivoTexto, setMotivoTexto] = useState("");
+  const [comentarioTexto, setComentarioTexto] = useState("");
+  const [enviandoFeedback, setEnviandoFeedback] = useState(false);
+  const [feedbackError, setFeedbackError] = useState("");
+
   useEffect(() => {
     let activo = true;
 
@@ -89,7 +100,6 @@ export default function Page() {
 
     /*
      * Primero reconocemos al administrador por su email.
-     * La tabla usuarios también contiene su registro.
      */
     if (emailNormalizado === ADMIN_EMAIL.toLowerCase()) {
       setUsuarioActual({
@@ -104,16 +114,16 @@ export default function Page() {
     }
 
     /*
-     * Para los asesores usamos la tabla usuarios.
+     * Para los asesores usamos la tabla perfiles.
      */
     const { data: usuario, error } = await supabase
-      .from("usuarios")
+      .from("perfiles")
       .select("id,nombre,usuario,email,rol,activo,created_at")
       .eq("email", emailNormalizado)
       .maybeSingle();
 
     if (error) {
-      console.error("Error consultando usuarios:", error);
+      console.error("Error consultando perfiles:", error);
 
       await supabase.auth.signOut();
 
@@ -165,79 +175,98 @@ export default function Page() {
     setUsuarioActual(usuario);
     setModo("asesor");
 
-    await cargarReportes(usuario);
+    await cargarTodo(usuario);
   }
 
-  async function cargarReportes(usuario) {
-    if (!usuario) return;
+  async function cargarTodo(usuario) {
+    if (!usuario?.id) return;
 
     setCargandoReportes(true);
 
     try {
-      /*
-       * Primero buscamos por email.
-       *
-       * También contemplamos:
-       * - usuario, por si reportes guarda el identificador
-       * - nombre, porque los reportes anteriores pueden tener
-       *   "Gomez, Carla", "Mercado, Chiara", etc.
-       */
-      const emailUsuario = usuario.email?.trim().toLowerCase();
-      const nombreUsuario = usuario.nombre?.trim();
-
-      let resultados = [];
-
-      if (emailUsuario) {
-        const { data, error } = await supabase
+      const [
+        reportesResp,
+        pdasResp,
+        felicitacionesResp,
+        feedbackResp,
+      ] = await Promise.all([
+        supabase
           .from("reportes")
           .select("*")
-          .eq("usuario", emailUsuario)
-          .order("id", { ascending: false });
+          .eq("asesor_id", usuario.id)
+          .order("created_at", { ascending: false }),
 
-        if (!error && data) {
-          resultados = data;
-        }
-      }
-
-      /*
-       * Si todavía no encontramos reportes, buscamos por nombre.
-       * Esto permite que los reportes históricos sigan apareciendo
-       * aunque hayan sido guardados con el nombre del asesor.
-       */
-      if (resultados.length === 0 && nombreUsuario) {
-        const { data, error } = await supabase
-          .from("reportes")
+        supabase
+          .from("pdas")
           .select("*")
-          .eq("asesor", nombreUsuario)
-          .order("id", { ascending: false });
+          .eq("asesor_id", usuario.id)
+          .order("created_at", { ascending: false }),
 
-        if (!error && data) {
-          resultados = data;
-        }
-      }
-
-      /*
-       * Si la columna usuario contiene el UUID del registro
-       * de usuarios, también lo contemplamos.
-       */
-      if (resultados.length === 0 && usuario.id) {
-        const { data, error } = await supabase
-          .from("reportes")
+        supabase
+          .from("felicitaciones")
           .select("*")
-          .eq("usuario", usuario.id)
-          .order("id", { ascending: false });
+          .eq("asesor_id", usuario.id)
+          .order("created_at", { ascending: false }),
 
-        if (!error && data) {
-          resultados = data;
-        }
-      }
+        supabase
+          .from("feedback")
+          .select("*")
+          .eq("asesor_id", usuario.id)
+          .order("created_at", { ascending: false }),
+      ]);
 
-      setReportes(resultados || []);
+      setReportes(reportesResp.data || []);
+      setPdas(pdasResp.data || []);
+      setFelicitaciones(felicitacionesResp.data || []);
+      setFeedbackList(feedbackResp.data || []);
     } catch (error) {
-      console.error("Error cargando reportes:", error);
+      console.error("Error cargando información:", error);
       setReportes([]);
+      setPdas([]);
+      setFelicitaciones([]);
+      setFeedbackList([]);
     } finally {
       setCargandoReportes(false);
+    }
+  }
+
+  async function enviarFeedback(reporteActual, estado) {
+    if (!usuarioActual?.id || !reporteActual?.semana) return;
+
+    setFeedbackError("");
+    setEnviandoFeedback(true);
+
+    try {
+      const payload = {
+        asesor_id: usuarioActual.id,
+        semana: reporteActual.semana,
+        firma: estado,
+        motivo: estado === "Disconforme" ? motivoTexto : null,
+        comentario: comentarioTexto || null,
+      };
+
+      const { data, error } = await supabase
+        .from("feedback")
+        .insert(payload)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setFeedbackList((prev) => [data, ...prev]);
+      setRespondiendo(false);
+      setEstadoSeleccionado("");
+      setMotivoTexto("");
+      setComentarioTexto("");
+    } catch (error) {
+      console.error("Error guardando feedback:", error);
+      setFeedbackError(
+        "No se pudo guardar tu respuesta. Intentá nuevamente."
+      );
+    } finally {
+      setEnviandoFeedback(false);
     }
   }
 
@@ -299,6 +328,9 @@ export default function Page() {
     setSession(null);
     setUsuarioActual(null);
     setReportes([]);
+    setPdas([]);
+    setFelicitaciones([]);
+    setFeedbackList([]);
     setEmail("");
     setPassword("");
     setLoginError("");
@@ -330,9 +362,6 @@ export default function Page() {
    *
    * La pantalla de administración está en:
    * /admin
-   *
-   * No mostramos información administrativa dentro del
-   * portal del asesor.
    */
   if (modo === "admin") {
     return (
@@ -446,6 +475,16 @@ export default function Page() {
   if (modo === "asesor") {
     const reporteActual = reportes[0];
 
+    const feedbackActual = reporteActual
+      ? feedbackList.find(
+          (f) => f.semana === reporteActual.semana
+        )
+      : null;
+
+    const pdasActivos = pdas.filter(
+      (p) => (p.estado || "Activo") === "Activo"
+    );
+
     return (
       <main style={styles.page}>
         <div style={styles.container}>
@@ -510,6 +549,13 @@ export default function Page() {
                       {reporteActual?.semana ||
                         "Semana"}
                     </h2>
+
+                    {reporteActual?.campania && (
+                      <p style={styles.muted}>
+                        Campaña:{" "}
+                        {reporteActual.campania}
+                      </p>
+                    )}
                   </div>
 
                   <div style={styles.score}>
@@ -691,6 +737,381 @@ export default function Page() {
                     <p>
                       {reporteActual.gestion}
                     </p>
+                  </div>
+                )}
+              </section>
+
+              <section style={styles.card}>
+                <h2>Tipificaciones</h2>
+
+                <div style={styles.grid}>
+                  <Metric
+                    title="Objetivo"
+                    value={
+                      reporteActual?.tipificaciones_objetivo ||
+                      "-"
+                    }
+                  />
+
+                  <Metric
+                    title="Resultado"
+                    value={
+                      reporteActual?.tipificaciones_resultado ||
+                      "-"
+                    }
+                  />
+
+                  <Metric
+                    title="Desvío"
+                    value={
+                      reporteActual?.tipificaciones_desvio ||
+                      "-"
+                    }
+                  />
+                </div>
+
+                {reporteActual?.tipificaciones_auditadas && (
+                  <div style={{ marginTop: "20px" }}>
+                    <h3>Tipificaciones auditadas</h3>
+                    <p>
+                      {
+                        reporteActual.tipificaciones_auditadas
+                      }
+                    </p>
+                  </div>
+                )}
+
+                {reporteActual?.tipificaciones_compromiso && (
+                  <p>
+                    <strong>Compromiso: </strong>
+                    {reporteActual.tipificaciones_compromiso}
+                  </p>
+                )}
+
+                {reporteActual?.tipificaciones_observaciones && (
+                  <>
+                    <h3>Observaciones</h3>
+                    <p>
+                      {
+                        reporteActual.tipificaciones_observaciones
+                      }
+                    </p>
+                  </>
+                )}
+              </section>
+
+              <section style={styles.card}>
+                <h2>No Ventas</h2>
+
+                <div style={styles.grid}>
+                  <Metric
+                    title="Cantidad"
+                    value={
+                      reporteActual?.no_ventas || "-"
+                    }
+                  />
+
+                  <Metric
+                    title="Registro en sistema"
+                    value={
+                      reporteActual?.no_ventas_registro ||
+                      "-"
+                    }
+                  />
+
+                  <Metric
+                    title="Compromiso"
+                    value={
+                      reporteActual?.no_ventas_compromiso ||
+                      "-"
+                    }
+                  />
+                </div>
+
+                {reporteActual?.no_ventas_coaching && (
+                  <div style={{ marginTop: "20px" }}>
+                    <h3>Coaching</h3>
+                    <p>
+                      {reporteActual.no_ventas_coaching}
+                    </p>
+                  </div>
+                )}
+
+                {reporteActual?.no_ventas_om && (
+                  <div style={{ marginTop: "20px" }}>
+                    <h3>Principales O.M.</h3>
+                    <p>{reporteActual.no_ventas_om}</p>
+                  </div>
+                )}
+
+                {reporteActual?.no_ventas_fortalezas && (
+                  <div style={{ marginTop: "20px" }}>
+                    <h3>Fortalezas</h3>
+                    <p>
+                      {
+                        reporteActual.no_ventas_fortalezas
+                      }
+                    </p>
+                  </div>
+                )}
+
+                {reporteActual?.no_ventas_observaciones && (
+                  <>
+                    <h3>Observaciones</h3>
+                    <p>
+                      {
+                        reporteActual.no_ventas_observaciones
+                      }
+                    </p>
+                  </>
+                )}
+              </section>
+
+              {pdasActivos.length > 0 && (
+                <section style={styles.card}>
+                  <h2>Mis Planes de Acción activos</h2>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "12px",
+                    }}
+                  >
+                    {pdasActivos.map((p) => (
+                      <div
+                        key={p.id}
+                        style={styles.history}
+                      >
+                        <strong>
+                          {p.aspecto || "PDA"}
+                        </strong>
+
+                        <p style={styles.muted}>
+                          {p.fecha_desde || "-"} al{" "}
+                          {p.fecha_hasta || "-"}
+                        </p>
+
+                        {p.objetivo && (
+                          <p>
+                            <strong>
+                              Objetivo:
+                            </strong>{" "}
+                            {p.objetivo}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {felicitaciones.length > 0 && (
+                <section style={styles.card}>
+                  <h2>Felicitaciones</h2>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "12px",
+                    }}
+                  >
+                    {felicitaciones.map((f) => (
+                      <div
+                        key={f.id}
+                        style={styles.history}
+                      >
+                        <strong>
+                          {f.fecha || "-"}
+                        </strong>
+                        <p style={{ marginBottom: 0 }}>
+                          {f.motivo}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <section style={styles.card}>
+                <h2>
+                  ¿Estás de acuerdo con este reporte?
+                </h2>
+
+                {feedbackActual ? (
+                  <div
+                    style={{
+                      ...styles.warning,
+                      background:
+                        feedbackActual.firma ===
+                        "Conforme"
+                          ? "#ecfdf5"
+                          : "#fff1f1",
+                      borderColor:
+                        feedbackActual.firma ===
+                        "Conforme"
+                          ? "#a7f3d0"
+                          : "#f0b5b5",
+                    }}
+                  >
+                    <strong>
+                      Ya respondiste:{" "}
+                      {feedbackActual.firma}
+                    </strong>
+
+                    {feedbackActual.motivo && (
+                      <p>
+                        <strong>Motivo:</strong>{" "}
+                        {feedbackActual.motivo}
+                      </p>
+                    )}
+
+                    {feedbackActual.comentario && (
+                      <p style={{ marginBottom: 0 }}>
+                        {feedbackActual.comentario}
+                      </p>
+                    )}
+                  </div>
+                ) : !respondiendo ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "12px",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <button
+                      style={{
+                        ...styles.primaryButton,
+                        width: "auto",
+                        padding: "12px 24px",
+                      }}
+                      onClick={() => {
+                        setEstadoSeleccionado(
+                          "Conforme"
+                        );
+                        setRespondiendo(true);
+                      }}
+                    >
+                      CONFORME
+                    </button>
+
+                    <button
+                      style={{
+                        ...styles.secondaryButton,
+                        borderColor: "#f0b5b5",
+                        color: "#991b1b",
+                      }}
+                      onClick={() => {
+                        setEstadoSeleccionado(
+                          "Disconforme"
+                        );
+                        setRespondiendo(true);
+                      }}
+                    >
+                      DISCONFORME
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <p>
+                      Vas a marcar este reporte como{" "}
+                      <strong>
+                        {estadoSeleccionado}
+                      </strong>
+                      .
+                    </p>
+
+                    {estadoSeleccionado ===
+                      "Disconforme" && (
+                      <>
+                        <label>
+                          Motivo
+                        </label>
+                        <textarea
+                          value={motivoTexto}
+                          onChange={(e) =>
+                            setMotivoTexto(
+                              e.target.value
+                            )
+                          }
+                          rows={3}
+                          placeholder="Contanos por qué no estás de acuerdo..."
+                          style={{
+                            ...styles.input,
+                            fontFamily: "inherit",
+                          }}
+                        />
+                      </>
+                    )}
+
+                    <label>
+                      Comentarios / qué necesitás
+                      para la próxima semana
+                    </label>
+                    <textarea
+                      value={comentarioTexto}
+                      onChange={(e) =>
+                        setComentarioTexto(
+                          e.target.value
+                        )
+                      }
+                      rows={3}
+                      placeholder="Dejá acá tus comentarios..."
+                      style={{
+                        ...styles.input,
+                        fontFamily: "inherit",
+                      }}
+                    />
+
+                    {feedbackError && (
+                      <div style={styles.error}>
+                        {feedbackError}
+                      </div>
+                    )}
+
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "10px",
+                      }}
+                    >
+                      <button
+                        style={{
+                          ...styles.primaryButton,
+                          width: "auto",
+                          padding: "12px 24px",
+                          opacity: enviandoFeedback
+                            ? 0.6
+                            : 1,
+                        }}
+                        disabled={enviandoFeedback}
+                        onClick={() =>
+                          enviarFeedback(
+                            reporteActual,
+                            estadoSeleccionado
+                          )
+                        }
+                      >
+                        {enviandoFeedback
+                          ? "ENVIANDO..."
+                          : "CONFIRMAR RESPUESTA"}
+                      </button>
+
+                      <button
+                        style={styles.secondaryButton}
+                        onClick={() => {
+                          setRespondiendo(false);
+                          setEstadoSeleccionado("");
+                          setMotivoTexto("");
+                          setComentarioTexto("");
+                          setFeedbackError("");
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
                   </div>
                 )}
               </section>

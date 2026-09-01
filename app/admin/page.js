@@ -11,30 +11,9 @@ const PALETTE = {
   cream: "#F4E9CD",
 };
 
-const ASESORES = [
-  "Tello, Marianela",
-  "Contreras, Gilary",
-  "Malqui, Xiomara",
-  "Luna, Oriana",
-  "Gomez, Carla",
-  "Acosta, Pamela",
-  "Bahamonde, Camila",
-  "Vasquez, Agustin",
-  "Bustos, Jesica",
-  "Cabrera, Antonella",
-  "Bustamante, Ailin",
-  "Simonetta, Valentina",
-  "Olmedo, Thomas",
-  "Aguilera, Trinidad",
-  "Viniegra, Agustín",
-  "Ojeda, Luana",
-  "Reartes, Maia",
-  "Cordoba, Tania",
-  "Peralta, Belen",
-  "Mercado, Chiara",
-  "Diaz, Milagros",
-  "Rojek, Luna",
-];
+// La lista de asesores ya NO es fija: se trae en vivo desde la
+// tabla `perfiles` de Supabase (columna rol = 'asesor'). Ver el
+// estado `perfiles` y `asesoresOptions` dentro de AdminPage.
 
 const CALIDAD_ASPECTOS = [
   "Información de otras compañías",
@@ -340,11 +319,18 @@ function Select({
       >
         <option value="">Seleccionar...</option>
 
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
+        {options.map((option) => {
+          const isObj =
+            option !== null && typeof option === "object";
+          const optValue = isObj ? option.value : option;
+          const optLabel = isObj ? option.label : option;
+
+          return (
+            <option key={optValue} value={optValue}>
+              {optLabel}
+            </option>
+          );
+        })}
       </select>
     </div>
   );
@@ -372,6 +358,16 @@ function StatusBadge({ status }) {
     background = PALETTE.mint;
   } else if (status === ESTADOS.debajo) {
     background = "#d99a9a";
+  } else if (
+    typeof status === "string" &&
+    status.toLowerCase() === "conforme"
+  ) {
+    background = PALETTE.mint;
+  } else if (
+    typeof status === "string" &&
+    status.toLowerCase() === "disconforme"
+  ) {
+    background = "#d99a9a";
   }
 
   return (
@@ -397,6 +393,8 @@ export default function AdminPage() {
   const [audios, setAudios] = useState([]);
   const [pdas, setPdas] = useState([]);
   const [felicitacionesList, setFelicitacionesList] = useState([]);
+  const [perfiles, setPerfiles] = useState([]);
+  const [feedbackList, setFeedbackList] = useState([]);
 
   const [selectedAdvisor, setSelectedAdvisor] = useState("");
   const [searchAdvisor, setSearchAdvisor] = useState("");
@@ -516,6 +514,8 @@ export default function AdminPage() {
         audiosResponse,
         pdasResponse,
         felicitacionesResponse,
+        perfilesResponse,
+        feedbackResponse,
       ] = await Promise.all([
         supabase
           .from("reportes")
@@ -539,6 +539,18 @@ export default function AdminPage() {
 
         supabase
           .from("felicitaciones")
+          .select("*")
+          .order("created_at", { ascending: false }),
+
+        supabase
+          .from("perfiles")
+          .select("*")
+          .eq("rol", "asesor")
+          .eq("activo", true)
+          .order("nombre", { ascending: true }),
+
+        supabase
+          .from("feedback")
           .select("*")
           .order("created_at", { ascending: false }),
       ]);
@@ -574,6 +586,18 @@ export default function AdminPage() {
           felicitacionesResponse.data || []
         );
       }
+
+      if (perfilesResponse.error) {
+        console.error(perfilesResponse.error);
+      } else {
+        setPerfiles(perfilesResponse.data || []);
+      }
+
+      if (feedbackResponse.error) {
+        console.error(feedbackResponse.error);
+      } else {
+        setFeedbackList(feedbackResponse.data || []);
+      }
     } catch (err) {
       console.error(err);
       setError("No se pudieron cargar los datos.");
@@ -587,39 +611,53 @@ export default function AdminPage() {
     setError("");
   }
 
-  function seleccionarAsesor(asesor) {
-    setSelectedAdvisor(asesor);
+  function nombreAsesor(asesorId) {
+    const perfil = perfiles.find((p) => p.id === asesorId);
+    return perfil ? perfil.nombre : asesorId || "-";
+  }
+
+  const asesoresOptions = useMemo(
+    () =>
+      perfiles.map((p) => ({
+        value: p.id,
+        label: p.nombre,
+      })),
+    [perfiles]
+  );
+
+  function seleccionarAsesor(asesorId) {
+    setSelectedAdvisor(asesorId);
 
     setReporte((prev) => ({
       ...prev,
-      asesor,
+      asesor: asesorId,
     }));
 
     setDevolucion((prev) => ({
       ...prev,
-      asesor,
+      asesor: asesorId,
     }));
 
     setAudio((prev) => ({
       ...prev,
-      asesor,
+      asesor: asesorId,
     }));
 
     setPda((prev) => ({
       ...prev,
-      asesor,
+      asesor: asesorId,
     }));
   }
 
   const asesoresFiltrados = useMemo(() => {
     const texto = searchAdvisor.toLowerCase().trim();
 
-    if (!texto) return ASESORES;
+    if (!texto) return perfiles;
 
-    return ASESORES.filter((asesor) =>
-      asesor.toLowerCase().includes(texto)
+    return perfiles.filter((p) =>
+      p.nombre.toLowerCase().includes(texto)
     );
-  }, [searchAdvisor]);
+  }, [searchAdvisor, perfiles]);
 
   const reportesFiltrados = useMemo(() => {
     return reportes.filter((item) => {
@@ -637,7 +675,7 @@ export default function AdminPage() {
     if (!selectedAdvisor) return devoluciones;
 
     return devoluciones.filter(
-      (item) => item.asesor === selectedAdvisor
+      (item) => item.asesor_id === selectedAdvisor
     );
   }, [devoluciones, selectedAdvisor]);
 
@@ -645,7 +683,7 @@ export default function AdminPage() {
     if (!selectedAdvisor) return audios;
 
     return audios.filter(
-      (item) => item.asesor === selectedAdvisor
+      (item) => item.asesor_id === selectedAdvisor
     );
   }, [audios, selectedAdvisor]);
 
@@ -653,7 +691,7 @@ export default function AdminPage() {
     if (!selectedAdvisor) return pdas;
 
     return pdas.filter(
-      (item) => item.asesor === selectedAdvisor
+      (item) => item.asesor_id === selectedAdvisor
     );
   }, [pdas, selectedAdvisor]);
 
@@ -699,7 +737,7 @@ export default function AdminPage() {
 
     try {
       const payload = {
-        asesor: reporte.asesor,
+        asesor_id: reporte.asesor,
         semana: reporte.semana,
         campania: reporte.campania,
 
@@ -798,7 +836,7 @@ export default function AdminPage() {
 
     try {
       const payload = {
-        asesor: devolucion.asesor,
+        asesor_id: devolucion.asesor,
         area: devolucion.area,
         responsable: devolucion.responsable || null,
         nota_calidad: devolucion.notaCalidad || null,
@@ -865,7 +903,7 @@ export default function AdminPage() {
 
     try {
       const payload = {
-        asesor: felicitacion.asesor,
+        asesor_id: felicitacion.asesor,
         motivo: felicitacion.motivo,
         fecha: felicitacion.fecha || null,
       };
@@ -922,9 +960,11 @@ export default function AdminPage() {
       const extension =
         audio.archivo.name.split(".").pop() || "mp3";
 
-      const fileName = `${Date.now()}-${audio.asesor
+      const nombreArchivo = nombreAsesor(audio.asesor)
         .replace(/\s+/g, "-")
-        .replace(/,/g, "")}.${extension}`;
+        .replace(/,/g, "");
+
+      const fileName = `${Date.now()}-${nombreArchivo}.${extension}`;
 
       const filePath = `audios/${fileName}`;
 
@@ -941,7 +981,7 @@ export default function AdminPage() {
         .getPublicUrl(filePath);
 
       const payload = {
-        asesor: audio.asesor,
+        asesor_id: audio.asesor,
         area: audio.area,
         responsable: audio.responsable || null,
         fecha: audio.fecha || null,
@@ -1006,7 +1046,7 @@ export default function AdminPage() {
 
     try {
       const payload = {
-        asesor: pda.asesor,
+        asesor_id: pda.asesor,
         aspecto: pda.aspecto || null,
         fecha_desde: pda.fechaDesde || null,
         fecha_hasta: pda.fechaHasta || null,
@@ -1081,7 +1121,8 @@ export default function AdminPage() {
   function imprimirReporte(
     reporteSeleccionado,
     pdaAsesor = [],
-    felicitacionesAsesor = []
+    felicitacionesAsesor = [],
+    feedbackAsesor = null
   ) {
     const ventana = window.open(
       "",
@@ -1135,7 +1176,7 @@ export default function AdminPage() {
 
           <div class="dato">
             <span class="label">Asesor:</span>
-            ${reporteSeleccionado.asesor || "-"}
+            ${nombreAsesor(reporteSeleccionado.asesor_id) || "-"}
           </div>
 
           <div class="dato">
@@ -1332,24 +1373,31 @@ export default function AdminPage() {
             <div class="dato">
               <span class="label">Estado:</span>
               ${
-                reporteSeleccionado.asesor_estado === "conforme"
-                  ? "CONFORME"
-                  : reporteSeleccionado.asesor_estado === "disconforme"
-                  ? "DISCONFORME"
+                feedbackAsesor
+                  ? feedbackAsesor.firma || "Sin firma"
                   : "Pendiente de respuesta"
               }
             </div>
 
             <div class="dato">
               <span class="label">Fecha de respuesta:</span>
-              ${formatearFecha(
-                reporteSeleccionado.asesor_fecha_respuesta
-              )}
+              ${
+                feedbackAsesor
+                  ? formatearFecha(feedbackAsesor.created_at)
+                  : "-"
+              }
+            </div>
+
+            <div class="dato">
+              <span class="label">Motivo:</span>
+              ${(feedbackAsesor && feedbackAsesor.motivo) || "-"}
             </div>
 
             <div class="dato">
               <span class="label">Comentario del asesor:</span>
-              ${reporteSeleccionado.asesor_comentario || "-"}
+              ${
+                (feedbackAsesor && feedbackAsesor.comentario) || "-"
+              }
             </div>
           </div>
 
@@ -1397,7 +1445,7 @@ export default function AdminPage() {
         <div style={styles.statsGrid}>
           <div style={styles.statCard}>
             <span style={styles.statNumber}>
-              {ASESORES.length}
+              {perfiles.length}
             </span>
             <span style={styles.statLabel}>
               Asesores
@@ -1517,19 +1565,19 @@ export default function AdminPage() {
 
   function renderAsesores() {
     const reporteAsesor = reportes.filter(
-      (item) => item.asesor === selectedAdvisor
+      (item) => item.asesor_id === selectedAdvisor
     );
 
     const devolucionesAsesor = devoluciones.filter(
-      (item) => item.asesor === selectedAdvisor
+      (item) => item.asesor_id === selectedAdvisor
     );
 
     const audiosAsesor = audios.filter(
-      (item) => item.asesor === selectedAdvisor
+      (item) => item.asesor_id === selectedAdvisor
     );
 
     const pdasAsesor = pdas.filter(
-      (item) => item.asesor === selectedAdvisor
+      (item) => item.asesor_id === selectedAdvisor
     );
 
     return (
@@ -1545,19 +1593,21 @@ export default function AdminPage() {
               />
 
               <div style={styles.advisorList}>
-                {asesoresFiltrados.map((asesor) => (
+                {asesoresFiltrados.map((perfil) => (
                   <button
                     type="button"
-                    key={asesor}
-                    onClick={() => seleccionarAsesor(asesor)}
+                    key={perfil.id}
+                    onClick={() =>
+                      seleccionarAsesor(perfil.id)
+                    }
                     style={{
                       ...styles.advisorButton,
-                      ...(selectedAdvisor === asesor
+                      ...(selectedAdvisor === perfil.id
                         ? styles.advisorButtonActive
                         : {}),
                     }}
                   >
-                    {asesor}
+                    {perfil.nombre}
                   </button>
                 ))}
               </div>
@@ -1578,7 +1628,7 @@ export default function AdminPage() {
                       </div>
 
                       <h2 style={styles.profileName}>
-                        {selectedAdvisor}
+                        {nombreAsesor(selectedAdvisor)}
                       </h2>
                     </div>
                   </div>
@@ -1890,7 +1940,7 @@ export default function AdminPage() {
                 onChange={(value) =>
                   actualizarReporte("asesor", value)
                 }
-                options={ASESORES}
+                options={asesoresOptions}
               />
 
               <TextInput
@@ -2011,7 +2061,7 @@ export default function AdminPage() {
               onChange={(value) =>
                 actualizarReporte("asesor", value)
               }
-              options={ASESORES}
+              options={asesoresOptions}
             />
 
             <TextInput
@@ -2134,7 +2184,7 @@ export default function AdminPage() {
               onChange={(value) =>
                 actualizarReporte("asesor", value)
               }
-              options={ASESORES}
+              options={asesoresOptions}
             />
 
             <TextInput
@@ -2247,7 +2297,7 @@ export default function AdminPage() {
               onChange={(value) =>
                 actualizarReporte("asesor", value)
               }
-              options={ASESORES}
+              options={asesoresOptions}
             />
 
             <NumberInput
@@ -2365,7 +2415,7 @@ export default function AdminPage() {
                     value
                   )
                 }
-                options={ASESORES}
+                options={asesoresOptions}
               />
 
               <Select
@@ -2553,7 +2603,7 @@ export default function AdminPage() {
                     asesor: value,
                   }))
                 }
-                options={ASESORES}
+                options={asesoresOptions}
               />
 
               <TextInput
@@ -2613,7 +2663,7 @@ export default function AdminPage() {
                 onChange={(value) =>
                   actualizarAudio("asesor", value)
                 }
-                options={ASESORES}
+                options={asesoresOptions}
               />
 
               <Select
@@ -2746,7 +2796,7 @@ export default function AdminPage() {
                 onChange={(value) =>
                   actualizarPda("asesor", value)
                 }
-                options={ASESORES}
+                options={asesoresOptions}
               />
 
               <TextInput
@@ -3046,14 +3096,20 @@ export default function AdminPage() {
               {reportesFiltrados.map((item) => {
                 const pdaAsesor = pdas.filter(
                   (p) =>
-                    p.asesor === item.asesor &&
+                    p.asesor_id === item.asesor_id &&
                     (p.estado || "Activo") === "Activo"
                 );
 
                 const felicitacionesAsesor =
                   felicitacionesList.filter(
-                    (f) => f.asesor === item.asesor
+                    (f) => f.asesor_id === item.asesor_id
                   );
+
+                const feedbackAsesor = feedbackList.find(
+                  (f) =>
+                    f.asesor_id === item.asesor_id &&
+                    f.semana === item.semana
+                );
 
                 return (
                   <div
@@ -3067,7 +3123,7 @@ export default function AdminPage() {
                         </div>
 
                         <h3 style={styles.reportName}>
-                          {item.asesor || "-"}
+                          {nombreAsesor(item.asesor_id)}
                         </h3>
                       </div>
 
@@ -3077,7 +3133,8 @@ export default function AdminPage() {
                           imprimirReporte(
                             item,
                             pdaAsesor,
-                            felicitacionesAsesor
+                            felicitacionesAsesor,
+                            feedbackAsesor
                           )
                         }
                         style={styles.secondaryButton}
@@ -3265,7 +3322,7 @@ export default function AdminPage() {
                         Respuesta del asesor
                       </h4>
 
-                      {!item.asesor_estado ? (
+                      {!feedbackAsesor ? (
                         <div style={styles.emptyState}>
                           El asesor todavía no respondió
                           este reporte.
@@ -3275,20 +3332,24 @@ export default function AdminPage() {
                           <div style={styles.resultTop}>
                             <StatusBadge
                               status={
-                                item.asesor_estado ===
-                                "conforme"
-                                  ? "CONFORME"
-                                  : "DISCONFORME"
+                                feedbackAsesor.firma ||
+                                "Sin firma"
                               }
                             />
                             <span>
                               {formatearFecha(
-                                item.asesor_fecha_respuesta
+                                feedbackAsesor.created_at
                               )}
                             </span>
                           </div>
+                          {feedbackAsesor.motivo && (
+                            <p style={styles.resultText}>
+                              <strong>Motivo:</strong>{" "}
+                              {feedbackAsesor.motivo}
+                            </p>
+                          )}
                           <p style={styles.resultText}>
-                            {item.asesor_comentario ||
+                            {feedbackAsesor.comentario ||
                               "Sin comentarios."}
                           </p>
                         </div>
@@ -3521,7 +3582,7 @@ export default function AdminPage() {
           {selectedAdvisor && (
             <div style={styles.selectedAdvisor}>
               <span>Asesor seleccionado</span>
-              <strong>{selectedAdvisor}</strong>
+              <strong>{nombreAsesor(selectedAdvisor)}</strong>
             </div>
           )}
         </header>

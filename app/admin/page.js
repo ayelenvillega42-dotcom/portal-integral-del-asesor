@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
+/* ================= CONSTANTES ================= */
+
 const PALETTE = {
   navy: "#031926",
   teal: "#468189",
@@ -12,101 +14,201 @@ const PALETTE = {
 };
 
 const ASESORES = [
-  "Tello, Marianela", "Contreras, Gilary", "Malqui, Xiomara", "Luna, Oriana",
-  "Gomez, Carla", "Acosta, Pamela", "Bahamonde, Camila", "Vasquez, Agustin",
-  "Bustos, Jesica", "Cabrera, Antonella", "Bustamante, Ailin",
-  "Simonetta, Valentina", "Olmedo, Thomas", "Aguilera, Trinidad",
-  "Viniegra, Agustín", "Ojeda, Luana", "Reartes, Maia", "Cordoba, Tania",
-  "Peralta, Belen", "Mercado, Chiara", "Diaz, Milagros", "Rojek, Luna",
+  "Tello, Marianela",
+  "Contreras, Gilary",
+  "Malqui, Xiomara",
+  "Luna, Oriana",
+  "Gomez, Carla",
+  "Acosta, Pamela",
+  "Bahamonde, Camila",
+  "Vasquez, Agustin",
+  "Bustos, Jesica",
+  "Cabrera, Antonella",
+  "Bustamante, Ailin",
+  "Simonetta, Valentina",
+  "Olmedo, Thomas",
+  "Aguilera, Trinidad",
+  "Viniegra, Agustín",
+  "Ojeda, Luana",
+  "Reartes, Maia",
+  "Cordoba, Tania",
+  "Peralta, Belen",
+  "Mercado, Chiara",
+  "Diaz, Milagros",
+  "Rojek, Luna",
 ];
 
+const AREAS = ["Calidad", "Productividad", "Tipificaciones", "No Ventas"];
+
 const CALIDAD_ASPECTOS = [
-  "Información de otras compañías", "Presentación HS", "Validación de datos",
-  "Cláusula de aceptación", "Información", "Preexistencia", "Negociación",
-  "Precio", "Suscripción", "Asume Responsabilidad del Sponsor",
+  "Información de otras compañías",
+  "Presentación HS",
+  "Validación de datos",
+  "Cláusula de aceptación",
+  "Información",
+  "Preexistencia",
+  "Negociación",
+  "Precio",
+  "Suscripción",
+  "Asume Responsabilidad del Sponsor",
   "Habilidades de comunicación",
 ];
 
 const CALIDAD_ACCIONES = [
-  "Feedback individual", "Espacio de coaching", "Escucha en línea",
-  "Devolución mediante Meet", "Escucha de llamada de un compañero",
+  "Feedback individual",
+  "Espacio de coaching",
+  "Escucha en línea",
+  "Devolución mediante Meet",
+  "Escucha de llamada de un compañero",
   "Transcripción de venta mediante Word con desvíos marcados",
-  "Calibración conjunta de audio", "Otros",
+  "Calibración conjunta de audio",
+  "Otros",
 ];
 
 const PRODUCTIVIDAD_ASPECTOS = [
-  "Técnicas manejo de objeciones", "Generación de interés", "Cambio apertura",
-  "Escucha activa", "Venta consultiva", "Venta conversacional",
-  "Ejemplos de P.S.", "Cierre con seguridad comercial", "Manejo de objeciones",
-  "Ofrecimiento", "Rebate comercial", "Rebate conversacional",
-  "Rebate asertivo", "Posicionamiento", "Manejo de la llamada",
+  "Técnicas manejo de objeciones",
+  "Generación de interés",
+  "Cambio apertura",
+  "Escucha activa",
+  "Venta consultiva",
+  "Venta conversacional",
+  "Ejemplos de P.S.",
+  "Cierre con seguridad comercial",
+  "Manejo de objeciones",
+  "Ofrecimiento",
+  "Rebate comercial",
+  "Rebate conversacional",
+  "Rebate asertivo",
+  "Posicionamiento",
+  "Manejo de la llamada",
 ];
 
 const PRODUCTIVIDAD_ACCIONES = [
-  "FEEDBACK INDIVIDUAL", "ESPACIO DE COACHING", "ESCUCHA EN LÍNEA",
-  "ROLEPLAY COMERCIAL", "ROLEPLAY DE OBJECIONES", "REPASO DE SPEECH",
-  "REFUERZO DE ESCUCHA ACTIVA", "REFUERZO DE REBATES", "CALIBRACIÓN",
-  "SIMULACIÓN DE LLAMADA", "ACOMPAÑAMIENTO EN LÍNEA",
-  "DEVOLUCIÓN PERSONALIZADA", "SEGUIMIENTO DIARIO",
-  "REFUERZO DE TIPIFICACIÓN", "REFUERZO DE CIERRE", "REFUERZO DE SONDEO",
-  "REFUERZO DE APERTURA", "REPASO DE PROCESOS", "CAPACITACIÓN",
+  "FEEDBACK INDIVIDUAL",
+  "ESPACIO DE COACHING",
+  "ESCUCHA EN LÍNEA",
+  "ROLEPLAY COMERCIAL",
+  "ROLEPLAY DE OBJECIONES",
+  "REPASO DE SPEECH",
+  "REFUERZO DE ESCUCHA ACTIVA",
+  "REFUERZO DE REBATES",
+  "CALIBRACIÓN",
+  "SIMULACIÓN DE LLAMADA",
+  "ACOMPAÑAMIENTO EN LÍNEA",
+  "DEVOLUCIÓN PERSONALIZADA",
+  "SEGUIMIENTO DIARIO",
+  "REFUERZO DE TIPIFICACIÓN",
+  "REFUERZO DE CIERRE",
+  "REFUERZO DE SONDEO",
+  "REFUERZO DE APERTURA",
+  "REPASO DE PROCESOS",
+  "CAPACITACIÓN",
   "ESCUCHA DE LLAMADAS",
 ];
 
 const TIPIFICACIONES = [
-  "VENTA", "VOLVER A LLAMAR", "VOLVER A LLAMAR ARGUMENTANDO",
-  "NO PERMITE ARGUMENTAR", "CLIENTE DISCONFORME CON CIA",
-  "CLIENTE DISCONFORME CON EL BANCO", "TIENE PRODUCTO CON OTRA CÍA",
-  "NO CONFORME CON SUMAS ASEGURADAS", "NO INTERESADO PRODUCTO",
-  "NO INTERESADO NO INFORMA MOTIVO", "PROBLEMAS ECONÓMICOS", "LE PARECE CARO",
-  "DARA DE BAJA MEDIO DE PAGO", "NO ELEGIBLE / NO REÚNE REQUISTOS",
+  "VENTA",
+  "VOLVER A LLAMAR",
+  "VOLVER A LLAMAR ARGUMENTANDO",
+  "NO PERMITE ARGUMENTAR",
+  "CLIENTE DISCONFORME CON CIA",
+  "CLIENTE DISCONFORME CON EL BANCO",
+  "TIENE PRODUCTO CON OTRA CÍA",
+  "NO CONFORME CON SUMAS ASEGURADAS",
+  "NO INTERESADO PRODUCTO",
+  "NO INTERESADO NO INFORMA MOTIVO",
+  "PROBLEMAS ECONÓMICOS",
+  "LE PARECE CARO",
+  "DARA DE BAJA MEDIO DE PAGO",
+  "NO ELEGIBLE / NO REÚNE REQUISTOS",
   "NO CONTESTA",
 ];
 
 const OM = [
-  "MANEJO DE OBJECIONES", "GENERACION DE INTERES", "APERTURA",
-  "ESCUCHA ACTIVA", "VENTA CONSULTIVA", "VENTA CONVERSACIONAL",
-  "EJEMPLOS DE P.S", "CIERRE CON SEGURIDAD COMERCIAL", "OFRECIMIENTO",
-  "REBATE COMERCIAL", "REBATE CONVERSACIONAL", "REBATE ASERTIVO", "PAUSAS",
-  "POSICIONAMIENTO", "MANEJO DE LA LLAMADA", "PRODUCTO", "SONDEO",
+  "MANEJO DE OBJECIONES",
+  "GENERACION DE INTERES",
+  "APERTURA",
+  "ESCUCHA ACTIVA",
+  "VENTA CONSULTIVA",
+  "VENTA CONVERSACIONAL",
+  "EJEMPLOS DE P.S",
+  "CIERRE CON SEGURIDAD COMERCIAL",
+  "OFRECIMIENTO",
+  "REBATE COMERCIAL",
+  "REBATE CONVERSACIONAL",
+  "REBATE ASERTIVO",
+  "PAUSAS",
+  "POSICIONAMIENTO",
+  "MANEJO DE LA LLAMADA",
+  "PRODUCTO",
+  "SONDEO",
 ];
 
 const FORTALEZAS = [
-  "ESCUCHA ACTIVA", "BUEN SONDEO", "SEGURIDAD COMERCIAL", "EMPATÍA",
-  "BUEN TONO", "MANEJO DE OBJECIONES", "CORRECTA VALIDACIÓN", "BUEN CIERRE",
-  "IMPULSO COMERCIAL", "FLUIDEZ CONVERSACIONAL", "ADAPTABILIDAD",
-  "BUENA DETECCIÓN DE NECESIDAD", "CLARIDAD EN EXPLICACIÓN",
-  "BUEN MANEJO DE SILENCIOS", "CORRECTA CONTENCIÓN", "VENTA CONSULTIVA",
-  "BUENA APERTURA", "PERSISTENCIA COMERCIAL", "CORRECTA ARGUMENTACIÓN",
+  "ESCUCHA ACTIVA",
+  "BUEN SONDEO",
+  "SEGURIDAD COMERCIAL",
+  "EMPATÍA",
+  "BUEN TONO",
+  "MANEJO DE OBJECIONES",
+  "CORRECTA VALIDACIÓN",
+  "BUEN CIERRE",
+  "IMPULSO COMERCIAL",
+  "FLUIDEZ CONVERSACIONAL",
+  "ADAPTABILIDAD",
+  "BUENA DETECCIÓN DE NECESIDAD",
+  "CLARIDAD EN EXPLICACIÓN",
+  "BUEN MANEJO DE SILENCIOS",
+  "CORRECTA CONTENCIÓN",
+  "VENTA CONSULTIVA",
+  "BUENA APERTURA",
+  "PERSISTENCIA COMERCIAL",
+  "CORRECTA ARGUMENTACIÓN",
 ];
 
-const AREAS = ["Calidad", "Productividad", "Tipificaciones", "No Ventas"];
-const TIPOS_SANCION = [
-  "Llamado de atención",
-  "Apercibimiento",
-  "Suspensión",
-  "Sanción",
-  "Otro",
-];
-const MESES = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto",
-  "Septiembre", "Octubre", "Noviembre", "Diciembre",
+const NAV = [
+  ["inicio", "Inicio"],
+  ["asesores", "Asesores"],
+  ["calidad", "Calidad"],
+  ["productividad", "Productividad"],
+  ["tipificaciones", "Tipificaciones"],
+  ["noVentas", "No Ventas"],
+  ["devoluciones", "Devoluciones"],
+  ["felicitaciones", "Felicitaciones"],
+  ["audios", "Audios"],
+  ["pdas", "PDA"],
+  ["reportes", "Reportes"],
 ];
 
-const ESTADOS = {
-  alcanzado: "ALCANZADO",
-  superado: "SUPERADO",
-  debajo: "POR DEBAJO DEL OBJETIVO",
-};
+/* ================= UTILIDADES ================= */
 
-function porcentaje(value) {
-  if (value === null || value === undefined || value === "") return "";
-  return String(value).includes("%") ? String(value) : `${value}%`;
+function norm(texto) {
+  return String(texto || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-function normalizarPorcentaje(value) {
-  if (value === null || value === undefined || value === "") return "";
-  return String(value).replace("%", "").trim();
+function num(valor) {
+  if (valor === "" || valor === null || valor === undefined) return null;
+  const n = Number(valor);
+  return Number.isNaN(n) ? null : n;
+}
+
+function unir(lista) {
+  return lista && lista.length > 0 ? lista.join(", ") : null;
+}
+
+function porcentaje(valor) {
+  if (valor === null || valor === undefined || valor === "") return null;
+  return String(valor).includes("%") ? String(valor) : `${valor}%`;
+}
+
+function sinPorcentaje(valor) {
+  if (valor === null || valor === undefined || valor === "") return "";
+  return String(valor).replace("%", "").trim();
 }
 
 function formatearFecha(fecha) {
@@ -114,32 +216,28 @@ function formatearFecha(fecha) {
   try {
     return new Date(fecha).toLocaleDateString("es-AR");
   } catch {
-    return fecha;
+    return String(fecha);
   }
 }
 
-function semanaDe(fecha) {
-  const d = new Date(
-    /^\d{4}-\d{2}-\d{2}$/.test(String(fecha)) ? `${fecha}T12:00:00` : fecha
-  );
-  if (!fecha || isNaN(d.getTime())) return "Sin fecha";
-  return `Semana ${Math.ceil(d.getDate() / 7)} · ${MESES[d.getMonth()]}`;
-}
-
-function esc(v) {
-  return String(v ?? "-")
+function esc(valor) {
+  if (valor === null || valor === undefined || valor === "") return "-";
+  return String(valor)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
 
+/* ================= COMPONENTES ================= */
+
 function MultiSelect({ label, options, value = [], onChange }) {
-  const toggle = (option) =>
-    onChange(
-      value.includes(option)
-        ? value.filter((item) => item !== option)
-        : [...value, option]
-    );
+  const toggle = (option) => {
+    if (value.includes(option)) {
+      onChange(value.filter((item) => item !== option));
+    } else {
+      onChange([...value, option]);
+    }
+  };
 
   return (
     <div style={styles.field}>
@@ -170,7 +268,7 @@ function PercentageInput({ label, value, onChange }) {
           min="0"
           max="100"
           step="0.01"
-          value={normalizarPorcentaje(value)}
+          value={sinPorcentaje(value)}
           onChange={(e) => onChange(e.target.value)}
           placeholder="0"
           style={styles.percentInput}
@@ -181,12 +279,13 @@ function PercentageInput({ label, value, onChange }) {
   );
 }
 
-function NumberInput({ label, value, onChange, placeholder = "", small }) {
+function NumberInput({ label, value, onChange, placeholder = "", small = false }) {
   return (
     <div style={styles.field}>
       <label style={styles.label}>{label}</label>
       <input
         type="number"
+        step="any"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -258,228 +357,32 @@ function Card({ title, children, action }) {
   );
 }
 
-function StatusBadge({ status }) {
-  let background = PALETTE.soft;
-  if (status === ESTADOS.superado) background = PALETTE.teal;
-  else if (status === ESTADOS.alcanzado) background = PALETTE.mint;
-  else if (status === ESTADOS.debajo) background = "#d99a9a";
-  return <span style={{ ...styles.badge, background }}>{status || "-"}</span>;
-}
-
-function Bloque({ titulo, items }) {
+function KV({ label, value }) {
   return (
-    <div style={styles.sectionSpacing}>
-      <h4 style={styles.subTitle}>
-        {titulo} ({items.length})
-      </h4>
-      {items.length === 0 ? (
-        <div style={styles.emptyState}>Sin registros.</div>
-      ) : (
-        <div style={styles.resultList}>{items.map((i) => i)}</div>
-      )}
+    <div style={styles.kv}>
+      <span style={styles.kvLabel}>{label}</span>
+      <strong>{value === null || value === undefined || value === "" ? "-" : value}</strong>
     </div>
   );
 }
 
-function Dato({ k, v }) {
+function SaveButton({ loading, children }) {
   return (
-    <div>
-      <span>{k}</span>
-      <strong>{v || "-"}</strong>
+    <div style={styles.formActions}>
+      <button type="submit" disabled={loading} style={styles.primaryButton}>
+        {loading ? "Guardando..." : children}
+      </button>
     </div>
   );
 }
 
-function HistorialSemanal({
-  asesor,
-  reportes,
-  devoluciones,
-  audios,
-  pdas,
-  felicitaciones,
-  sanciones = [],
-}) {
-  const [semSel, setSemSel] = useState("");
+/* ================= PÁGINA ================= */
 
-  const semanas = useMemo(() => {
-    const mapa = {};
-    const add = (tipo, item, sem) => {
-      const key = sem || "Sin fecha";
-      const ts = new Date(item.created_at || 0).getTime() || 0;
-      if (!mapa[key]) {
-        mapa[key] = {
-          key, ts: 0, reportes: [], devoluciones: [], audios: [], pdas: [],
-          felicitaciones: [], sanciones: [],
-        };
-      }
-      mapa[key][tipo].push(item);
-      mapa[key].ts = Math.max(mapa[key].ts, ts);
-    };
-
-    reportes.forEach((i) =>
-      add("reportes", i, i.semana || semanaDe(i.created_at))
-    );
-    devoluciones.forEach((i) => add("devoluciones", i, semanaDe(i.created_at)));
-    audios.forEach((i) => add("audios", i, semanaDe(i.created_at)));
-    pdas.forEach((i) => add("pdas", i, semanaDe(i.created_at)));
-    felicitaciones.forEach((i) =>
-      add("felicitaciones", i, semanaDe(i.created_at || i.fecha))
-    );
-    sanciones.forEach((i) =>
-      add("sanciones", i, semanaDe(i.fecha || i.created_at))
-    );
-
-    return Object.values(mapa).sort((a, b) => b.ts - a.ts);
-  }, [reportes, devoluciones, audios, pdas, felicitaciones, sanciones]);
-
-  const visibles = semSel ? semanas.filter((s) => s.key === semSel) : semanas;
-
-  if (!asesor) return null;
-
-  return (
-    <div style={styles.sectionSpacing}>
-      <div style={styles.resultTop}>
-        <h3 style={styles.subTitle}>Historial por semana</h3>
-        <select
-          value={semSel}
-          onChange={(e) => setSemSel(e.target.value)}
-          style={styles.filterSelect}
-        >
-          <option value="">Todas las semanas</option>
-          {semanas.map((s) => (
-            <option key={s.key} value={s.key}>
-              {s.key}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {visibles.length === 0 && (
-        <div style={styles.emptyState}>
-          Todavía no hay actividad registrada para este asesor.
-        </div>
-      )}
-
-      {visibles.map((s) => (
-        <div key={s.key} style={styles.weekCard}>
-          <div style={styles.weekTitle}>{s.key}</div>
-
-          <Bloque
-            titulo="Reportes"
-            items={s.reportes.map((r) => (
-              <div key={r.id} style={styles.resultCard}>
-                <div style={styles.resultGrid}>
-                  <Dato k="Campaña" v={r.campania} />
-                  <Dato k="Nota" v={r.nota} />
-                  <Dato k="Objetivo" v={r.objetivo} />
-                  <Dato k="Desvío" v={r.desvio} />
-                  <Dato k="Evolución" v={r.evolucion} />
-                  <Dato k="SPH" v={r.sph} />
-                  <Dato k="Ventas" v={r.ventas} />
-                  <Dato k="Tipificaciones" v={r.tipificaciones_resultado} />
-                  <Dato k="No ventas" v={r.no_ventas} />
-                </div>
-                <p style={styles.resultText}>
-                  <b>Aspectos:</b> {r.recomendacion || "-"}
-                </p>
-                <p style={styles.resultText}>
-                  <b>Obs.:</b> {r.observaciones || "-"}
-                </p>
-              </div>
-            ))}
-          />
-
-          <Bloque
-            titulo="Devoluciones"
-            items={s.devoluciones.map((d) => (
-              <div key={d.id} style={styles.resultCard}>
-                <div style={styles.resultTop}>
-                  <strong>{d.area || "-"}</strong>
-                  <span>
-                    {formatearFecha(d.created_at)}
-                    {d.responsable ? ` · ${d.responsable}` : ""}
-                  </span>
-                </div>
-                <p style={styles.resultText}>
-                  {d.aspectos_calidad || d.aspectos_productividad || ""}
-                </p>
-                <p style={styles.resultText}>
-                  {d.observaciones || "Sin observaciones."}
-                </p>
-              </div>
-            ))}
-          />
-
-          <Bloque
-            titulo="Audios"
-            items={s.audios.map((a) => (
-              <div key={a.id} style={styles.resultCard}>
-                <div style={styles.resultTop}>
-                  <strong>{a.area || "-"}</strong>
-                  <span>{formatearFecha(a.created_at)}</span>
-                </div>
-                {a.archivo ? (
-                  <audio controls src={a.archivo} style={styles.audioPlayer} />
-                ) : null}
-                <p style={styles.resultText}>{a.devolucion || ""}</p>
-              </div>
-            ))}
-          />
-
-          <Bloque
-            titulo="Planes de acción"
-            items={s.pdas.map((p) => (
-              <div key={p.id} style={styles.resultCard}>
-                <div style={styles.resultTop}>
-                  <strong>{p.aspecto || "-"}</strong>
-                  <span>
-                    {p.fecha_desde || "-"} → {p.fecha_hasta || "-"}
-                  </span>
-                </div>
-                <p style={styles.resultText}>
-                  {p.objetivo || p.observaciones || "Sin información."}
-                </p>
-              </div>
-            ))}
-          />
-
-          <Bloque
-            titulo="Apercibimientos y sanciones"
-            items={s.sanciones.map((x, idx) => (
-              <div key={x.id || idx} style={styles.resultCard}>
-                <div style={styles.resultTop}>
-                  <strong>{x.tipo || "-"}</strong>
-                  <span>{formatearFecha(x.fecha || x.created_at)}</span>
-                </div>
-                <p style={styles.resultText}>{x.motivo || "-"}</p>
-                {x.observaciones ? (
-                  <p style={styles.resultText}>{x.observaciones}</p>
-                ) : null}
-              </div>
-            ))}
-          />
-
-          <Bloque
-            titulo="Felicitaciones"
-            items={s.felicitaciones.map((f, idx) => (
-              <div key={f.id || idx} style={styles.resultCard}>
-                <div style={styles.resultTop}>
-                  <strong>{f.fecha || formatearFecha(f.created_at)}</strong>
-                </div>
-                <p style={styles.resultText}>{f.motivo}</p>
-              </div>
-            ))}
-          />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-const REPORTE_INICIAL = {
+const REPORTE_VACIO = {
   asesor: "",
   semana: "Semana 4 · Agosto",
   campania: "BM",
+
   notaCalidad: "",
   objetivoCalidad: "",
   evolucionCalidad: "",
@@ -487,6 +390,7 @@ const REPORTE_INICIAL = {
   aspectosTrabajadosCalidad: [],
   accionesCalidad: [],
   observacionesCalidad: "",
+
   sph: "",
   objetivoSph: "",
   ventas: "",
@@ -495,12 +399,14 @@ const REPORTE_INICIAL = {
   aspectosTrabajadosProductividad: [],
   accionesProductividad: [],
   observacionesProductividad: "",
+
   tipificacionesAuditadas: [],
   tipificacionesDesvio: "",
   tipificacionesObjetivo: "",
   tipificacionesResultado: "",
   tipificacionesCompromiso: "",
   tipificacionesObservaciones: "",
+
   noVentasCantidad: "",
   noVentasCoaching: [],
   noVentasRegistro: "",
@@ -510,77 +416,17 @@ const REPORTE_INICIAL = {
   noVentasObservaciones: "",
 };
 
-const DEVOLUCION_INICIAL = {
-  asesor: "",
-  area: "Calidad",
-  responsable: "",
-  notaCalidad: "",
-  aspectosCalidad: [],
-  accionesCalidad: [],
-  aspectosProductividad: [],
-  accionesProductividad: [],
-  tipificacion: [],
-  om: [],
-  registroSistema: "",
-  fortalezas: [],
-  observaciones: "",
-};
-
-const AUDIO_INICIAL = {
-  asesor: "",
-  area: "Calidad",
-  responsable: "",
-  fecha: "",
-  archivo: null,
-  aspectosCalidad: [],
-  aspectosProductividad: [],
-  tipificacion: [],
-  devolucion: "",
-};
-
-const PDA_INICIAL = {
-  asesor: "",
-  aspecto: "",
-  fechaDesde: "",
-  fechaHasta: "",
-  objetivo: "",
-  observaciones: "",
-};
-
-const SANCION_INICIAL = {
-  asesor: "",
-  tipo: "",
-  fecha: "",
-  motivo: "",
-  observaciones: "",
-};
-
-const TABS = [
-  ["inicio", "Inicio"],
-  ["asesores", "Asesores"],
-  ["calidad", "Calidad"],
-  ["productividad", "Productividad"],
-  ["tipificaciones", "Tipificaciones"],
-  ["noVentas", "No Ventas"],
-  ["devoluciones", "Devoluciones"],
-  ["felicitaciones", "Felicitaciones"],
-  ["sanciones", "Sanciones"],
-  ["audios", "Audios"],
-  ["pdas", "PDA"],
-  ["reportes", "Reportes"],
-];
-
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("inicio");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const [perfiles, setPerfiles] = useState([]);
   const [reportes, setReportes] = useState([]);
   const [devoluciones, setDevoluciones] = useState([]);
   const [audios, setAudios] = useState([]);
   const [pdas, setPdas] = useState([]);
-  const [felicitaciones, setFelicitaciones] = useState([]);
 
   const [selectedAdvisor, setSelectedAdvisor] = useState("");
   const [searchAdvisor, setSearchAdvisor] = useState("");
@@ -588,19 +434,51 @@ export default function AdminPage() {
   const [semana, setSemana] = useState("Semana 4 · Agosto");
   const [campania, setCampania] = useState("BM");
 
-  const [reporte, setReporte] = useState(REPORTE_INICIAL);
-  const [devolucion, setDevolucion] = useState(DEVOLUCION_INICIAL);
+  const [reporte, setReporte] = useState(REPORTE_VACIO);
+  const [reporteId, setReporteId] = useState(null);
+
+  const [devolucion, setDevolucion] = useState({
+    asesor: "",
+    area: "Calidad",
+    responsable: "",
+    notaCalidad: "",
+    aspectosCalidad: [],
+    accionesCalidad: [],
+    aspectosProductividad: [],
+    accionesProductividad: [],
+    tipificacion: [],
+    om: [],
+    registroSistema: "",
+    fortalezas: [],
+    observaciones: "",
+  });
+
   const [felicitacion, setFelicitacion] = useState({
     asesor: "",
     motivo: "",
     fecha: "",
   });
-  const [audio, setAudio] = useState(AUDIO_INICIAL);
-  const [pda, setPda] = useState(PDA_INICIAL);
-  const [sanciones, setSanciones] = useState([]);
-  const [sancion, setSancion] = useState(SANCION_INICIAL);
-  const [sancFiltroAsesor, setSancFiltroAsesor] = useState("");
-  const [sancFiltroTipo, setSancFiltroTipo] = useState("");
+
+  const [audio, setAudio] = useState({
+    asesor: "",
+    area: "Calidad",
+    responsable: "",
+    fecha: "",
+    archivo: null,
+    aspectosCalidad: [],
+    aspectosProductividad: [],
+    tipificacion: [],
+    devolucion: "",
+  });
+
+  const [pda, setPda] = useState({
+    asesor: "",
+    aspecto: "",
+    fechaDesde: "",
+    fechaHasta: "",
+    objetivo: "",
+    observaciones: "",
+  });
 
   useEffect(() => {
     cargarDatos();
@@ -611,38 +489,31 @@ export default function AdminPage() {
     setError("");
 
     try {
-      const pedir = (tabla) =>
-        supabase
-          .from(tabla)
-          .select("*")
-          .order("created_at", { ascending: false });
+      const pedir = (tabla, columnas = "*") =>
+        supabase.from(tabla).select(columnas).order("created_at", { ascending: false });
 
-      const [r, d, a, p, f, sa] = await Promise.all([
+      const [rPerfiles, rReportes, rDevoluciones, rAudios, rPdas] = await Promise.all([
+        supabase.from("perfiles").select("id, nombre, rol"),
         pedir("reportes"),
         pedir("devoluciones"),
         pedir("audios"),
         pedir("pdas"),
-        pedir("felicitaciones"),
-        pedir("sanciones"),
       ]);
 
-      if (r.error) console.error(r.error);
-      else setReportes(r.data || []);
+      if (rPerfiles.error) console.error(rPerfiles.error);
+      else setPerfiles(rPerfiles.data || []);
 
-      if (d.error) console.error(d.error);
-      else setDevoluciones(d.data || []);
+      if (rReportes.error) console.error(rReportes.error);
+      else setReportes(rReportes.data || []);
 
-      if (a.error) console.error(a.error);
-      else setAudios(a.data || []);
+      if (rDevoluciones.error) console.error(rDevoluciones.error);
+      else setDevoluciones(rDevoluciones.data || []);
 
-      if (p.error) console.error(p.error);
-      else setPdas(p.data || []);
+      if (rAudios.error) console.error(rAudios.error);
+      else setAudios(rAudios.data || []);
 
-      if (f.error) console.error(f.error);
-      else setFelicitaciones(f.data || []);
-
-      if (sa.error) console.error(sa.error);
-      else setSanciones(sa.data || []);
+      if (rPdas.error) console.error(rPdas.error);
+      else setPdas(rPdas.data || []);
     } catch (err) {
       console.error(err);
       setError("No se pudieron cargar los datos.");
@@ -651,9 +522,53 @@ export default function AdminPage() {
     }
   }
 
+  /* ---------- Vínculo asesor <-> perfiles ---------- */
+
+  const idPorNombre = useMemo(() => {
+    const mapa = {};
+    perfiles.forEach((p) => {
+      mapa[norm(p.nombre)] = p.id;
+    });
+    return mapa;
+  }, [perfiles]);
+
+  const nombrePorId = useMemo(() => {
+    const mapa = {};
+    perfiles.forEach((p) => {
+      mapa[p.id] = p.nombre;
+    });
+    return mapa;
+  }, [perfiles]);
+
+  function nombreDe(item) {
+    return item.asesor || nombrePorId[item.asesor_id] || "";
+  }
+
+  function buscarAsesorId(nombre) {
+    const id = idPorNombre[norm(nombre)];
+    if (!id) {
+      setError(
+        `❌ No se encontró a "${nombre}" en la tabla perfiles. Revisá que el nombre coincida.`
+      );
+      return null;
+    }
+    return id;
+  }
+
   function limpiarMensajes() {
     setMessage("");
     setError("");
+  }
+
+  async function insertar(tabla, payload) {
+    const { data, error: saveError } = await supabase
+      .from(tabla)
+      .insert(payload)
+      .select()
+      .single();
+
+    if (saveError) throw saveError;
+    return data;
   }
 
   function seleccionarAsesor(asesor) {
@@ -663,13 +578,15 @@ export default function AdminPage() {
     setAudio((prev) => ({ ...prev, asesor }));
     setPda((prev) => ({ ...prev, asesor }));
     setFelicitacion((prev) => ({ ...prev, asesor }));
-    setSancion((prev) => ({ ...prev, asesor }));
+    setReporteId(null);
   }
 
+  /* ---------- Filtros ---------- */
+
   const asesoresFiltrados = useMemo(() => {
-    const texto = searchAdvisor.toLowerCase().trim();
+    const texto = norm(searchAdvisor);
     if (!texto) return ASESORES;
-    return ASESORES.filter((a) => a.toLowerCase().includes(texto));
+    return ASESORES.filter((a) => norm(a).includes(texto));
   }, [searchAdvisor]);
 
   const reportesFiltrados = useMemo(
@@ -682,17 +599,37 @@ export default function AdminPage() {
     [reportes, semana, campania]
   );
 
-  const actualizarReporte = (campo, valor) =>
+  const promedioNotas = useMemo(() => {
+    const notas = reportes.map((r) => Number(r.nota)).filter((n) => !Number.isNaN(n) && n > 0);
+    if (notas.length === 0) return "-";
+    return (notas.reduce((a, b) => a + b, 0) / notas.length).toFixed(1);
+  }, [reportes]);
+
+  /* ---------- Actualizadores ---------- */
+
+  function actualizarReporte(campo, valor) {
     setReporte((prev) => ({ ...prev, [campo]: valor }));
-  const actualizarDevolucion = (campo, valor) =>
+    if (campo === "asesor" || campo === "semana" || campo === "campania") {
+      setReporteId(null);
+    }
+  }
+
+  function actualizarDevolucion(campo, valor) {
     setDevolucion((prev) => ({ ...prev, [campo]: valor }));
-  const actualizarAudio = (campo, valor) =>
+  }
+
+  function actualizarAudio(campo, valor) {
     setAudio((prev) => ({ ...prev, [campo]: valor }));
-  const actualizarPda = (campo, valor) =>
+  }
+
+  function actualizarPda(campo, valor) {
     setPda((prev) => ({ ...prev, [campo]: valor }));
+  }
+
+  /* ---------- Guardados ---------- */
 
   async function guardarReporte(e) {
-    if (e && e.preventDefault) e.preventDefault();
+    e.preventDefault();
     limpiarMensajes();
 
     if (!reporte.asesor) {
@@ -700,72 +637,71 @@ export default function AdminPage() {
       return;
     }
 
+    const asesorId = buscarAsesorId(reporte.asesor);
+    if (!asesorId) return;
+
     setLoading(true);
 
     try {
-      // acciones_calidad NO se envía: la columna no existe en reportes.
+      /* acciones_calidad NO se envía: la columna no existe en reportes. */
       const payload = {
+        asesor_id: asesorId,
         asesor: reporte.asesor,
         semana: reporte.semana,
         campania: reporte.campania,
-
-        nota: reporte.notaCalidad || null,
-        objetivo: reporte.objetivoCalidad || null,
-        evolucion: reporte.evolucionCalidad || null,
-        desvio: reporte.desviosCalidad || null,
-        recomendacion:
-          reporte.aspectosTrabajadosCalidad?.join(", ") || null,
-        observaciones: reporte.observacionesCalidad || null,
-
         producto: reporte.campania,
 
-        sph: reporte.sph || null,
-        objetivo_sph: reporte.objetivoSph || null,
-        ventas: reporte.ventas || null,
-        objetivo_ventas: reporte.objetivoVentas || null,
-        objetivo_campania: reporte.objetivoCampania
-          ? Number(reporte.objetivoCampania)
-          : null,
+        nota: num(reporte.notaCalidad),
+        objetivo: reporte.objetivoCalidad !== "" ? String(reporte.objetivoCalidad) : null,
+        evolucion: reporte.evolucionCalidad !== "" ? String(reporte.evolucionCalidad) : null,
+        desvio: reporte.desviosCalidad !== "" ? String(reporte.desviosCalidad) : null,
+        recomendacion: unir(reporte.aspectosTrabajadosCalidad),
+        observaciones: reporte.observacionesCalidad || null,
 
-        tipificaciones_auditadas:
-          reporte.tipificacionesAuditadas?.join(", ") || null,
-        tipificaciones_desvio:
-          porcentaje(reporte.tipificacionesDesvio) || null,
-        tipificaciones_objetivo:
-          porcentaje(reporte.tipificacionesObjetivo) || null,
-        tipificaciones_resultado:
-          porcentaje(reporte.tipificacionesResultado) || null,
+        sph: num(reporte.sph),
+        objetivo_sph: num(reporte.objetivoSph),
+        ventas: num(reporte.ventas),
+        objetivo_ventas: num(reporte.objetivoVentas),
+        objetivo_campania:
+          reporte.objetivoCampania !== "" ? String(reporte.objetivoCampania) : null,
+
+        tipificaciones_auditadas: unir(reporte.tipificacionesAuditadas),
+        tipificaciones_desvio: porcentaje(reporte.tipificacionesDesvio),
+        tipificaciones_objetivo: porcentaje(reporte.tipificacionesObjetivo),
+        tipificaciones_resultado: porcentaje(reporte.tipificacionesResultado),
         tipificaciones_compromiso: reporte.tipificacionesCompromiso || null,
-        tipificaciones_observaciones:
-          reporte.tipificacionesObservaciones || null,
+        tipificaciones_observaciones: reporte.tipificacionesObservaciones || null,
 
-        no_ventas: reporte.noVentasCantidad || null,
-        no_ventas_coaching: reporte.noVentasCoaching?.join(", ") || null,
+        no_ventas: reporte.noVentasCantidad !== "" ? String(reporte.noVentasCantidad) : null,
+        no_ventas_coaching: unir(reporte.noVentasCoaching),
         no_ventas_registro: reporte.noVentasRegistro || null,
         no_ventas_compromiso: reporte.noVentasCompromiso || null,
-        no_ventas_om: reporte.noVentasOM?.join(", ") || null,
-        no_ventas_fortalezas: reporte.noVentasFortalezas?.join(", ") || null,
+        no_ventas_om: unir(reporte.noVentasOM),
+        no_ventas_fortalezas: unir(reporte.noVentasFortalezas),
         no_ventas_observaciones: reporte.noVentasObservaciones || null,
       };
 
-      const { data, error: saveError } = await supabase
-        .from("reportes")
-        .upsert(payload)
-        .select()
-        .single();
+      let data;
 
-      if (saveError) throw saveError;
+      if (reporteId) {
+        const respuesta = await supabase
+          .from("reportes")
+          .update(payload)
+          .eq("id", reporteId)
+          .select()
+          .single();
+        if (respuesta.error) throw respuesta.error;
+        data = respuesta.data;
+      } else {
+        data = await insertar("reportes", payload);
+      }
 
-      setReportes((prev) => [
-        data,
-        ...prev.filter((item) => item.id !== data.id),
-      ]);
-      setMessage("✔ Reporte guardado correctamente.");
+      setReporteId(data.id);
+      setReportes((prev) => [data, ...prev.filter((item) => item.id !== data.id)]);
+      setMessage("✅ REPORTE GUARDADO CORRECTAMENTE");
     } catch (err) {
       console.error(err);
-      setError(
-        `✖ No se pudo guardar el reporte: ${err?.message || "Error desconocido"}`
-      );
+      setError(`❌ No se pudo guardar el reporte: ${err?.message || "Error desconocido"}`);
     } finally {
       setLoading(false);
     }
@@ -780,42 +716,34 @@ export default function AdminPage() {
       return;
     }
 
+    const asesorId = buscarAsesorId(devolucion.asesor);
+    if (!asesorId) return;
+
     setLoading(true);
 
     try {
-      const payload = {
+      const data = await insertar("devoluciones", {
+        asesor_id: asesorId,
         asesor: devolucion.asesor,
         area: devolucion.area,
         responsable: devolucion.responsable || null,
-        nota_calidad: devolucion.notaCalidad || null,
-        aspectos_calidad: devolucion.aspectosCalidad?.join(", ") || null,
-        acciones_calidad: devolucion.accionesCalidad?.join(", ") || null,
-        aspectos_productividad:
-          devolucion.aspectosProductividad?.join(", ") || null,
-        acciones_productividad:
-          devolucion.accionesProductividad?.join(", ") || null,
-        tipificacion: devolucion.tipificacion?.join(", ") || null,
-        om: devolucion.om?.join(", ") || null,
+        nota_calidad: num(devolucion.notaCalidad),
+        aspectos_calidad: unir(devolucion.aspectosCalidad),
+        acciones_calidad: unir(devolucion.accionesCalidad),
+        aspectos_productividad: unir(devolucion.aspectosProductividad),
+        acciones_productividad: unir(devolucion.accionesProductividad),
+        tipificacion: unir(devolucion.tipificacion),
+        om: unir(devolucion.om),
         registro_sistema: devolucion.registroSistema || null,
-        fortalezas: devolucion.fortalezas?.join(", ") || null,
+        fortalezas: unir(devolucion.fortalezas),
         observaciones: devolucion.observaciones || null,
-      };
-
-      const { data, error: saveError } = await supabase
-        .from("devoluciones")
-        .insert(payload)
-        .select()
-        .single();
-
-      if (saveError) throw saveError;
+      });
 
       setDevoluciones((prev) => [data, ...prev]);
-      setMessage("✔ Devolución guardada correctamente.");
+      setMessage("✅ Devolución guardada correctamente.");
     } catch (err) {
       console.error(err);
-      setError(
-        `✖ No se pudo guardar la devolución: ${err?.message || "Error desconocido"}`
-      );
+      setError(`❌ No se pudo guardar la devolución: ${err?.message || "Error desconocido"}`);
     } finally {
       setLoading(false);
     }
@@ -829,77 +757,30 @@ export default function AdminPage() {
       setError("Seleccioná un asesor.");
       return;
     }
+
     if (!felicitacion.motivo) {
       setError("Ingresá el motivo de la felicitación.");
       return;
     }
 
+    const asesorId = buscarAsesorId(felicitacion.asesor);
+    if (!asesorId) return;
+
     setLoading(true);
 
     try {
-      const { data, error: saveError } = await supabase
-        .from("felicitaciones")
-        .insert({
-          asesor: felicitacion.asesor,
-          motivo: felicitacion.motivo,
-          fecha: felicitacion.fecha || null,
-        })
-        .select()
-        .single();
+      await insertar("felicitaciones", {
+        asesor_id: asesorId,
+        asesor: felicitacion.asesor,
+        motivo: felicitacion.motivo,
+        fecha: felicitacion.fecha || null,
+      });
 
-      if (saveError) throw saveError;
-
-      if (data) setFelicitaciones((prev) => [data, ...prev]);
-      setMessage("✔ Felicitación guardada correctamente.");
+      setMessage("✅ Felicitación guardada correctamente.");
       setFelicitacion({ asesor: felicitacion.asesor, motivo: "", fecha: "" });
     } catch (err) {
       console.error(err);
-      setError(
-        `✖ No se pudo guardar la felicitación: ${err?.message || "Error desconocido"}`
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function guardarSancion(e) {
-    e.preventDefault();
-    limpiarMensajes();
-
-    if (!sancion.asesor) {
-      setError("Seleccioná un asesor.");
-      return;
-    }
-    if (!sancion.tipo) {
-      setError("Seleccioná el tipo.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const { data, error: saveError } = await supabase
-        .from("sanciones")
-        .insert({
-          asesor: sancion.asesor,
-          tipo: sancion.tipo,
-          fecha: sancion.fecha || null,
-          motivo: sancion.motivo || null,
-          observaciones: sancion.observaciones || null,
-        })
-        .select()
-        .single();
-
-      if (saveError) throw saveError;
-
-      setSanciones((prev) => [data, ...prev]);
-      setMessage("✔ Registro guardado correctamente.");
-      setSancion({ ...SANCION_INICIAL, asesor: sancion.asesor });
-    } catch (err) {
-      console.error(err);
-      setError(
-        `✖ No se pudo guardar el registro: ${err?.message || "Error desconocido"}`
-      );
+      setError(`❌ No se pudo guardar la felicitación: ${err?.message || "Error desconocido"}`);
     } finally {
       setLoading(false);
     }
@@ -913,57 +794,59 @@ export default function AdminPage() {
       setError("Seleccioná un asesor.");
       return;
     }
+
     if (!audio.archivo) {
       setError("Seleccioná un archivo de audio.");
       return;
     }
 
+    const asesorId = buscarAsesorId(audio.asesor);
+    if (!asesorId) return;
+
     setLoading(true);
 
     try {
       const extension = audio.archivo.name.split(".").pop() || "mp3";
-      const fileName = `${Date.now()}-${audio.asesor
-        .replace(/\s+/g, "-")
-        .replace(/,/g, "")}.${extension}`;
-      const filePath = `audios/${fileName}`;
+      const nombreSeguro = norm(audio.asesor).replace(/[^a-z0-9]+/g, "-");
+      const filePath = `${Date.now()}-${nombreSeguro}.${extension}`;
 
       const { error: uploadError } = await supabase.storage
         .from("audios")
         .upload(filePath, audio.archivo);
+
       if (uploadError) throw uploadError;
 
-      const { data: publicData } = supabase.storage
-        .from("audios")
-        .getPublicUrl(filePath);
+      const { data: publicData } = supabase.storage.from("audios").getPublicUrl(filePath);
 
-      const payload = {
+      const data = await insertar("audios", {
+        asesor_id: asesorId,
         asesor: audio.asesor,
         area: audio.area,
         responsable: audio.responsable || null,
         fecha: audio.fecha || null,
         archivo: publicData?.publicUrl || null,
-        aspectos_calidad: audio.aspectosCalidad?.join(", ") || null,
-        aspectos_productividad:
-          audio.aspectosProductividad?.join(", ") || null,
-        tipificacion: audio.tipificacion?.join(", ") || null,
+        aspectos_calidad: unir(audio.aspectosCalidad),
+        aspectos_productividad: unir(audio.aspectosProductividad),
+        tipificacion: unir(audio.tipificacion),
         devolucion: audio.devolucion || null,
-      };
-
-      const { data, error: saveError } = await supabase
-        .from("audios")
-        .insert(payload)
-        .select()
-        .single();
-      if (saveError) throw saveError;
+      });
 
       setAudios((prev) => [data, ...prev]);
-      setMessage("✔ Audio cargado correctamente.");
-      setAudio({ ...AUDIO_INICIAL, asesor: audio.asesor });
+      setMessage("✅ Audio cargado correctamente.");
+      setAudio({
+        asesor: audio.asesor,
+        area: "Calidad",
+        responsable: "",
+        fecha: "",
+        archivo: null,
+        aspectosCalidad: [],
+        aspectosProductividad: [],
+        tipificacion: [],
+        devolucion: "",
+      });
     } catch (err) {
       console.error(err);
-      setError(
-        `✖ No se pudo cargar el audio: ${err?.message || "Error desconocido"}`
-      );
+      setError(`❌ No se pudo cargar el audio: ${err?.message || "Error desconocido"}`);
     } finally {
       setLoading(false);
     }
@@ -978,55 +861,52 @@ export default function AdminPage() {
       return;
     }
 
+    const asesorId = buscarAsesorId(pda.asesor);
+    if (!asesorId) return;
+
     setLoading(true);
 
     try {
-      const payload = {
+      const data = await insertar("pdas", {
+        asesor_id: asesorId,
         asesor: pda.asesor,
         aspecto: pda.aspecto || null,
         fecha_desde: pda.fechaDesde || null,
         fecha_hasta: pda.fechaHasta || null,
         objetivo: pda.objetivo || null,
         observaciones: pda.observaciones || null,
-      };
-
-      const { data, error: saveError } = await supabase
-        .from("pdas")
-        .insert(payload)
-        .select()
-        .single();
-      if (saveError) throw saveError;
+      });
 
       setPdas((prev) => [data, ...prev]);
-      setMessage("✔ PDA guardado correctamente.");
-      setPda({ ...PDA_INICIAL, asesor: pda.asesor });
+      setMessage("✅ PDA guardado correctamente.");
+      setPda({
+        asesor: pda.asesor,
+        aspecto: "",
+        fechaDesde: "",
+        fechaHasta: "",
+        objetivo: "",
+        observaciones: "",
+      });
     } catch (err) {
       console.error(err);
-      setError(
-        `✖ No se pudo guardar el PDA: ${err?.message || "Error desconocido"}`
-      );
+      setError(`❌ No se pudo guardar el PDA: ${err?.message || "Error desconocido"}`);
     } finally {
       setLoading(false);
     }
   }
 
+  /* ---------- Impresión ---------- */
+
   function imprimirReporte(r) {
     const ventana = window.open("", "_blank", "width=1000,height=800");
+
     if (!ventana) {
       setError("El navegador bloqueó la ventana de impresión.");
       return;
     }
 
-    const seccion = (titulo, filas) => `
-      <h2>${titulo}</h2>
-      <div class="box">
-        ${filas
-          .map(
-            ([k, v]) =>
-              `<div class="dato"><span class="label">${k}:</span> ${esc(v || "-")}</div>`
-          )
-          .join("")}
-      </div>`;
+    const fila = (label, valor) =>
+      `<div class="dato"><span class="label">${label}:</span> ${esc(valor)}</div>`;
 
     ventana.document.write(`<!DOCTYPE html>
 <html lang="es">
@@ -1043,82 +923,77 @@ export default function AdminPage() {
 </style>
 </head>
 <body>
-  <h1>PORTAL DE CALIDAD</h1>
-  <div class="dato"><span class="label">Asesor:</span> ${esc(r.asesor)}</div>
-  <div class="dato"><span class="label">Semana:</span> ${esc(r.semana)}</div>
-  <div class="dato"><span class="label">Campaña:</span> ${esc(r.campania)}</div>
-  ${seccion("Calidad", [
-    ["Nota", r.nota],
-    ["Objetivo", r.objetivo],
-    ["Evolución", r.evolucion],
-    ["Desvío", r.desvio],
-    ["Aspectos trabajados", r.recomendacion],
-    ["Observaciones", r.observaciones],
-  ])}
-  ${seccion("Productividad", [
-    ["SPH", r.sph],
-    ["Objetivo SPH", r.objetivo_sph],
-    ["Ventas", r.ventas],
-    ["Objetivo ventas", r.objetivo_ventas],
-    ["Objetivo campaña", r.objetivo_campania],
-  ])}
-  ${seccion("Tipificaciones", [
-    ["Auditadas", r.tipificaciones_auditadas],
-    ["Desvío", r.tipificaciones_desvio],
-    ["Objetivo", r.tipificaciones_objetivo],
-    ["Resultado", r.tipificaciones_resultado],
-    ["Compromiso", r.tipificaciones_compromiso],
-    ["Observaciones", r.tipificaciones_observaciones],
-  ])}
-  ${seccion("No Ventas", [
-    ["Cantidad", r.no_ventas],
-    ["Coaching", r.no_ventas_coaching],
-    ["Registro", r.no_ventas_registro],
-    ["Compromiso", r.no_ventas_compromiso],
-    ["OM", r.no_ventas_om],
-    ["Fortalezas", r.no_ventas_fortalezas],
-    ["Observaciones", r.no_ventas_observaciones],
-  ])}
-  <script>window.onload = function () { window.print(); };</script>
+<h1>PORTAL DE CALIDAD</h1>
+${fila("Asesor", nombreDe(r))}
+${fila("Semana", r.semana)}
+${fila("Campaña", r.campania)}
+
+<h2>Calidad</h2>
+<div class="box">
+${fila("Nota", r.nota)}
+${fila("Objetivo", r.objetivo)}
+${fila("Evolución", r.evolucion)}
+${fila("Desvío", r.desvio)}
+${fila("Aspectos trabajados", r.recomendacion)}
+${fila("Observaciones", r.observaciones)}
+</div>
+
+<h2>Productividad</h2>
+<div class="box">
+${fila("SPH", r.sph)}
+${fila("Objetivo SPH", r.objetivo_sph)}
+${fila("Ventas", r.ventas)}
+${fila("Objetivo ventas", r.objetivo_ventas)}
+${fila("Objetivo campaña", r.objetivo_campania)}
+</div>
+
+<h2>Tipificaciones</h2>
+<div class="box">
+${fila("Auditadas", r.tipificaciones_auditadas)}
+${fila("Desvío", r.tipificaciones_desvio)}
+${fila("Objetivo", r.tipificaciones_objetivo)}
+${fila("Resultado", r.tipificaciones_resultado)}
+${fila("Compromiso", r.tipificaciones_compromiso)}
+${fila("Observaciones", r.tipificaciones_observaciones)}
+</div>
+
+<h2>No Ventas</h2>
+<div class="box">
+${fila("Cantidad", r.no_ventas)}
+${fila("Coaching", r.no_ventas_coaching)}
+${fila("Registro", r.no_ventas_registro)}
+${fila("Compromiso", r.no_ventas_compromiso)}
+${fila("OM", r.no_ventas_om)}
+${fila("Fortalezas", r.no_ventas_fortalezas)}
+${fila("Observaciones", r.no_ventas_observaciones)}
+</div>
+
+<script>window.onload = function () { window.print(); };</script>
 </body>
 </html>`);
 
     ventana.document.close();
   }
 
-  function BotonGuardar({ texto, onClick, submit }) {
-    return (
-      <div style={styles.formActions}>
-        <button
-          type={submit ? "submit" : "button"}
-          onClick={onClick}
-          disabled={loading}
-          style={styles.primaryButton}
-        >
-          {loading ? "Guardando..." : texto}
-        </button>
-      </div>
-    );
-  }
+  /* ================= VISTAS ================= */
 
   function renderInicio() {
+    const accesos = [
+      ["asesores", "Asesores", "Buscar y consultar la información integral de cada asesor."],
+      ["calidad", "Calidad", "Cargar notas, evolución y aspectos de calidad."],
+      ["productividad", "Productividad", "Gestionar objetivos y resultados."],
+      ["devoluciones", "Devoluciones", "Registrar devoluciones realizadas."],
+      ["audios", "Audios", "Cargar y consultar escuchas."],
+      ["pdas", "PDA", "Registrar planes de acción."],
+    ];
+
     const stats = [
       [ASESORES.length, "Asesores"],
       [reportes.length, "Reportes"],
+      [promedioNotas, "Promedio de notas"],
       [devoluciones.length, "Devoluciones"],
       [audios.length, "Audios"],
       [pdas.length, "PDA"],
-      [felicitaciones.length, "Felicitaciones"],
-      [sanciones.length, "Sanciones"],
-    ];
-
-    const accesos = [
-      ["asesores", "Asesores", "Historial semanal de cada asesor."],
-      ["calidad", "Calidad", "Cargar notas, evolución y aspectos."],
-      ["productividad", "Productividad", "Objetivos y resultados."],
-      ["devoluciones", "Devoluciones", "Registrar devoluciones."],
-      ["audios", "Audios", "Cargar y consultar escuchas."],
-      ["pdas", "PDA", "Registrar planes de acción."],
     ];
 
     return (
@@ -1128,18 +1003,18 @@ export default function AdminPage() {
             <div style={styles.eyebrow}>PORTAL INTEGRAL DEL ASESOR</div>
             <h1 style={styles.heroTitle}>Panel de Administración</h1>
             <p style={styles.heroText}>
-              Gestión centralizada de calidad, productividad, devoluciones,
-              audios, PDA y seguimiento de asesores.
+              Gestión centralizada de calidad, productividad, devoluciones, audios, PDA y
+              seguimiento de asesores.
             </p>
           </div>
           <div style={styles.heroBadge}>ADMINISTRADOR</div>
         </div>
 
         <div style={styles.statsGrid}>
-          {stats.map(([n, l]) => (
-            <div key={l} style={styles.statCard}>
-              <span style={styles.statNumber}>{n}</span>
-              <span style={styles.statLabel}>{l}</span>
+          {stats.map(([valor, etiqueta]) => (
+            <div key={etiqueta} style={styles.statCard}>
+              <span style={styles.statNumber}>{valor}</span>
+              <span style={styles.statLabel}>{etiqueta}</span>
             </div>
           ))}
         </div>
@@ -1164,8 +1039,12 @@ export default function AdminPage() {
   }
 
   function renderAsesores() {
-    const delAsesor = (lista) =>
-      lista.filter((item) => item.asesor === selectedAdvisor);
+    const delAsesor = (lista) => lista.filter((item) => nombreDe(item) === selectedAdvisor);
+
+    const reportesAsesor = delAsesor(reportes);
+    const devolucionesAsesor = delAsesor(devoluciones);
+    const audiosAsesor = delAsesor(audios);
+    const pdasAsesor = delAsesor(pdas);
 
     return (
       <div style={styles.page}>
@@ -1178,6 +1057,7 @@ export default function AdminPage() {
                 onChange={setSearchAdvisor}
                 placeholder="Escribí el nombre..."
               />
+
               <div style={styles.advisorList}>
                 {asesoresFiltrados.map((asesor) => (
                   <button
@@ -1186,9 +1066,7 @@ export default function AdminPage() {
                     onClick={() => seleccionarAsesor(asesor)}
                     style={{
                       ...styles.advisorButton,
-                      ...(selectedAdvisor === asesor
-                        ? styles.advisorButtonActive
-                        : {}),
+                      ...(selectedAdvisor === asesor ? styles.advisorButtonActive : {}),
                     }}
                   >
                     {asesor}
@@ -1210,29 +1088,106 @@ export default function AdminPage() {
                   </div>
 
                   <div style={styles.miniStats}>
-                    {[
-                      [delAsesor(reportes).length, "Reportes"],
-                      [delAsesor(devoluciones).length, "Devoluciones"],
-                      [delAsesor(audios).length, "Audios"],
-                      [delAsesor(pdas).length, "PDA"],
-                      [delAsesor(sanciones).length, "Sanciones"],
-                    ].map(([n, l]) => (
-                      <div key={l} style={styles.miniStat}>
-                        <strong>{n}</strong>
-                        <span>{l}</span>
-                      </div>
-                    ))}
+                    <KV label="Reportes" value={reportesAsesor.length} />
+                    <KV label="Devoluciones" value={devolucionesAsesor.length} />
+                    <KV label="Audios" value={audiosAsesor.length} />
+                    <KV label="PDA" value={pdasAsesor.length} />
                   </div>
 
-                  <HistorialSemanal
-                    asesor={selectedAdvisor}
-                    reportes={delAsesor(reportes)}
-                    devoluciones={delAsesor(devoluciones)}
-                    audios={delAsesor(audios)}
-                    pdas={delAsesor(pdas)}
-                    felicitaciones={delAsesor(felicitaciones)}
-                    sanciones={delAsesor(sanciones)}
-                  />
+                  <div style={styles.sectionSpacing}>
+                    <h3 style={styles.subTitle}>Últimos reportes</h3>
+                    {reportesAsesor.length === 0 ? (
+                      <div style={styles.emptyState}>No hay reportes cargados.</div>
+                    ) : (
+                      <div style={styles.resultList}>
+                        {reportesAsesor.slice(0, 3).map((item) => (
+                          <div key={item.id} style={styles.resultCard}>
+                            <div style={styles.resultTop}>
+                              <strong>{item.semana || "-"}</strong>
+                              <span>{item.campania || "-"}</span>
+                            </div>
+                            <div style={styles.resultGrid}>
+                              <KV label="Nota" value={item.nota} />
+                              <KV label="Desvío" value={item.desvio} />
+                              <KV label="Evolución" value={item.evolucion} />
+                              <KV label="SPH" value={item.sph} />
+                              <KV label="Ventas" value={item.ventas} />
+                              <KV label="Tipificaciones" value={item.tipificaciones_resultado} />
+                              <KV label="No ventas" value={item.no_ventas} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={styles.sectionSpacing}>
+                    <h3 style={styles.subTitle}>Devoluciones</h3>
+                    {devolucionesAsesor.length === 0 ? (
+                      <div style={styles.emptyState}>No hay devoluciones cargadas.</div>
+                    ) : (
+                      <div style={styles.resultList}>
+                        {devolucionesAsesor.slice(0, 5).map((item) => (
+                          <div key={item.id} style={styles.resultCard}>
+                            <div style={styles.resultTop}>
+                              <strong>{formatearFecha(item.created_at)}</strong>
+                              <span>{item.area || "-"}</span>
+                            </div>
+                            <p style={styles.resultText}>
+                              {item.observaciones || "Sin observaciones."}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={styles.sectionSpacing}>
+                    <h3 style={styles.subTitle}>PDA</h3>
+                    {pdasAsesor.length === 0 ? (
+                      <div style={styles.emptyState}>No hay PDA cargados.</div>
+                    ) : (
+                      <div style={styles.resultList}>
+                        {pdasAsesor.slice(0, 5).map((item) => (
+                          <div key={item.id} style={styles.resultCard}>
+                            <div style={styles.resultTop}>
+                              <strong>{item.aspecto || "-"}</strong>
+                              <span>
+                                {formatearFecha(item.fecha_desde)} →{" "}
+                                {formatearFecha(item.fecha_hasta)}
+                              </span>
+                            </div>
+                            <p style={styles.resultText}>
+                              {item.objetivo || item.observaciones || "Sin información."}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={styles.sectionSpacing}>
+                    <h3 style={styles.subTitle}>Audios</h3>
+                    {audiosAsesor.length === 0 ? (
+                      <div style={styles.emptyState}>No hay audios cargados.</div>
+                    ) : (
+                      <div style={styles.resultList}>
+                        {audiosAsesor.slice(0, 5).map((item) => (
+                          <div key={item.id} style={styles.resultCard}>
+                            <div style={styles.resultTop}>
+                              <strong>{formatearFecha(item.fecha || item.created_at)}</strong>
+                              <span>{item.area || "-"}</span>
+                            </div>
+                            {item.archivo ? (
+                              <audio controls src={item.archivo} style={styles.audioPlayer} />
+                            ) : (
+                              <p style={styles.resultText}>Sin archivo.</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
             </div>
@@ -1242,37 +1197,46 @@ export default function AdminPage() {
     );
   }
 
+  function selectorReporte() {
+    return (
+      <div style={styles.formGrid}>
+        <Select
+          label="Asesor"
+          value={reporte.asesor}
+          onChange={(v) => actualizarReporte("asesor", v)}
+          options={ASESORES}
+        />
+        <TextInput
+          label="Semana"
+          value={reporte.semana}
+          onChange={(v) => actualizarReporte("semana", v)}
+        />
+        <Select
+          label="Campaña"
+          value={reporte.campania}
+          onChange={(v) => actualizarReporte("campania", v)}
+          options={["AP", "BM"]}
+        />
+      </div>
+    );
+  }
+
   function renderCalidad() {
     return (
       <div style={styles.page}>
         <Card title="Carga de Calidad">
           <form onSubmit={guardarReporte}>
-            <div style={styles.formGrid}>
-              <Select
-                label="Asesor"
-                value={reporte.asesor}
-                onChange={(v) => actualizarReporte("asesor", v)}
-                options={ASESORES}
-              />
-              <TextInput
-                label="Semana"
-                value={reporte.semana}
-                onChange={(v) => actualizarReporte("semana", v)}
-              />
-              <Select
-                label="Campaña"
-                value={reporte.campania}
-                onChange={(v) => actualizarReporte("campania", v)}
-                options={["AP", "BM"]}
-              />
+            {selectorReporte()}
+
+            <div style={{ ...styles.formGrid, ...styles.sectionSpacing }}>
               <NumberInput
-                label="Nota"
+                label="Nota obtenida"
                 value={reporte.notaCalidad}
                 onChange={(v) => actualizarReporte("notaCalidad", v)}
                 placeholder="Ej. 85"
               />
               <PercentageInput
-                label="Objetivo"
+                label="Objetivo semanal"
                 value={reporte.objetivoCalidad}
                 onChange={(v) => actualizarReporte("objetivoCalidad", v)}
               />
@@ -1293,9 +1257,7 @@ export default function AdminPage() {
                 label="Aspectos trabajados"
                 options={CALIDAD_ASPECTOS}
                 value={reporte.aspectosTrabajadosCalidad}
-                onChange={(v) =>
-                  actualizarReporte("aspectosTrabajadosCalidad", v)
-                }
+                onChange={(v) => actualizarReporte("aspectosTrabajadosCalidad", v)}
               />
               <MultiSelect
                 label="Acciones realizadas"
@@ -1310,7 +1272,7 @@ export default function AdminPage() {
               />
             </div>
 
-            <BotonGuardar texto="Guardar reporte" submit />
+            <SaveButton loading={loading}>Guardar reporte</SaveButton>
           </form>
         </Card>
       </div>
@@ -1321,72 +1283,53 @@ export default function AdminPage() {
     return (
       <div style={styles.page}>
         <Card title="Productividad">
-          <div style={styles.formGrid}>
-            <Select
-              label="Asesor"
-              value={reporte.asesor}
-              onChange={(v) => actualizarReporte("asesor", v)}
-              options={ASESORES}
-            />
-            <TextInput
-              label="Semana"
-              value={reporte.semana}
-              onChange={(v) => actualizarReporte("semana", v)}
-            />
-            <NumberInput
-              label="SPH"
-              value={reporte.sph}
-              onChange={(v) => actualizarReporte("sph", v)}
-            />
-            <NumberInput
-              label="Objetivo SPH"
-              value={reporte.objetivoSph}
-              onChange={(v) => actualizarReporte("objetivoSph", v)}
-            />
-            <NumberInput
-              label="Ventas"
-              value={reporte.ventas}
-              onChange={(v) => actualizarReporte("ventas", v)}
-            />
-            <NumberInput
-              label="Objetivo ventas"
-              value={reporte.objetivoVentas}
-              onChange={(v) => actualizarReporte("objetivoVentas", v)}
-            />
-            <NumberInput
-              label="Objetivo de campaña"
-              value={reporte.objetivoCampania}
-              onChange={(v) => actualizarReporte("objetivoCampania", v)}
-              placeholder="0000"
-              small
-            />
-          </div>
+          <form onSubmit={guardarReporte}>
+            {selectorReporte()}
 
-          <div style={styles.sectionSpacing}>
-            <MultiSelect
-              label="Aspectos trabajados"
-              options={PRODUCTIVIDAD_ASPECTOS}
-              value={reporte.aspectosTrabajadosProductividad}
-              onChange={(v) =>
-                actualizarReporte("aspectosTrabajadosProductividad", v)
-              }
-            />
-            <MultiSelect
-              label="Acciones realizadas"
-              options={PRODUCTIVIDAD_ACCIONES}
-              value={reporte.accionesProductividad}
-              onChange={(v) => actualizarReporte("accionesProductividad", v)}
-            />
-            <TextArea
-              label="Observaciones"
-              value={reporte.observacionesProductividad}
-              onChange={(v) =>
-                actualizarReporte("observacionesProductividad", v)
-              }
-            />
-          </div>
+            <div style={{ ...styles.formGrid, ...styles.sectionSpacing }}>
+              <NumberInput label="SPH" value={reporte.sph} onChange={(v) => actualizarReporte("sph", v)} />
+              <NumberInput
+                label="Objetivo SPH"
+                value={reporte.objetivoSph}
+                onChange={(v) => actualizarReporte("objetivoSph", v)}
+              />
+              <NumberInput label="Ventas" value={reporte.ventas} onChange={(v) => actualizarReporte("ventas", v)} />
+              <NumberInput
+                label="Objetivo ventas"
+                value={reporte.objetivoVentas}
+                onChange={(v) => actualizarReporte("objetivoVentas", v)}
+              />
+              <NumberInput
+                label="Objetivo de campaña"
+                value={reporte.objetivoCampania}
+                onChange={(v) => actualizarReporte("objetivoCampania", v)}
+                placeholder="0000"
+                small
+              />
+            </div>
 
-          <BotonGuardar texto="Guardar reporte" onClick={guardarReporte} />
+            <div style={styles.sectionSpacing}>
+              <MultiSelect
+                label="Aspectos trabajados"
+                options={PRODUCTIVIDAD_ASPECTOS}
+                value={reporte.aspectosTrabajadosProductividad}
+                onChange={(v) => actualizarReporte("aspectosTrabajadosProductividad", v)}
+              />
+              <MultiSelect
+                label="Acciones realizadas"
+                options={PRODUCTIVIDAD_ACCIONES}
+                value={reporte.accionesProductividad}
+                onChange={(v) => actualizarReporte("accionesProductividad", v)}
+              />
+              <TextArea
+                label="Observaciones"
+                value={reporte.observacionesProductividad}
+                onChange={(v) => actualizarReporte("observacionesProductividad", v)}
+              />
+            </div>
+
+            <SaveButton loading={loading}>Guardar reporte</SaveButton>
+          </form>
         </Card>
       </div>
     );
@@ -1396,64 +1339,52 @@ export default function AdminPage() {
     return (
       <div style={styles.page}>
         <Card title="Tipificaciones">
-          <div style={styles.formGrid}>
-            <Select
-              label="Asesor"
-              value={reporte.asesor}
-              onChange={(v) => actualizarReporte("asesor", v)}
-              options={ASESORES}
-            />
-            <TextInput
-              label="Semana"
-              value={reporte.semana}
-              onChange={(v) => actualizarReporte("semana", v)}
-            />
-          </div>
+          <form onSubmit={guardarReporte}>
+            {selectorReporte()}
 
-          <div style={styles.sectionSpacing}>
-            <MultiSelect
-              label="Tipificaciones auditadas"
-              options={TIPIFICACIONES}
-              value={reporte.tipificacionesAuditadas}
-              onChange={(v) => actualizarReporte("tipificacionesAuditadas", v)}
-            />
-          </div>
+            <div style={styles.sectionSpacing}>
+              <MultiSelect
+                label="Tipificaciones auditadas"
+                options={TIPIFICACIONES}
+                value={reporte.tipificacionesAuditadas}
+                onChange={(v) => actualizarReporte("tipificacionesAuditadas", v)}
+              />
+            </div>
 
-          <div style={styles.formGrid}>
-            <PercentageInput
-              label="Desvío"
-              value={reporte.tipificacionesDesvio}
-              onChange={(v) => actualizarReporte("tipificacionesDesvio", v)}
-            />
-            <PercentageInput
-              label="Objetivo"
-              value={reporte.tipificacionesObjetivo}
-              onChange={(v) => actualizarReporte("tipificacionesObjetivo", v)}
-            />
-            <PercentageInput
-              label="Resultado"
-              value={reporte.tipificacionesResultado}
-              onChange={(v) => actualizarReporte("tipificacionesResultado", v)}
-            />
-          </div>
+            <div style={styles.formGrid}>
+              <PercentageInput
+                label="Desvío"
+                value={reporte.tipificacionesDesvio}
+                onChange={(v) => actualizarReporte("tipificacionesDesvio", v)}
+              />
+              <PercentageInput
+                label="Objetivo"
+                value={reporte.tipificacionesObjetivo}
+                onChange={(v) => actualizarReporte("tipificacionesObjetivo", v)}
+              />
+              <PercentageInput
+                label="Resultado"
+                value={reporte.tipificacionesResultado}
+                onChange={(v) => actualizarReporte("tipificacionesResultado", v)}
+              />
+              <Select
+                label="Compromiso"
+                value={reporte.tipificacionesCompromiso}
+                onChange={(v) => actualizarReporte("tipificacionesCompromiso", v)}
+                options={["APLICA DEVOLUCION", "SEGUIMIENTO", "NO APLICA"]}
+              />
+            </div>
 
-          <div style={styles.sectionSpacing}>
-            <Select
-              label="Compromiso"
-              value={reporte.tipificacionesCompromiso}
-              onChange={(v) => actualizarReporte("tipificacionesCompromiso", v)}
-              options={["APLICA DEVOLUCION", "SEGUIMIENTO", "NO APLICA"]}
-            />
-            <TextArea
-              label="Observaciones"
-              value={reporte.tipificacionesObservaciones}
-              onChange={(v) =>
-                actualizarReporte("tipificacionesObservaciones", v)
-              }
-            />
-          </div>
+            <div style={styles.sectionSpacing}>
+              <TextArea
+                label="Observaciones"
+                value={reporte.tipificacionesObservaciones}
+                onChange={(v) => actualizarReporte("tipificacionesObservaciones", v)}
+              />
+            </div>
 
-          <BotonGuardar texto="Guardar reporte" onClick={guardarReporte} />
+            <SaveButton loading={loading}>Guardar reporte</SaveButton>
+          </form>
         </Card>
       </div>
     );
@@ -1463,64 +1394,57 @@ export default function AdminPage() {
     return (
       <div style={styles.page}>
         <Card title="No Ventas">
-          <div style={styles.formGrid}>
-            <Select
-              label="Asesor"
-              value={reporte.asesor}
-              onChange={(v) => actualizarReporte("asesor", v)}
-              options={ASESORES}
-            />
-            <TextInput
-              label="Semana"
-              value={reporte.semana}
-              onChange={(v) => actualizarReporte("semana", v)}
-            />
-            <NumberInput
-              label="Cantidad de no ventas"
-              value={reporte.noVentasCantidad}
-              onChange={(v) => actualizarReporte("noVentasCantidad", v)}
-            />
-          </div>
+          <form onSubmit={guardarReporte}>
+            {selectorReporte()}
 
-          <div style={styles.sectionSpacing}>
-            <MultiSelect
-              label="Coaching"
-              options={PRODUCTIVIDAD_ACCIONES}
-              value={reporte.noVentasCoaching}
-              onChange={(v) => actualizarReporte("noVentasCoaching", v)}
-            />
-            <Select
-              label="Registro en sistema"
-              value={reporte.noVentasRegistro}
-              onChange={(v) => actualizarReporte("noVentasRegistro", v)}
-              options={["Correcto", "Incorrecto"]}
-            />
-            <Select
-              label="Compromiso"
-              value={reporte.noVentasCompromiso}
-              onChange={(v) => actualizarReporte("noVentasCompromiso", v)}
-              options={["APLICA DEVOLUCION", "SEGUIMIENTO", "NO APLICA"]}
-            />
-            <MultiSelect
-              label="OM"
-              options={OM}
-              value={reporte.noVentasOM}
-              onChange={(v) => actualizarReporte("noVentasOM", v)}
-            />
-            <MultiSelect
-              label="Fortalezas"
-              options={FORTALEZAS}
-              value={reporte.noVentasFortalezas}
-              onChange={(v) => actualizarReporte("noVentasFortalezas", v)}
-            />
-            <TextArea
-              label="Observaciones"
-              value={reporte.noVentasObservaciones}
-              onChange={(v) => actualizarReporte("noVentasObservaciones", v)}
-            />
-          </div>
+            <div style={{ ...styles.formGrid, ...styles.sectionSpacing }}>
+              <NumberInput
+                label="Cantidad de no ventas"
+                value={reporte.noVentasCantidad}
+                onChange={(v) => actualizarReporte("noVentasCantidad", v)}
+              />
+              <Select
+                label="Registro en sistema"
+                value={reporte.noVentasRegistro}
+                onChange={(v) => actualizarReporte("noVentasRegistro", v)}
+                options={["Correcto", "Incorrecto"]}
+              />
+              <Select
+                label="Compromiso"
+                value={reporte.noVentasCompromiso}
+                onChange={(v) => actualizarReporte("noVentasCompromiso", v)}
+                options={["APLICA DEVOLUCION", "SEGUIMIENTO", "NO APLICA"]}
+              />
+            </div>
 
-          <BotonGuardar texto="Guardar reporte" onClick={guardarReporte} />
+            <div style={styles.sectionSpacing}>
+              <MultiSelect
+                label="Coaching"
+                options={PRODUCTIVIDAD_ACCIONES}
+                value={reporte.noVentasCoaching}
+                onChange={(v) => actualizarReporte("noVentasCoaching", v)}
+              />
+              <MultiSelect
+                label="Principales O.M."
+                options={OM}
+                value={reporte.noVentasOM}
+                onChange={(v) => actualizarReporte("noVentasOM", v)}
+              />
+              <MultiSelect
+                label="Fortalezas"
+                options={FORTALEZAS}
+                value={reporte.noVentasFortalezas}
+                onChange={(v) => actualizarReporte("noVentasFortalezas", v)}
+              />
+              <TextArea
+                label="Observaciones"
+                value={reporte.noVentasObservaciones}
+                onChange={(v) => actualizarReporte("noVentasObservaciones", v)}
+              />
+            </div>
+
+            <SaveButton loading={loading}>Guardar reporte</SaveButton>
+          </form>
         </Card>
       </div>
     );
@@ -1550,7 +1474,7 @@ export default function AdminPage() {
                 onChange={(v) => actualizarDevolucion("responsable", v)}
               />
               <NumberInput
-                label="Nota calidad"
+                label="Nota calidad (0 a 100)"
                 value={devolucion.notaCalidad}
                 onChange={(v) => actualizarDevolucion("notaCalidad", v)}
               />
@@ -1573,17 +1497,13 @@ export default function AdminPage() {
                 label="Aspectos de productividad"
                 options={PRODUCTIVIDAD_ASPECTOS}
                 value={devolucion.aspectosProductividad}
-                onChange={(v) =>
-                  actualizarDevolucion("aspectosProductividad", v)
-                }
+                onChange={(v) => actualizarDevolucion("aspectosProductividad", v)}
               />
               <MultiSelect
                 label="Acciones de productividad"
                 options={PRODUCTIVIDAD_ACCIONES}
                 value={devolucion.accionesProductividad}
-                onChange={(v) =>
-                  actualizarDevolucion("accionesProductividad", v)
-                }
+                onChange={(v) => actualizarDevolucion("accionesProductividad", v)}
               />
               <MultiSelect
                 label="Tipificación"
@@ -1592,19 +1512,19 @@ export default function AdminPage() {
                 onChange={(v) => actualizarDevolucion("tipificacion", v)}
               />
               <MultiSelect
-                label="OM"
+                label="O.M. (No Ventas)"
                 options={OM}
                 value={devolucion.om}
                 onChange={(v) => actualizarDevolucion("om", v)}
               />
               <Select
-                label="Registro en sistema"
+                label="Registro en sistema (No Ventas)"
                 value={devolucion.registroSistema}
                 onChange={(v) => actualizarDevolucion("registroSistema", v)}
                 options={["Correcto", "Incorrecto"]}
               />
               <MultiSelect
-                label="Fortalezas"
+                label="Fortalezas destacadas (No Ventas)"
                 options={FORTALEZAS}
                 value={devolucion.fortalezas}
                 onChange={(v) => actualizarDevolucion("fortalezas", v)}
@@ -1616,7 +1536,7 @@ export default function AdminPage() {
               />
             </div>
 
-            <BotonGuardar texto="Guardar devolución" submit />
+            <SaveButton loading={loading}>Guardar devolución</SaveButton>
           </form>
         </Card>
       </div>
@@ -1632,18 +1552,14 @@ export default function AdminPage() {
               <Select
                 label="Asesor"
                 value={felicitacion.asesor}
-                onChange={(v) =>
-                  setFelicitacion((prev) => ({ ...prev, asesor: v }))
-                }
+                onChange={(v) => setFelicitacion((prev) => ({ ...prev, asesor: v }))}
                 options={ASESORES}
               />
               <TextInput
                 label="Fecha"
+                type="date"
                 value={felicitacion.fecha}
-                onChange={(v) =>
-                  setFelicitacion((prev) => ({ ...prev, fecha: v }))
-                }
-                placeholder="DD/MM/AAAA"
+                onChange={(v) => setFelicitacion((prev) => ({ ...prev, fecha: v }))}
               />
             </div>
 
@@ -1651,125 +1567,14 @@ export default function AdminPage() {
               <TextArea
                 label="Motivo de la felicitación"
                 value={felicitacion.motivo}
-                onChange={(v) =>
-                  setFelicitacion((prev) => ({ ...prev, motivo: v }))
-                }
+                onChange={(v) => setFelicitacion((prev) => ({ ...prev, motivo: v }))}
                 rows={5}
                 placeholder="Escribí el motivo..."
               />
             </div>
 
-            <BotonGuardar texto="Guardar felicitación" submit />
+            <SaveButton loading={loading}>Guardar felicitación</SaveButton>
           </form>
-        </Card>
-      </div>
-    );
-  }
-
-  function renderSanciones() {
-    const lista = sanciones.filter(
-      (x) =>
-        (!sancFiltroAsesor || x.asesor === sancFiltroAsesor) &&
-        (!sancFiltroTipo || x.tipo === sancFiltroTipo)
-    );
-
-    return (
-      <div style={styles.page}>
-        <Card title="Apercibimientos y sanciones">
-          <form onSubmit={guardarSancion}>
-            <div style={styles.formGrid}>
-              <Select
-                label="Asesor"
-                value={sancion.asesor}
-                onChange={(v) => setSancion((p) => ({ ...p, asesor: v }))}
-                options={ASESORES}
-              />
-              <Select
-                label="Tipo"
-                value={sancion.tipo}
-                onChange={(v) => setSancion((p) => ({ ...p, tipo: v }))}
-                options={TIPOS_SANCION}
-              />
-              <TextInput
-                label="Fecha"
-                type="date"
-                value={sancion.fecha}
-                onChange={(v) => setSancion((p) => ({ ...p, fecha: v }))}
-              />
-            </div>
-
-            <div style={styles.sectionSpacing}>
-              <TextArea
-                label="Motivo"
-                value={sancion.motivo}
-                onChange={(v) => setSancion((p) => ({ ...p, motivo: v }))}
-              />
-              <TextArea
-                label="Observaciones"
-                value={sancion.observaciones}
-                onChange={(v) =>
-                  setSancion((p) => ({ ...p, observaciones: v }))
-                }
-              />
-            </div>
-
-            <BotonGuardar texto="Guardar registro" submit />
-          </form>
-        </Card>
-
-        <Card
-          title={`Historial (${lista.length})`}
-          action={
-            <div style={styles.filters}>
-              <select
-                value={sancFiltroAsesor}
-                onChange={(e) => setSancFiltroAsesor(e.target.value)}
-                style={styles.filterSelect}
-              >
-                <option value="">Todos los asesores</option>
-                {ASESORES.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={sancFiltroTipo}
-                onChange={(e) => setSancFiltroTipo(e.target.value)}
-                style={styles.filterSelect}
-              >
-                <option value="">Todos los tipos</option>
-                {TIPOS_SANCION.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </div>
-          }
-        >
-          {lista.length === 0 ? (
-            <div style={styles.emptyState}>No hay registros.</div>
-          ) : (
-            <div style={styles.resultList}>
-              {lista.map((x) => (
-                <div key={x.id} style={styles.resultCard}>
-                  <div style={styles.resultTop}>
-                    <strong>{x.asesor}</strong>
-                    <span>
-                      {x.tipo || "-"} ·{" "}
-                      {formatearFecha(x.fecha || x.created_at)} ·{" "}
-                      {semanaDe(x.fecha || x.created_at)}
-                    </span>
-                  </div>
-                  <p style={styles.resultText}>{x.motivo || "-"}</p>
-                  {x.observaciones ? (
-                    <p style={styles.resultText}>{x.observaciones}</p>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          )}
         </Card>
       </div>
     );
@@ -1788,7 +1593,7 @@ export default function AdminPage() {
                 options={ASESORES}
               />
               <Select
-                label="Área"
+                label="¿A qué corresponde?"
                 value={audio.area}
                 onChange={(v) => actualizarAudio("area", v)}
                 options={AREAS}
@@ -1800,6 +1605,7 @@ export default function AdminPage() {
               />
               <TextInput
                 label="Fecha"
+                type="date"
                 value={audio.fecha}
                 onChange={(v) => actualizarAudio("fecha", v)}
               />
@@ -1811,9 +1617,7 @@ export default function AdminPage() {
                 <input
                   type="file"
                   accept="audio/*"
-                  onChange={(e) =>
-                    actualizarAudio("archivo", e.target.files?.[0] || null)
-                  }
+                  onChange={(e) => actualizarAudio("archivo", e.target.files?.[0] || null)}
                   style={styles.input}
                 />
               </div>
@@ -1843,7 +1647,7 @@ export default function AdminPage() {
               />
             </div>
 
-            <BotonGuardar texto="Cargar audio" submit />
+            <SaveButton loading={loading}>Cargar audio</SaveButton>
           </form>
         </Card>
       </div>
@@ -1853,7 +1657,7 @@ export default function AdminPage() {
   function renderPdas() {
     return (
       <div style={styles.page}>
-        <Card title="PDA">
+        <Card title="Plan de Acción (PDA)">
           <form onSubmit={guardarPda}>
             <div style={styles.formGrid}>
               <Select
@@ -1863,17 +1667,19 @@ export default function AdminPage() {
                 options={ASESORES}
               />
               <TextInput
-                label="Aspecto"
+                label="Aspecto a trabajar"
                 value={pda.aspecto}
                 onChange={(v) => actualizarPda("aspecto", v)}
               />
               <TextInput
                 label="Fecha desde"
+                type="date"
                 value={pda.fechaDesde}
                 onChange={(v) => actualizarPda("fechaDesde", v)}
               />
               <TextInput
                 label="Fecha hasta"
+                type="date"
                 value={pda.fechaHasta}
                 onChange={(v) => actualizarPda("fechaHasta", v)}
               />
@@ -1892,7 +1698,7 @@ export default function AdminPage() {
               />
             </div>
 
-            <BotonGuardar texto="Guardar PDA" submit />
+            <SaveButton loading={loading}>Guardar PDA</SaveButton>
           </form>
         </Card>
       </div>
@@ -1906,12 +1712,7 @@ export default function AdminPage() {
           title="Reportes"
           action={
             <div style={styles.filters}>
-              <TextInput
-                label=""
-                value={semana}
-                onChange={setSemana}
-                placeholder="Semana"
-              />
+              <TextInput label="" value={semana} onChange={setSemana} placeholder="Semana" />
               <select
                 value={campania}
                 onChange={(e) => setCampania(e.target.value)}
@@ -1934,10 +1735,8 @@ export default function AdminPage() {
                 <div key={item.id} style={styles.reportCard}>
                   <div style={styles.reportHeader}>
                     <div>
-                      <div style={styles.reportKicker}>
-                        {item.semana || "-"}
-                      </div>
-                      <h3 style={styles.reportName}>{item.asesor || "-"}</h3>
+                      <div style={styles.reportKicker}>{item.semana || "-"}</div>
+                      <h3 style={styles.reportName}>{nombreDe(item) || "-"}</h3>
                     </div>
                     <button
                       type="button"
@@ -1949,14 +1748,14 @@ export default function AdminPage() {
                   </div>
 
                   <div style={styles.reportGrid}>
-                    <Dato k="Campaña" v={item.campania} />
-                    <Dato k="Nota" v={item.nota} />
-                    <Dato k="Objetivo" v={item.objetivo} />
-                    <Dato k="Desvío" v={item.desvio} />
-                    <Dato k="SPH" v={item.sph} />
-                    <Dato k="Ventas" v={item.ventas} />
-                    <Dato k="Objetivo campaña" v={item.objetivo_campania} />
-                    <Dato k="Tipificaciones" v={item.tipificaciones_resultado} />
+                    <KV label="Campaña" value={item.campania} />
+                    <KV label="Nota" value={item.nota} />
+                    <KV label="Objetivo" value={item.objetivo} />
+                    <KV label="Desvío" value={item.desvio} />
+                    <KV label="SPH" value={item.sph} />
+                    <KV label="Ventas" value={item.ventas} />
+                    <KV label="Objetivo campaña" value={item.objetivo_campania} />
+                    <KV label="Tipificaciones" value={item.tipificaciones_resultado} />
                   </div>
 
                   <div style={styles.reportDetails}>
@@ -1987,7 +1786,6 @@ export default function AdminPage() {
     noVentas: renderNoVentas,
     devoluciones: renderDevoluciones,
     felicitaciones: renderFelicitaciones,
-    sanciones: renderSanciones,
     audios: renderAudios,
     pdas: renderPdas,
     reportes: renderReportes,
@@ -2005,17 +1803,17 @@ export default function AdminPage() {
         </div>
 
         <nav style={styles.nav}>
-          {TABS.map(([id, nombre]) => (
+          {NAV.map(([tab, titulo]) => (
             <button
-              key={id}
+              key={tab}
               type="button"
-              onClick={() => setActiveTab(id)}
+              onClick={() => setActiveTab(tab)}
               style={{
                 ...styles.navButton,
-                ...(activeTab === id ? styles.navButtonActive : {}),
+                ...(activeTab === tab ? styles.navButtonActive : {}),
               }}
             >
-              {nombre}
+              {titulo}
             </button>
           ))}
         </nav>
@@ -2050,6 +1848,8 @@ export default function AdminPage() {
   );
 }
 
+/* ================= ESTILOS ================= */
+
 const styles = {
   app: {
     minHeight: "100vh",
@@ -2058,6 +1858,7 @@ const styles = {
     color: PALETTE.navy,
     fontFamily: "Arial, Helvetica, sans-serif",
   },
+
   sidebar: {
     width: "250px",
     minHeight: "100vh",
@@ -2071,12 +1872,14 @@ const styles = {
     top: 0,
     alignSelf: "flex-start",
   },
+
   logo: {
     display: "flex",
     alignItems: "center",
     gap: "12px",
     padding: "4px 8px 28px",
   },
+
   logoMark: {
     width: "42px",
     height: "42px",
@@ -2088,14 +1891,18 @@ const styles = {
     fontWeight: 800,
     fontSize: "13px",
   },
+
   logoTitle: { display: "block", fontSize: "14px", lineHeight: 1.2 },
+
   logoSubtitle: {
     display: "block",
     marginTop: "3px",
     fontSize: "11px",
     opacity: 0.65,
   },
+
   nav: { display: "flex", flexDirection: "column", gap: "6px" },
+
   navButton: {
     border: "none",
     background: "transparent",
@@ -2107,7 +1914,13 @@ const styles = {
     fontSize: "13px",
     opacity: 0.82,
   },
-  navButtonActive: { background: PALETTE.teal, opacity: 1, fontWeight: 700 },
+
+  navButtonActive: {
+    background: PALETTE.teal,
+    opacity: 1,
+    fontWeight: 700,
+  },
+
   sidebarBottom: {
     marginTop: "auto",
     display: "flex",
@@ -2117,13 +1930,16 @@ const styles = {
     opacity: 0.7,
     padding: "14px 8px 4px",
   },
+
   statusDot: {
     width: "8px",
     height: "8px",
     borderRadius: "50%",
     background: PALETTE.mint,
   },
+
   main: { flex: 1, minWidth: 0 },
+
   topbar: {
     minHeight: "88px",
     background: "#ffffff",
@@ -2134,6 +1950,7 @@ const styles = {
     justifyContent: "space-between",
     boxSizing: "border-box",
   },
+
   topbarKicker: {
     display: "block",
     fontSize: "10px",
@@ -2141,12 +1958,14 @@ const styles = {
     letterSpacing: "1.5px",
     color: PALETTE.teal,
   },
+
   topbarTitle: {
     margin: "5px 0 0",
     fontSize: "23px",
     lineHeight: 1.2,
     color: PALETTE.navy,
   },
+
   selectedAdvisor: {
     display: "flex",
     flexDirection: "column",
@@ -2155,12 +1974,14 @@ const styles = {
     fontSize: "11px",
     color: "#66757a",
   },
+
   page: {
     padding: "28px 32px 40px",
     maxWidth: "1500px",
     margin: "0 auto",
     boxSizing: "border-box",
   },
+
   hero: {
     background: PALETTE.navy,
     color: "#ffffff",
@@ -2172,6 +1993,7 @@ const styles = {
     gap: "24px",
     marginBottom: "22px",
   },
+
   eyebrow: {
     fontSize: "10px",
     fontWeight: 800,
@@ -2179,7 +2001,9 @@ const styles = {
     color: PALETTE.mint,
     marginBottom: "8px",
   },
+
   heroTitle: { margin: 0, fontSize: "30px" },
+
   heroText: {
     margin: "9px 0 0",
     maxWidth: "700px",
@@ -2187,6 +2011,7 @@ const styles = {
     lineHeight: 1.6,
     opacity: 0.78,
   },
+
   heroBadge: {
     background: PALETTE.teal,
     borderRadius: "999px",
@@ -2195,12 +2020,14 @@ const styles = {
     fontWeight: 800,
     whiteSpace: "nowrap",
   },
+
   statsGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
     gap: "14px",
     marginBottom: "22px",
   },
+
   statCard: {
     background: "#ffffff",
     border: `1px solid ${PALETTE.soft}`,
@@ -2210,8 +2037,11 @@ const styles = {
     flexDirection: "column",
     gap: "6px",
   },
+
   statNumber: { fontSize: "27px", fontWeight: 800, color: PALETTE.navy },
+
   statLabel: { fontSize: "11px", color: "#65757a" },
+
   card: {
     background: "#ffffff",
     border: `1px solid ${PALETTE.soft}`,
@@ -2220,6 +2050,7 @@ const styles = {
     marginBottom: "20px",
     boxSizing: "border-box",
   },
+
   cardHeader: {
     display: "flex",
     alignItems: "center",
@@ -2227,15 +2058,19 @@ const styles = {
     gap: "16px",
     marginBottom: "20px",
   },
+
   cardTitle: { margin: 0, fontSize: "19px", color: PALETTE.navy },
+
   quickGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
     gap: "12px",
   },
+
   quickButton: {
     border: `1px solid ${PALETTE.soft}`,
     background: "#ffffff",
+    color: PALETTE.navy,
     borderRadius: "12px",
     padding: "16px",
     cursor: "pointer",
@@ -2243,13 +2078,16 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: "7px",
+    fontSize: "12px",
   },
+
   twoColumns: {
     display: "grid",
     gridTemplateColumns: "minmax(240px, 300px) minmax(0, 1fr)",
     gap: "24px",
     alignItems: "start",
   },
+
   advisorList: {
     marginTop: "12px",
     display: "flex",
@@ -2258,6 +2096,7 @@ const styles = {
     maxHeight: "650px",
     overflowY: "auto",
   },
+
   advisorButton: {
     border: `1px solid ${PALETTE.soft}`,
     background: "#ffffff",
@@ -2268,11 +2107,13 @@ const styles = {
     textAlign: "left",
     fontSize: "12px",
   },
+
   advisorButtonActive: {
     background: PALETTE.cream,
     borderColor: PALETTE.teal,
     fontWeight: 700,
   },
+
   emptyState: {
     border: `1px dashed ${PALETTE.soft}`,
     borderRadius: "12px",
@@ -2281,94 +2122,87 @@ const styles = {
     fontSize: "13px",
     textAlign: "center",
   },
+
   profileHeader: {
     background: PALETTE.cream,
     borderRadius: "14px",
     padding: "20px",
     marginBottom: "14px",
   },
+
   profileKicker: {
     fontSize: "9px",
     fontWeight: 800,
     letterSpacing: "1.3px",
     color: PALETTE.teal,
   },
+
   profileName: { margin: "6px 0 0", fontSize: "24px" },
+
   miniStats: {
     display: "grid",
-    gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
     gap: "8px",
   },
-  miniStat: {
-    border: `1px solid ${PALETTE.soft}`,
-    borderRadius: "10px",
-    padding: "12px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-  },
+
   sectionSpacing: { marginTop: "22px" },
+
   subTitle: { margin: "0 0 12px", fontSize: "14px", color: PALETTE.teal },
-  weekCard: {
-    border: `2px solid ${PALETTE.soft}`,
-    borderRadius: "14px",
-    padding: "16px",
-    marginTop: "14px",
-    background: "#fcfdfd",
-  },
-  weekTitle: {
-    display: "inline-block",
-    background: PALETTE.navy,
-    color: "#ffffff",
-    borderRadius: "999px",
-    padding: "6px 14px",
-    fontSize: "12px",
-    fontWeight: 800,
-  },
+
   resultList: { display: "flex", flexDirection: "column", gap: "10px" },
+
   resultCard: {
     border: `1px solid ${PALETTE.soft}`,
     borderRadius: "11px",
     padding: "14px",
-    background: "#ffffff",
   },
+
   resultTop: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     gap: "12px",
     marginBottom: "10px",
+    fontSize: "12px",
   },
+
   resultGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
     gap: "10px",
-    fontSize: "12px",
   },
+
   resultText: {
-    margin: "8px 0 0",
+    margin: 0,
     fontSize: "12px",
     color: "#56676b",
     lineHeight: 1.5,
   },
-  badge: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: "999px",
-    padding: "5px 9px",
-    fontSize: "9px",
-    fontWeight: 800,
-    color: PALETTE.navy,
+
+  kv: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+    fontSize: "13px",
+    border: `1px solid ${PALETTE.soft}`,
+    borderRadius: "10px",
+    padding: "10px 12px",
+    background: "#ffffff",
   },
+
+  kvLabel: { fontSize: "10px", color: "#65757a" },
+
   formGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
     gap: "15px",
     alignItems: "start",
   },
+
   field: { display: "flex", flexDirection: "column", gap: "7px" },
+
   label: { fontSize: "11px", fontWeight: 700, color: PALETTE.navy },
+
   input: {
     width: "100%",
     boxSizing: "border-box",
@@ -2380,7 +2214,9 @@ const styles = {
     background: "#ffffff",
     color: PALETTE.navy,
   },
-  smallNumberInput: { maxWidth: "120px" },
+
+  smallNumberInput: { maxWidth: "140px" },
+
   textarea: {
     width: "100%",
     boxSizing: "border-box",
@@ -2394,6 +2230,7 @@ const styles = {
     color: PALETTE.navy,
     fontFamily: "Arial, Helvetica, sans-serif",
   },
+
   select: {
     width: "100%",
     boxSizing: "border-box",
@@ -2405,6 +2242,7 @@ const styles = {
     background: "#ffffff",
     color: PALETTE.navy,
   },
+
   percentWrap: {
     display: "flex",
     alignItems: "center",
@@ -2413,6 +2251,7 @@ const styles = {
     background: "#ffffff",
     overflow: "hidden",
   },
+
   percentInput: {
     flex: 1,
     minWidth: 0,
@@ -2422,12 +2261,14 @@ const styles = {
     fontSize: "12px",
     color: PALETTE.navy,
   },
+
   percentSymbol: {
     padding: "0 11px",
     fontWeight: 800,
     color: PALETTE.teal,
     fontSize: "12px",
   },
+
   multiSelect: {
     border: `1px solid ${PALETTE.soft}`,
     borderRadius: "10px",
@@ -2437,6 +2278,7 @@ const styles = {
     gap: "7px",
     background: "#ffffff",
   },
+
   checkRow: {
     display: "flex",
     alignItems: "flex-start",
@@ -2446,11 +2288,13 @@ const styles = {
     cursor: "pointer",
     lineHeight: 1.35,
   },
+
   formActions: {
     display: "flex",
     justifyContent: "flex-end",
     marginTop: "22px",
   },
+
   primaryButton: {
     border: "none",
     background: PALETTE.teal,
@@ -2461,6 +2305,7 @@ const styles = {
     fontWeight: 800,
     cursor: "pointer",
   },
+
   secondaryButton: {
     border: `1px solid ${PALETTE.teal}`,
     background: "#ffffff",
@@ -2471,6 +2316,7 @@ const styles = {
     fontWeight: 800,
     cursor: "pointer",
   },
+
   successMessage: {
     margin: "18px 32px 0",
     background: "#e7f3ef",
@@ -2481,6 +2327,7 @@ const styles = {
     fontSize: "12px",
     fontWeight: 700,
   },
+
   errorMessage: {
     margin: "18px 32px 0",
     background: "#f9e8e8",
@@ -2491,8 +2338,11 @@ const styles = {
     fontSize: "12px",
     fontWeight: 700,
   },
+
   audioPlayer: { width: "100%", marginTop: "5px" },
+
   filters: { display: "flex", alignItems: "center", gap: "8px" },
+
   filterSelect: {
     border: `1px solid ${PALETTE.soft}`,
     borderRadius: "8px",
@@ -2501,12 +2351,15 @@ const styles = {
     background: "#ffffff",
     color: PALETTE.navy,
   },
+
   reportList: { display: "flex", flexDirection: "column", gap: "14px" },
+
   reportCard: {
     border: `1px solid ${PALETTE.soft}`,
     borderRadius: "13px",
     padding: "17px",
   },
+
   reportHeader: {
     display: "flex",
     justifyContent: "space-between",
@@ -2514,19 +2367,22 @@ const styles = {
     gap: "15px",
     marginBottom: "16px",
   },
+
   reportKicker: {
     fontSize: "10px",
     fontWeight: 800,
     color: PALETTE.teal,
     marginBottom: "3px",
   },
+
   reportName: { margin: 0, fontSize: "17px" },
+
   reportGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
     gap: "9px",
-    fontSize: "12px",
   },
+
   reportDetails: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
@@ -2534,5 +2390,6 @@ const styles = {
     marginTop: "14px",
     paddingTop: "14px",
     borderTop: `1px solid ${PALETTE.soft}`,
+    fontSize: "12px",
   },
 };

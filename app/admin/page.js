@@ -422,6 +422,12 @@ export default function AdminPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+
   const [perfiles, setPerfiles] = useState([]);
   const [reportes, setReportes] = useState([]);
   const [devoluciones, setDevoluciones] = useState([]);
@@ -481,8 +487,50 @@ export default function AdminPage() {
   });
 
   useEffect(() => {
-    cargarDatos();
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data?.session || null);
+      setAuthLoading(false);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_evento, nuevaSesion) => {
+      setSession(nuevaSesion || null);
+    });
+
+    return () => {
+      listener?.subscription?.unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    if (session) cargarDatos();
+  }, [session]);
+
+  async function iniciarSesion(e) {
+    e.preventDefault();
+    setLoginError("");
+    setAuthLoading(true);
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: loginEmail.trim(),
+      password: loginPassword,
+    });
+
+    if (signInError) {
+      setLoginError("No se pudo iniciar sesión: " + signInError.message);
+    }
+
+    setAuthLoading(false);
+  }
+
+  async function cerrarSesion() {
+    await supabase.auth.signOut();
+    setSession(null);
+    setPerfiles([]);
+    setReportes([]);
+    setDevoluciones([]);
+    setAudios([]);
+    setPdas([]);
+  }
 
   async function cargarDatos() {
     setLoading(true);
@@ -500,8 +548,17 @@ export default function AdminPage() {
         pedir("pdas"),
       ]);
 
-      if (rPerfiles.error) console.error(rPerfiles.error);
-      else setPerfiles(rPerfiles.data || []);
+      if (rPerfiles.error) {
+        console.error(rPerfiles.error);
+        setError(`❌ No se pudieron leer los perfiles: ${rPerfiles.error.message}`);
+      } else {
+        setPerfiles(rPerfiles.data || []);
+        if ((rPerfiles.data || []).length <= 1) {
+          setError(
+            "❌ Solo se puede leer tu propio perfil. Revisá que hayas iniciado sesión como administrador."
+          );
+        }
+      }
 
       if (rReportes.error) console.error(rReportes.error);
       else setReportes(rReportes.data || []);
@@ -1791,6 +1848,46 @@ ${fila("Observaciones", r.no_ventas_observaciones)}
     reportes: renderReportes,
   };
 
+  if (authLoading && !session) {
+    return (
+      <div style={styles.loginWrap}>
+        <div style={styles.loginCard}>Cargando...</div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div style={styles.loginWrap}>
+        <form onSubmit={iniciarSesion} style={styles.loginCard}>
+          <div style={styles.eyebrowDark}>PORTAL INTEGRAL DEL ASESOR</div>
+          <h1 style={styles.loginTitle}>Iniciar sesión</h1>
+
+          <TextInput
+            label="Email"
+            type="email"
+            value={loginEmail}
+            onChange={setLoginEmail}
+            placeholder="correo@ejemplo.com"
+          />
+
+          <TextInput
+            label="Contraseña"
+            type="password"
+            value={loginPassword}
+            onChange={setLoginPassword}
+          />
+
+          {loginError && <div style={styles.errorMessageInline}>{loginError}</div>}
+
+          <button type="submit" disabled={authLoading} style={styles.primaryButton}>
+            {authLoading ? "Ingresando..." : "Ingresar"}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.app}>
       <aside style={styles.sidebar}>
@@ -1820,7 +1917,10 @@ ${fila("Observaciones", r.no_ventas_observaciones)}
 
         <div style={styles.sidebarBottom}>
           <div style={styles.statusDot} />
-          <span>Sistema conectado</span>
+          <span>{session?.user?.email || "Sistema conectado"}</span>
+          <button type="button" onClick={cerrarSesion} style={styles.logoutButton}>
+            Salir
+          </button>
         </div>
       </aside>
 
@@ -1851,6 +1951,62 @@ ${fila("Observaciones", r.no_ventas_observaciones)}
 /* ================= ESTILOS ================= */
 
 const styles = {
+  loginWrap: {
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#f4f6f8",
+    fontFamily: "Arial, Helvetica, sans-serif",
+    padding: "20px",
+    boxSizing: "border-box",
+  },
+
+  loginCard: {
+    width: "100%",
+    maxWidth: "380px",
+    background: "#ffffff",
+    border: `1px solid ${PALETTE.soft}`,
+    borderRadius: "16px",
+    padding: "28px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+    boxSizing: "border-box",
+    color: PALETTE.navy,
+    fontSize: "13px",
+  },
+
+  eyebrowDark: {
+    fontSize: "10px",
+    fontWeight: 800,
+    letterSpacing: "1.5px",
+    color: PALETTE.teal,
+  },
+
+  loginTitle: { margin: 0, fontSize: "24px", color: PALETTE.navy },
+
+  errorMessageInline: {
+    background: "#f9e8e8",
+    border: "1px solid #d99a9a",
+    color: "#7b2525",
+    borderRadius: "10px",
+    padding: "10px 12px",
+    fontSize: "12px",
+    fontWeight: 700,
+  },
+
+  logoutButton: {
+    marginLeft: "auto",
+    border: "1px solid rgba(255,255,255,0.4)",
+    background: "transparent",
+    color: "#ffffff",
+    borderRadius: "6px",
+    padding: "4px 8px",
+    fontSize: "10px",
+    cursor: "pointer",
+  },
+
   app: {
     minHeight: "100vh",
     display: "flex",

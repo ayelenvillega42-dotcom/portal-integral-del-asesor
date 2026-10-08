@@ -433,6 +433,8 @@ export default function AdminPage() {
   const [devoluciones, setDevoluciones] = useState([]);
   const [audios, setAudios] = useState([]);
   const [pdas, setPdas] = useState([]);
+  const [felicitaciones, setFelicitaciones] = useState([]);
+  const [miPerfil, setMiPerfil] = useState(null);
 
   const [selectedAdvisor, setSelectedAdvisor] = useState("");
   const [searchAdvisor, setSearchAdvisor] = useState("");
@@ -502,7 +504,21 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (session) cargarDatos();
+    if (!session) {
+      setMiPerfil(null);
+      return;
+    }
+
+    (async () => {
+      const { data } = await supabase
+        .from("perfiles")
+        .select("id, nombre, rol, activo")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      setMiPerfil(data || { rol: "sin-perfil", nombre: session.user.email });
+      cargarDatos(data?.rol === "administrador");
+    })();
   }, [session]);
 
   async function iniciarSesion(e) {
@@ -532,7 +548,7 @@ export default function AdminPage() {
     setPdas([]);
   }
 
-  async function cargarDatos() {
+  async function cargarDatos(esAdmin = true) {
     setLoading(true);
     setError("");
 
@@ -540,20 +556,22 @@ export default function AdminPage() {
       const pedir = (tabla, columnas = "*") =>
         supabase.from(tabla).select(columnas).order("created_at", { ascending: false });
 
-      const [rPerfiles, rReportes, rDevoluciones, rAudios, rPdas] = await Promise.all([
-        supabase.from("perfiles").select("id, nombre, rol"),
-        pedir("reportes"),
-        pedir("devoluciones"),
-        pedir("audios"),
-        pedir("pdas"),
-      ]);
+      const [rPerfiles, rReportes, rDevoluciones, rAudios, rPdas, rFelicitaciones] =
+        await Promise.all([
+          supabase.from("perfiles").select("id, nombre, rol"),
+          pedir("reportes"),
+          pedir("devoluciones"),
+          pedir("audios"),
+          pedir("pdas"),
+          pedir("felicitaciones"),
+        ]);
 
       if (rPerfiles.error) {
         console.error(rPerfiles.error);
         setError(`❌ No se pudieron leer los perfiles: ${rPerfiles.error.message}`);
       } else {
         setPerfiles(rPerfiles.data || []);
-        if ((rPerfiles.data || []).length <= 1) {
+        if (esAdmin && (rPerfiles.data || []).length <= 1) {
           setError(
             "❌ Solo se puede leer tu propio perfil. Revisá que hayas iniciado sesión como administrador."
           );
@@ -571,6 +589,9 @@ export default function AdminPage() {
 
       if (rPdas.error) console.error(rPdas.error);
       else setPdas(rPdas.data || []);
+
+      if (rFelicitaciones.error) console.error(rFelicitaciones.error);
+      else setFelicitaciones(rFelicitaciones.data || []);
     } catch (err) {
       console.error(err);
       setError("No se pudieron cargar los datos.");
@@ -610,6 +631,90 @@ export default function AdminPage() {
       return null;
     }
     return id;
+  }
+
+  async function borrarRegistro(tabla, id, setter, etiqueta) {
+    limpiarMensajes();
+
+    if (!window.confirm(`¿Borrar ${etiqueta}? Esta acción no se puede deshacer.`)) return;
+
+    setLoading(true);
+
+    try {
+      const { data, error: delError } = await supabase
+        .from(tabla)
+        .delete()
+        .eq("id", id)
+        .select();
+
+      if (delError) throw delError;
+
+      if (!data || data.length === 0) {
+        setError(
+          "❌ No se borró nada. Probablemente falta el permiso de borrado en Supabase (corré el SQL de políticas)."
+        );
+        return;
+      }
+
+      setter((prev) => prev.filter((item) => item.id !== id));
+      setMessage("✅ Registro borrado.");
+    } catch (err) {
+      console.error(err);
+      setError(`❌ No se pudo borrar: ${err?.message || "Error desconocido"}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function vaciarTodo() {
+    limpiarMensajes();
+
+    const texto = window.prompt(
+      "Esto borra TODOS los reportes, devoluciones, audios, PDA y felicitaciones. Los perfiles no se tocan.\n\nPara confirmar escribí BORRAR"
+    );
+
+    if (texto !== "BORRAR") return;
+
+    setLoading(true);
+
+    try {
+      for (const tabla of ["reportes", "devoluciones", "audios", "pdas", "felicitaciones"]) {
+        const { error: delError } = await supabase.from(tabla).delete().not("id", "is", null);
+        if (delError) throw new Error(`${tabla}: ${delError.message}`);
+
+        const { count } = await supabase
+          .from(tabla)
+          .select("id", { count: "exact", head: true });
+
+        if (count && count > 0) {
+          throw new Error(
+            `${tabla}: quedaron ${count} registros. Falta el permiso de borrado en Supabase.`
+          );
+        }
+      }
+
+      try {
+        const { data: archivos } = await supabase.storage.from("audios").list("", { limit: 1000 });
+        if (archivos && archivos.length > 0) {
+          await supabase.storage.from("audios").remove(archivos.map((a) => a.name));
+        }
+      } catch (storageErr) {
+        console.error(storageErr);
+      }
+
+      setReportes([]);
+      setDevoluciones([]);
+      setAudios([]);
+      setPdas([]);
+      setFelicitaciones([]);
+      setReporteId(null);
+      setMessage("✅ Todo quedó en cero.");
+    } catch (err) {
+      console.error(err);
+      setError(`❌ No se pudo vaciar: ${err?.message || "Error desconocido"}`);
+    } finally {
+      setLoading(false);
+    }
   }
 
   function limpiarMensajes() {
@@ -826,12 +931,14 @@ export default function AdminPage() {
     setLoading(true);
 
     try {
-      await insertar("felicitaciones", {
+      const data = await insertar("felicitaciones", {
         asesor_id: asesorId,
         asesor: felicitacion.asesor,
         motivo: felicitacion.motivo,
         fecha: felicitacion.fecha || null,
       });
+
+      setFelicitaciones((prev) => [data, ...prev]);
 
       setMessage("✅ Felicitación guardada correctamente.");
       setFelicitacion({ asesor: felicitacion.asesor, motivo: "", fecha: "" });
@@ -1089,6 +1196,24 @@ ${fila("Observaciones", r.no_ventas_observaciones)}
                 <span>{texto}</span>
               </button>
             ))}
+          </div>
+        </Card>
+
+        <Card title="Borrar datos cargados">
+          <p style={styles.resultText}>
+            Deja en cero reportes, devoluciones, audios, PDA y felicitaciones. Los perfiles de los
+            asesores no se tocan. Para borrar un solo registro, usá el botón Borrar en cada
+            sección.
+          </p>
+          <div style={styles.formActions}>
+            <button
+              type="button"
+              onClick={vaciarTodo}
+              disabled={loading}
+              style={styles.dangerButton}
+            >
+              Vaciar todos los datos
+            </button>
           </div>
         </Card>
       </div>
@@ -1596,6 +1721,17 @@ ${fila("Observaciones", r.no_ventas_observaciones)}
             <SaveButton loading={loading}>Guardar devolución</SaveButton>
           </form>
         </Card>
+
+        {renderHistorial(
+          "Devoluciones cargadas",
+          devoluciones,
+          "devoluciones",
+          setDevoluciones,
+          (item) =>
+            `${formatearFecha(item.created_at)} · ${item.area || "-"} · ${
+              item.observaciones || "Sin observaciones"
+            }`
+        )}
       </div>
     );
   }
@@ -1633,6 +1769,14 @@ ${fila("Observaciones", r.no_ventas_observaciones)}
             <SaveButton loading={loading}>Guardar felicitación</SaveButton>
           </form>
         </Card>
+
+        {renderHistorial(
+          "Felicitaciones cargadas",
+          felicitaciones,
+          "felicitaciones",
+          setFelicitaciones,
+          (item) => `${formatearFecha(item.fecha || item.created_at)} · ${item.motivo || "-"}`
+        )}
       </div>
     );
   }
@@ -1707,6 +1851,17 @@ ${fila("Observaciones", r.no_ventas_observaciones)}
             <SaveButton loading={loading}>Cargar audio</SaveButton>
           </form>
         </Card>
+
+        {renderHistorial(
+          "Audios cargados",
+          audios,
+          "audios",
+          setAudios,
+          (item) =>
+            `${formatearFecha(item.fecha || item.created_at)} · ${item.area || "-"} · ${
+              item.responsable || "-"
+            }`
+        )}
       </div>
     );
   }
@@ -1758,7 +1913,46 @@ ${fila("Observaciones", r.no_ventas_observaciones)}
             <SaveButton loading={loading}>Guardar PDA</SaveButton>
           </form>
         </Card>
+
+        {renderHistorial(
+          "PDA cargados",
+          pdas,
+          "pdas",
+          setPdas,
+          (item) =>
+            `${item.aspecto || "-"} · ${formatearFecha(item.fecha_desde)} → ${formatearFecha(
+              item.fecha_hasta
+            )}`
+        )}
       </div>
+    );
+  }
+
+  function renderHistorial(titulo, lista, tabla, setter, describir) {
+    return (
+      <Card title={titulo}>
+        {lista.length === 0 ? (
+          <div style={styles.emptyState}>Todavía no hay registros.</div>
+        ) : (
+          <div style={styles.resultList}>
+            {lista.slice(0, 30).map((item) => (
+              <div key={item.id} style={styles.resultCard}>
+                <div style={styles.resultTop}>
+                  <strong>{nombreDe(item) || "-"}</strong>
+                  <button
+                    type="button"
+                    style={styles.dangerButton}
+                    onClick={() => borrarRegistro(tabla, item.id, setter, "este registro")}
+                  >
+                    Borrar
+                  </button>
+                </div>
+                <p style={styles.resultText}>{describir(item)}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
     );
   }
 
@@ -1795,13 +1989,22 @@ ${fila("Observaciones", r.no_ventas_observaciones)}
                       <div style={styles.reportKicker}>{item.semana || "-"}</div>
                       <h3 style={styles.reportName}>{nombreDe(item) || "-"}</h3>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => imprimirReporte(item)}
-                      style={styles.secondaryButton}
-                    >
-                      Imprimir
-                    </button>
+                    <div style={styles.filters}>
+                      <button
+                        type="button"
+                        onClick={() => imprimirReporte(item)}
+                        style={styles.secondaryButton}
+                      >
+                        Imprimir
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => borrarRegistro("reportes", item.id, setReportes, "este reporte")}
+                        style={styles.dangerButton}
+                      >
+                        Borrar
+                      </button>
+                    </div>
                   </div>
 
                   <div style={styles.reportGrid}>
@@ -1888,6 +2091,172 @@ ${fila("Observaciones", r.no_ventas_observaciones)}
     );
   }
 
+  if (!miPerfil) {
+    return (
+      <div style={styles.loginWrap}>
+        <div style={styles.loginCard}>Cargando tu perfil...</div>
+      </div>
+    );
+  }
+
+  if (miPerfil.rol !== "administrador") {
+    return (
+      <div style={styles.app}>
+        <main style={styles.main}>
+          <header style={styles.topbar}>
+            <div>
+              <span style={styles.topbarKicker}>MI PORTAL</span>
+              <h1 style={styles.topbarTitle}>{miPerfil.nombre || session.user.email}</h1>
+            </div>
+            <button type="button" onClick={cerrarSesion} style={styles.secondaryButton}>
+              Salir
+            </button>
+          </header>
+
+          {error && <div style={styles.errorMessage}>{error}</div>}
+
+          <div style={styles.page}>
+            {miPerfil.rol === "sin-perfil" ? (
+              <Card title="Sin perfil">
+                <div style={styles.emptyState}>
+                  Tu usuario no tiene un perfil asignado. Contactá al administrador.
+                </div>
+              </Card>
+            ) : (
+              <>
+                <Card title="Mis reportes">
+                  {reportes.length === 0 ? (
+                    <div style={styles.emptyState}>Todavía no tenés reportes cargados.</div>
+                  ) : (
+                    <div style={styles.reportList}>
+                      {reportes.map((item) => (
+                        <div key={item.id} style={styles.reportCard}>
+                          <div style={styles.reportHeader}>
+                            <div>
+                              <div style={styles.reportKicker}>{item.campania || "-"}</div>
+                              <h3 style={styles.reportName}>{item.semana || "-"}</h3>
+                            </div>
+                          </div>
+
+                          <div style={styles.reportGrid}>
+                            <KV label="Nota" value={item.nota} />
+                            <KV label="Objetivo" value={item.objetivo} />
+                            <KV label="Evolución" value={item.evolucion} />
+                            <KV label="Desvío" value={item.desvio} />
+                            <KV label="SPH" value={item.sph} />
+                            <KV label="Objetivo SPH" value={item.objetivo_sph} />
+                            <KV label="Ventas" value={item.ventas} />
+                            <KV label="Objetivo ventas" value={item.objetivo_ventas} />
+                            <KV label="Objetivo campaña" value={item.objetivo_campania} />
+                            <KV label="Tipificaciones" value={item.tipificaciones_resultado} />
+                            <KV label="No ventas" value={item.no_ventas} />
+                          </div>
+
+                          <div style={styles.reportDetails}>
+                            <div>
+                              <strong>Aspectos trabajados</strong>
+                              <p>{item.recomendacion || "-"}</p>
+                            </div>
+                            <div>
+                              <strong>Observaciones</strong>
+                              <p>{item.observaciones || "-"}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+
+                <Card title="Mis devoluciones">
+                  {devoluciones.length === 0 ? (
+                    <div style={styles.emptyState}>No hay devoluciones.</div>
+                  ) : (
+                    <div style={styles.resultList}>
+                      {devoluciones.map((item) => (
+                        <div key={item.id} style={styles.resultCard}>
+                          <div style={styles.resultTop}>
+                            <strong>{formatearFecha(item.created_at)}</strong>
+                            <span>{item.area || "-"}</span>
+                          </div>
+                          <p style={styles.resultText}>
+                            {[item.aspectos_calidad, item.aspectos_productividad, item.observaciones]
+                              .filter(Boolean)
+                              .join(" · ") || "Sin detalle."}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+
+                <Card title="Mis audios">
+                  {audios.length === 0 ? (
+                    <div style={styles.emptyState}>No hay audios.</div>
+                  ) : (
+                    <div style={styles.resultList}>
+                      {audios.map((item) => (
+                        <div key={item.id} style={styles.resultCard}>
+                          <div style={styles.resultTop}>
+                            <strong>{formatearFecha(item.fecha || item.created_at)}</strong>
+                            <span>{item.area || "-"}</span>
+                          </div>
+                          {item.archivo && (
+                            <audio controls src={item.archivo} style={styles.audioPlayer} />
+                          )}
+                          {item.devolucion && <p style={styles.resultText}>{item.devolucion}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+
+                <Card title="Mis planes de acción">
+                  {pdas.length === 0 ? (
+                    <div style={styles.emptyState}>No hay planes de acción.</div>
+                  ) : (
+                    <div style={styles.resultList}>
+                      {pdas.map((item) => (
+                        <div key={item.id} style={styles.resultCard}>
+                          <div style={styles.resultTop}>
+                            <strong>{item.aspecto || "-"}</strong>
+                            <span>
+                              {formatearFecha(item.fecha_desde)} → {formatearFecha(item.fecha_hasta)}
+                            </span>
+                          </div>
+                          <p style={styles.resultText}>
+                            {item.objetivo || item.observaciones || "Sin detalle."}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+
+                <Card title="Mis felicitaciones">
+                  {felicitaciones.length === 0 ? (
+                    <div style={styles.emptyState}>Todavía no hay felicitaciones.</div>
+                  ) : (
+                    <div style={styles.resultList}>
+                      {felicitaciones.map((item) => (
+                        <div key={item.id} style={styles.resultCard}>
+                          <div style={styles.resultTop}>
+                            <strong>{formatearFecha(item.fecha || item.created_at)}</strong>
+                          </div>
+                          <p style={styles.resultText}>{item.motivo || "-"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              </>
+            )}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.app}>
       <aside style={styles.sidebar}>
@@ -1951,6 +2320,17 @@ ${fila("Observaciones", r.no_ventas_observaciones)}
 /* ================= ESTILOS ================= */
 
 const styles = {
+  dangerButton: {
+    border: "1px solid #c0392b",
+    background: "#ffffff",
+    color: "#c0392b",
+    borderRadius: "8px",
+    padding: "8px 12px",
+    fontSize: "11px",
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+
   loginWrap: {
     minHeight: "100vh",
     display: "flex",
